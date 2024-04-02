@@ -5,6 +5,7 @@
 # -----------------------------------------------------------
 import nuke  # type: ignore
 import sys
+import uuid
 import traceback
 
 if sys.version_info.major == 2:
@@ -23,12 +24,11 @@ import threading
 from ..nuke_util.nuke_util import get_input, get_connected_nodes, get_project_name, get_vina_path, duplicate_node
 from ..nuke_util.media_util import get_extension
 from ..python_util.util import jwrite, jread, recursive_rename
+from ..settings import IP, COMFYUI_DIR, PORT
 
 
 
-ip = '192.168.1.21'
-port = 8188
-client_id = 'd65c9f986cf04403be21071cbb9d9bad'
+client_id = str(uuid.uuid4())[:32].replace('-', '')
 
 state_dir = '{}/comfyui_state'.format(get_vina_path())
 if not os.path.isdir(state_dir):
@@ -92,7 +92,7 @@ def comfyui_submit():
 
 
 def progress(save_image_node):
-    url = "ws://{}:{}/ws?clientId={}".format(ip, port, client_id)
+    url = "ws://{}:{}/ws?clientId={}".format(IP, PORT, client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
     def on_message(_, message):
@@ -243,18 +243,10 @@ def save_image_backup():
 
 
 def get_comfyui_dir():
-    comfyui_dir_a = '/mnt/Documents/develop/sd/workspace/ComfyUI'
+    if os.path.isdir(os.path.join(COMFYUI_DIR, 'comfy')):
+        return COMFYUI_DIR
 
-    if os.path.isdir(os.path.join(comfyui_dir_a, 'comfy')):
-        return comfyui_dir_a
-
-    comfyui_dir_b = '/home/pancho/Documents/develop/sd/workspace/ComfyUI'
-
-    if os.path.isdir(os.path.join(comfyui_dir_b, 'comfy')):
-        return comfyui_dir_b
-
-    nuke.message('Empty directories !\n\n{}\n{}'.format(
-        comfyui_dir_a, comfyui_dir_b))
+    nuke.message('Directory "{}" does not exist'.format(COMFYUI_DIR))
 
     return ''
 
@@ -598,7 +590,7 @@ def get_output_index(node, node_data, input_index):
 
 
 def send_request(relative_url, data={}):
-    url = 'http://{}:{}/{}'.format(ip, port, relative_url)
+    url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
     headers = {'Content-Type': 'application/json'}
     request = urllib2.Request(url, json.dumps(data), headers)  # type: ignore
 
