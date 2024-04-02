@@ -1,0 +1,55 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name KSampler
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ label "\[value sampler_name_]"
+ note_font "Bitstream Vera Sans"
+ selected true
+ xpos 83
+ ypos 122
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'KSampler',\n    'inputs': \[\n        \{'name': 'latent_image', 'outputs': \['latent']\},\n        \{'name': 'model', 'outputs': \['model']\},\n        \{'name': 'positive', 'outputs': \['conditioning', 'positive']\},\n        \{'name': 'negative', 'outputs': \['conditioning', 'negative']\}\n    ],\n    'outputs': \['latent']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {3 seed_ l seed}
+ seed_ 1
+ addUserKnob {6 fixed_seed l fixed -STARTLINE}
+ addUserKnob {3 steps_ l steps}
+ steps_ 15
+ addUserKnob {7 cfg_ l cfg R 0.1 10}
+ cfg_ 8
+ addUserKnob {4 sampler_name_ l sampler_name M {euler euler_ancestral heun heunpp2 dpm_2 dpm_2_ancestral lms dpm_fast dpm_adaptive dpmpp_2s_ancestral dpmpp_sde dpmpp_sde_gpu dpmpp_2m dpmpp_2m_sde dpmpp_2m_sde_gpu dpmpp_3m_sde dpmpp_3m_sde_gpu ddpm lcm ddim uni_pc uni_pc_bh2 ""}}
+ sampler_name_ dpmpp_sde
+ addUserKnob {4 scheduler_ l scheduler M {normal karras exponential sgm_uniform simple ddim_uniform "" "" ""}}
+ scheduler_ karras
+ addUserKnob {7 denoise_ l denoise R 0.1 1}
+ denoise_ 1
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>KSampler</b> v1.20<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Input {
+  inputs 0
+  name latent_image
+ }
+ Output {
+  name Output1
+  xpos 231
+  ypos 63
+ }
+ Input {
+  inputs 0
+  name model
+  number 1
+ }
+ Input {
+  inputs 0
+  name positive
+  number 2
+ }
+ Input {
+  inputs 0
+  name negative
+  number 3
+ }
+end_group

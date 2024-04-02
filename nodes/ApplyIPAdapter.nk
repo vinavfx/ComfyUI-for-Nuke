@@ -1,0 +1,64 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name ApplyIPAdapter1
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ selected true
+ xpos -451
+ ypos 490
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'IPAdapterApply',\n    'inputs': \[\n        \{'name': 'model', 'outputs': \['model'], 'opt': False\},\n        \{'name': 'ipadapter', 'outputs': \['ipadapter'], 'opt': False\},\n        \{'name': 'clip_vision', 'outputs': \['clip_vision'], 'opt': False\},\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\},\n        \{'name': 'attn_mask', 'outputs': \[], 'opt': True\}\n    ],\n    'outputs': \['model']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {7 weight_ l weight}
+ weight_ 1
+ addUserKnob {7 noise_ l noise}
+ addUserKnob {4 weight_type_ l weight_type M {original linear "channel penalty" ""}}
+ addUserKnob {26 ""}
+ addUserKnob {7 start_at_ l start_at}
+ addUserKnob {7 end_at_ l end_at}
+ end_at_ 1
+ addUserKnob {6 unfold_batch_ l unfold_batch +STARTLINE}
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>ApplyIPAdapter</b> v1.1<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Input {
+  inputs 0
+  name model
+  xpos 180
+  ypos -9
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 300
+ }
+ Input {
+  inputs 0
+  name ipadapter
+  xpos 290
+  ypos -9
+  number 1
+ }
+ Input {
+  inputs 0
+  name clip_vision
+  xpos 400
+  ypos -9
+  number 2
+ }
+ Input {
+  inputs 0
+  name image
+  xpos 510
+  ypos -9
+  number 3
+ }
+ Input {
+  inputs 0
+  name attn_mask
+  xpos 620
+  ypos -9
+  number 4
+ }
+end_group

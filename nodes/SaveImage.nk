@@ -1,0 +1,46 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name SaveImage2
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ knobChanged "\nif nuke.thisKnob().name() == 'outside_read':\n    vina.nodes.comfyui.outside_read(nuke.thisNode())\n\n"
+ tile_color 0x609e38ff
+ note_font "Bitstream Vera Sans"
+ selected true
+ xpos -409
+ ypos 30
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'SaveImage',\n    'inputs': \[\n        \{'name': 'images', 'outputs': \['image']\}\n    ],\n    'outputs': \[]\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 comfyui_submit l submit T exe('vina.nodes.comfyui.comfyui_submit') +STARTLINE}
+ addUserKnob {22 backup_result -STARTLINE T exe('vina.nodes.comfyui.save_image_backup')}
+ addUserKnob {6 outside_read +STARTLINE}
+ outside_read true
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>SaveImage</b> v1.24<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Read {
+  inputs 0
+  file_type png
+  format "2276 1280 0 0 2276 1280 1 "
+  origset true
+  on_error black
+  version 472
+  colorspace sRGB
+  name read
+  xpos -120
+  ypos 25
+ }
+ Input {
+  inputs 0
+  name images
+  xpos 145
+  ypos 93
+ }
+ Output {
+  name Output
+  xpos 145
+  ypos 257
+ }
+end_group

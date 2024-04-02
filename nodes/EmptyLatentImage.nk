@@ -1,0 +1,48 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+Group {
+ inputs 0
+ name EmptyLatentImage3
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ knobChanged "this = nuke.thisNode()\nformat_knob = this.knob('format')\n\nformats = \[\n    \[512, 512],\n    \[512, 768],\n    \[768, 512],\n    \[768, 768],\n    \[768, 1152],\n    \[1152, 768],\n    \[1024, 1024],\n    \[1024, 1536],\n    \[1536, 1024],\n]\n\nwidth_knob = this.knob('width_')\nheight_knob = this.knob('height_')\n\nwidth_knob.setEnabled(True)\nheight_knob.setEnabled(True)\n\nif not 'custom' in format_knob.value():\n    index = int(format_knob.getValue())\n    width, height = formats\[index]\n    \n    width_knob.setValue(width)\n    height_knob.setValue(height)\n\n    width_knob.setEnabled(False)\n    height_knob.setEnabled(False)\n"
+ tile_color 0xa57aaaff
+ label "\[value width_ ] x \[value height_]"
+ selected true
+ xpos -39
+ ypos 1323
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'EmptyLatentImage',\n    'inputs': \[],\n    'outputs': \['latent']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {4 format M {"Square - 512" "Portrait - 512" "Landscape - 512" "Square - 768" "Portrait - 768" "Landscape - 768" "Square - 1024" "Portrait - 1024" "Landscape - 1024" custom "" "" "" "" "" "" "" "" "" "" "" "" ""}}
+ addUserKnob {3 width_ l pixels +DISABLED}
+ width_ 512
+ addUserKnob {3 height_ l "" -STARTLINE +DISABLED}
+ height_ 512
+ addUserKnob {3 batch_size_ l "batch_size / frames"}
+ batch_size_ 1
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>EmptyLatentImage</b> v1.11<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Crop {
+  inputs 0
+  box {0 0 {parent.width_} {parent.height_}}
+  reformat true
+  crop false
+  name Crop1
+  xpos -40
+  ypos 182
+ }
+ FrameRange {
+  first_frame 1
+  last_frame {{parent.batch_size_}}
+  time ""
+  name FrameRange1
+  xpos -40
+  ypos 206
+ }
+ Output {
+  name Output1
+  xpos -40
+  ypos 231
+ }
+end_group

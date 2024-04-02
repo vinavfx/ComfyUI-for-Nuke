@@ -1,0 +1,54 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name sdRifeVfi1
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ selected true
+ xpos -32
+ ypos 1045
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'RIFE VFI',\n    'inputs': \[\n        \{'name': 'frames', 'outputs': \['image'], 'opt': False\},\n        \{'name': 'optional_interpolation_states', 'outputs': \['image'], 'opt': True\}\n    ],\n    'outputs': \['image']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {4 ckpt_name_ l ckpt_name M {rife47.pth}}
+ addUserKnob {22 update l update_models -STARTLINE T "nuke.thisNode().knob('ckpt_name_').setValues(\n    vina.nodes.comfyui.get_models('ComfyUI-Frame-Interpolation/ckpts/rife', True))"}
+ addUserKnob {3 clear_cache_after_n_frames_ l clear_cache_after_n_frames}
+ clear_cache_after_n_frames_ 10
+ addUserKnob {3 multiplier_ l multiplier}
+ multiplier_ 2
+ addUserKnob {6 fast_mode_ l fast_mode +STARTLINE}
+ fast_mode_ true
+ addUserKnob {6 ensemble_ l ensemble +STARTLINE}
+ ensemble_ true
+ addUserKnob {3 scale_factor_ l scale_factor}
+ scale_factor_ 1
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>sdRifeVfi</b> v1.9<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Input {
+  inputs 0
+  name frames
+  xpos 290
+  ypos -9
+ }
+ FrameRange {
+  first_frame 1
+  last_frame {{"parent.input0.last_frame * parent.multiplier_ "}}
+  time ""
+  name FrameRange1
+  xpos 138
+  ypos 162
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 300
+ }
+ Input {
+  inputs 0
+  name optional_interpolation_states
+  xpos 400
+  ypos -9
+  number 1
+ }
+end_group

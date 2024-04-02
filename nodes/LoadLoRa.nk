@@ -1,0 +1,40 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name LoadLoRa
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ tile_color 0xcc6759ff
+ label "\[value lora_name_]"
+ note_font "Bitstream Vera Sans"
+ selected true
+ xpos 2188
+ ypos 1103
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'Lora Loader',\n    'inputs': \[\n        \{'name': 'model', 'outputs': \['model'], 'opt': False\},\n        \{'name': 'clip', 'outputs': \['clip'], 'opt': False\}\n    ],\n    'outputs': \['model', 'clip']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {4 lora_name_ l lora_name M {catman.safetensors underwater-photos.safetensors p1r4t3s_v6.safetensors lcm/LCM_LoRA_Weights_SD15.safetensors}}
+ addUserKnob {22 update -STARTLINE T "models = exe('vina.nodes.comfyui.get_models', 'loras')\nif models:\n    nuke.thisNode().knob('lora_name_').setValues(models)"}
+ addUserKnob {26 ""}
+ addUserKnob {7 strength_model_ l strength_model}
+ strength_model_ 1
+ addUserKnob {7 strength_clip_ l strength_clip}
+ strength_clip_ 1
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>LoadLoRa</b> v1.1<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Input {
+  inputs 0
+  name model
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 300
+ }
+ Input {
+  inputs 0
+  name clip
+  number 1
+ }
+end_group

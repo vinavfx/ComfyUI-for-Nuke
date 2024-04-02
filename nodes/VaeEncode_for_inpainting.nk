@@ -1,0 +1,63 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+push 0
+push $cut_paste_input
+Group {
+ inputs 3
+ name sdVaeEncode_for_inpainting1
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ tile_color 0xf9962fff
+ selected true
+ xpos -807
+ ypos 516
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'VAEEncodeForInpaint',\n    'inputs': \[\n        \{'name': 'pixels', 'outputs': \['image']\},\n        \{'name': 'vae', 'outputs': \['vae']\},\n        \{'name': 'mask', 'outputs': \['mask']\}\n\n    ],\n    'outputs': \['latent']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {3 grow_mask_by_ l grow_mask_by}
+ grow_mask_by_ 6
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>sdVaeEncode_for_inpainting</b> v1.3<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Input {
+  inputs 0
+  name mask
+  xpos 329
+  ypos 95
+  number 2
+ }
+ Shuffle {
+  in alpha
+  green black
+  blue black
+  name Shuffle1
+  xpos 329
+  ypos 154
+ }
+ Input {
+  inputs 0
+  name pixels
+  xpos 510
+  ypos -9
+ }
+ Merge2 {
+  inputs 2
+  bbox B
+  mix 0.5
+  name Merge1
+  xpos 510
+  ypos 154
+ }
+ Output {
+  name Output1
+  xpos 510
+  ypos 244
+ }
+ Input {
+  inputs 0
+  name vae
+  xpos 776
+  ypos 124
+  number 1
+ }
+end_group

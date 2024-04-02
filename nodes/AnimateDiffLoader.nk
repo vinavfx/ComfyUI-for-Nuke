@@ -1,0 +1,67 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name AnimateDiffLoader
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ tile_color 0x335b7cff
+ label "\[value model_name_]"
+ selected true
+ xpos 2200
+ ypos 1397
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ADE_AnimateDiffLoaderGen1',\n    'inputs': \[\n        \{'name': 'model', 'outputs': \['model']\},\n        \{'name': 'context_options', 'outputs': \['context_opts'], 'opt': True\},\n        \{'name': 'motion_lora', 'outputs': \[], 'opt': True\},\n        \{'name': 'ad_settings', 'outputs': \[], 'opt': True\},\n        \{'name': 'ad_keyframes', 'outputs': \[], 'opt': True\},\n        \{'name': 'sample_settings', 'outputs': \[], 'opt': True\},\n        \{'name': 'scale_multival', 'outputs': \[], 'opt': True\},\n        \{'name': 'effect_multival', 'outputs': \[], 'opt': True\}\n    ],\n    'outputs': \['model']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\nreload(vina.nodes.comfyui)\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {4 model_name_ l model_name M {v3_sd15_mm.ckpt temporaldiff-v1-animatediff.ckpt mm-Stabilized_mid.pth mm-Stabilized_high.pth mm_sd_v15_v2.ckpt mm_sd_v15.ckpt mm_sd_v14.ckpt mm-p_0.75.pth mm-p_0.5.pth lt_long_mm_16_64_frames.ckpt lt_long_mm_32_frames.ckpt}}
+ addUserKnob {22 update -STARTLINE T "models = exe('vina.nodes.comfyui.get_models', 'animatediff_models')\nif models:\n    nuke.thisNode().knob('model_name_').setValues(models)"}
+ addUserKnob {4 beta_schedule_ l beta_schedule M {autoselect "use existing" "sqrt_linear (AnimateDiff)" "linear (AnimateDiff-SDXL)" "linear (HotshotXL/default)" avg(sqrt_linear,linear) "lcm avg(sqrt_linear,linear)" lcm "lcm\[100_ots]" "lcm >> sqrt_linear" sqrt cosine squaredcos_cap_v2}}
+ beta_schedule_ "sqrt_linear (AnimateDiff)"
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>AnimateDiffLoader</b> v1.3<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Output {
+  inputs 0
+  name Output1
+  xpos 0
+  ypos 300
+ }
+ Input {
+  inputs 0
+  name model
+ }
+ Input {
+  inputs 0
+  name context_options
+  number 1
+ }
+ Input {
+  inputs 0
+  name motion_lora
+  number 2
+ }
+ Input {
+  inputs 0
+  name ad_settings
+  number 3
+ }
+ Input {
+  inputs 0
+  name ad_keyframes
+  number 4
+ }
+ Input {
+  inputs 0
+  name sample_settings
+  number 5
+ }
+ Input {
+  inputs 0
+  name scale_multival
+  number 6
+ }
+ Input {
+  inputs 0
+  name effect_multival
+  number 7
+ }
+end_group

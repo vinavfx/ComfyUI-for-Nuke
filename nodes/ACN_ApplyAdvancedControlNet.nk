@@ -1,0 +1,90 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name ACN_ApplyAdvancedControlNet1
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ note_font "Bitstream Vera Sans"
+ selected true
+ xpos 273
+ ypos 323
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ACN_AdvancedControlNetApply',\n    'inputs': \[\n        \{'name': 'positive', 'outputs': \['conditioning', 'positive']\},\n        \{'name': 'negative', 'outputs': \['conditioning', 'negative']\},\n        \{'name': 'control_net', 'outputs': \['control_net']\},\n        \{'name': 'image', 'outputs': \['image']\},\n        \{'name': 'mask_optional', 'outputs': \['mask'], 'opt': True\},\n        \{'name': 'timestep_kf', 'outputs': \['timestep_kf'], 'opt': True\},\n        \{'name': 'latent_kf_override', 'outputs': \['latent_kf'], 'opt': True\},\n        \{'name': 'weights_override', 'outputs': \['weights_override'], 'opt': True\},\n        \{'name': 'model_optional', 'outputs': \['model'], 'opt': True\}\n    ],\n    'outputs': \['positive', 'negative', 'model_opt']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {7 strength_ l strength R 0.1 1}
+ strength_ 1
+ addUserKnob {26 ""}
+ addUserKnob {7 start_percent_ l start_percent}
+ addUserKnob {7 end_percent_ l end_percent}
+ end_percent_ 1
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>ACN_ApplyAdvancedControlNet</b> v1.1<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Reformat {
+  inputs 0
+  type "to box"
+  box_width {{image.width}}
+  box_height {{image.height}}
+  box_fixed true
+  scale {1 1}
+  name Reformat1
+  xpos 400
+  ypos 347
+ }
+ Dissolve {
+  channels rgba
+  which {{parent.strength_}}
+  name Dissolve1
+  xpos 400
+  ypos 412
+ }
+ Input {
+  inputs 0
+  name positive
+ }
+ Output {
+  name Output1
+  xpos 400
+  ypos 515
+ }
+ Input {
+  inputs 0
+  name negative
+  number 1
+ }
+ Input {
+  inputs 0
+  name control_net
+  number 2
+ }
+ Input {
+  inputs 0
+  name image
+  number 3
+ }
+ Input {
+  inputs 0
+  name mask_optional
+  number 4
+ }
+ Input {
+  inputs 0
+  name timestep_kf
+  number 5
+ }
+ Input {
+  inputs 0
+  name latent_kf_override
+  number 6
+ }
+ Input {
+  inputs 0
+  name weights_override
+  number 7
+ }
+ Input {
+  inputs 0
+  name model_optional
+  number 8
+ }
+end_group

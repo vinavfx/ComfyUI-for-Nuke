@@ -1,0 +1,44 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name sdAnimateDiffContextOptions
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ selected true
+ xpos -185
+ ypos -175
+ hide_input true
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ADE_AnimateDiffUniformContextOptions',\n    'inputs': \[\n        \{'name': 'prev_context', 'outputs': \['prev_context'], 'opt': True\},\n        \{'name': 'view_opts', 'outputs': \['view_opts'], 'opt': True\}\n    ],\n    'outputs': \['context_opts']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {3 context_length_ l context_length}
+ context_length_ 16
+ addUserKnob {3 context_stride_ l context_stride}
+ context_stride_ 1
+ addUserKnob {3 context_overlap_ l context_overlap}
+ addUserKnob {4 context_schedule_ l context_schedule M {uniform}}
+ addUserKnob {6 closed_loop_ l closed_loop +STARTLINE}
+ addUserKnob {4 fuse_method_ l fuse_method M {pyramid flat}}
+ addUserKnob {6 use_on_equal_length_ l use_on_equal_length +STARTLINE}
+ addUserKnob {7 start_percent_ l start_percent}
+ addUserKnob {3 guarantee_steps_ l guarantee_steps}
+ guarantee_steps_ 1
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>sdAnimateDiffContextOptions</b> v1.0<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Output {
+  inputs 0
+  name Output1
+  xpos 0
+  ypos 300
+ }
+ Input {
+  inputs 0
+  name prev_context
+ }
+ Input {
+  inputs 0
+  name view_opts
+  number 1
+ }
+end_group

@@ -1,0 +1,268 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name UltimateSDUpscale1
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ label "\[value sampler_name_]"
+ note_font "Bitstream Vera Sans"
+ selected true
+ xpos 1280
+ ypos 332
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'UltimateSDUpscale',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image']\},\n        \{'name': 'model', 'outputs': \['model']\},\n        \{'name': 'positive', 'outputs': \['conditioning', 'positive']\},\n        \{'name': 'negative', 'outputs': \['conditioning', 'negative']\},\n        \{'name': 'vae', 'outputs': \['vae']\},\n        \{'name': 'upscale_model', 'outputs': \['upscale_model']\}\n    ],\n    'outputs': \['image']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {7 upscale_by_ l upscale_by R 1 4}
+ upscale_by_ 2
+ addUserKnob {26 ""}
+ addUserKnob {3 seed_ l seed}
+ seed_ 4.848942434e+15
+ addUserKnob {6 random_seed l random -STARTLINE}
+ random_seed true
+ addUserKnob {3 steps_ l steps}
+ steps_ 20
+ addUserKnob {7 cfg_ l cfg R 0.1 10}
+ cfg_ 8
+ addUserKnob {4 sampler_name_ l sampler_name M {euler euler_ancestral heun heunpp2 dpm_2 dpm_2_ancestral lms dpm_fast dpm_adaptive dpmpp_2s_ancestral dpmpp_sde dpmpp_sde_gpu dpmpp_2m dpmpp_2m_sde dpmpp_2m_sde_gpu dpmpp_3m_sde dpmpp_3m_sde_gpu ddpm lcm ddim uni_pc uni_pc_bh2 ""}}
+ sampler_name_ dpmpp_sde
+ addUserKnob {4 scheduler_ l scheduler M {normal karras exponential sgm_uniform simple ddim_uniform "" "" ""}}
+ scheduler_ karras
+ addUserKnob {7 denoise_ l denoise t "uses from default img2img field. We recommend 0.35 value for image enhancements, but if you don't wan't changes use 0.15-0.20"}
+ denoise_ 0.35
+ addUserKnob {26 ""}
+ addUserKnob {4 mode_type_ l mode_type t "\nLinear - All tiles processed one by one. column by column, row by row\n\nChess - All tiles are processed in a checkerboard pattern. Reduces the chance of seam artifacts\n\nNone - Disabled redraw. Use it when run generation without seam fix, see visible overlays or artifacts on seams and want to run just seam pass. Don't forget to put upscaled image as the source before" M {Linear Chess None "" "" "" ""}}
+ addUserKnob {3 tile_width_ l tile_width t "The width of the tile to be processed. The larger the tile, the less artifacts will be in the final image. For 2k 512px is usually enough"}
+ tile_width_ 512
+ addUserKnob {3 tile_height_ l tile_height t "The height of the tile to be processed. The default is 0, in which case it is equal to the width. The larger the tile, the less artifacts will be in the final image. For 2k 512px is usually enough\n\n"}
+ tile_height_ 512
+ addUserKnob {7 mask_blur_ l mask_blur t "It is blur of masks used in tile masking. Set it to 12-16 on 512-768px tile size. Increase if you see seams." R 0 64}
+ mask_blur_ 8
+ addUserKnob {7 tile_padding_ l tile_padding t "How many pixels of neighboring tiles will be taken into account when processing a tile" R 0 128}
+ tile_padding_ 32
+ addUserKnob {26 ""}
+ addUserKnob {4 seam_fix_mode_ l seam_fix_mode t "\nBands pass - It adds passes on just seams (rows and columns) and covers small area around them (width in ui). It requires less time than offset pass.\n\nHalf tile offset pass - It adds 2 passes like redraw pass, but with a half-tile offset. One pass for rows with vertical gradient mask and one pass for columns with horizontal gradient mask. This pass covers bigger area than bands and mostly produces better result, but require more time.\n\nHalf tile offset + intersections pass - It runs Half tile offset pass and then run extra pass on intersections with radial gradient mask\n\nNone - Disabled seams fix. Default value" M {None "Band Pass" "Half Tile" "Half Tile + Intersections" "" "" "" ""}}
+ addUserKnob {7 seam_fix_denoise_ l seam_fix_denoise t "Denoise strength for seams fix"}
+ seam_fix_denoise_ 1
+ addUserKnob {7 seam_fix_width_ l seam_fix_width t "Redraw line width. Used only by \"Band pass\"" R 0 100}
+ seam_fix_width_ 64
+ addUserKnob {7 seam_fix_mask_blur_ l seam_fix_mask_blur t "It is blur of masks used in tile masking. Set it to 8-16 on 32px padding. Increase if increased padding.\n\n" R 0 10}
+ seam_fix_mask_blur_ 8
+ addUserKnob {7 seam_fix_padding_ l seam_fix_padding t "How many pixels of image near seam will be taken into account when processing a tile" R 0 50}
+ seam_fix_padding_ 16
+ addUserKnob {26 ""}
+ addUserKnob {6 force_uniform_tiles_ l force_uniform_tiles +STARTLINE}
+ force_uniform_tiles_ true
+ addUserKnob {6 tiled_decode_ l tiled_decode -STARTLINE}
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>UltimateSDUpscale</b> v1.17<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Input {
+  inputs 0
+  name model
+  xpos 838
+  ypos -51
+  number 1
+ }
+ Input {
+  inputs 0
+  name positive
+  xpos 948
+  ypos -51
+  number 2
+ }
+ Input {
+  inputs 0
+  name negative
+  xpos 1058
+  ypos -51
+  number 3
+ }
+ Input {
+  inputs 0
+  name vae
+  xpos 1168
+  ypos -51
+  number 4
+ }
+ Input {
+  inputs 0
+  name upscale_model
+  xpos 1278
+  ypos -51
+  number 5
+ }
+ Input {
+  inputs 0
+  name image
+  xpos 692
+  ypos -24
+ }
+ Reformat {
+  type scale
+  scale {{parent.upscale_by_}}
+  name reformat
+  xpos 692
+  ypos 29
+ }
+set N1097c170 [stack 0]
+ Ramp {
+  replace true
+  p0 {0 0}
+  p1 {{parent.tile_width_} {parent.tile_height_}}
+  name Ramp1
+  xpos 897
+  ypos 82
+ }
+ Group {
+  name vTile
+  tile_color 0x7500b7ff
+  xpos 897
+  ypos 106
+  addUserKnob {20 controls l Controls}
+  addUserKnob {15 area l Area}
+  area {0 0 {parent.tile_width_} {parent.tile_height_}}
+  addUserKnob {26 ""}
+  addUserKnob {41 tile_mirror_x l "Mirror X" T BlinkScript1.tile_mirror_x}
+  addUserKnob {41 tile_mirror_y l "Mirror Y" -STARTLINE T BlinkScript1.tile_mirror_y}
+  addUserKnob {20 about l About}
+  addUserKnob {26 _name l "" +STARTLINE T "<b>Francisco Contreras - 2022</b>\n<br>Senior Compositor"}
+  addUserKnob {26 ""}
+  addUserKnob {26 website l "" +STARTLINE T "<b>Web Site:</b>\n<br>\n<a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ }
+  Input {
+   inputs 0
+   name Image
+   xpos 0
+  }
+  BlinkScript {
+   kernelSourceFile "\[python \{nuke.pluginPath()\[0]\}]/vina_plugins/blink_scripts/tile.cc"
+   recompileCount 54
+   ProgramGroup 1
+   KernelDescription "2 \"tile\" iterate pixelWise 245ccf08123336e1b17757efefc8ed0c34369e27d924ceb18853c01bb18dbb38 2 \"src\" Read Random \"dst\" Write Random 3 \"mirror_x\" Bool 1 AA== \"mirror_y\" Bool 1 AA== \"area\" Int 4 AAAAAAAAAAD0AQAA9AEAAA== 3 \"mirror_x\" 1 1 \"mirror_y\" 1 1 \"area\" 4 1 2 \"srcconstEdgeColor\" Float 4 1 AAAAAAAAAAAAAAAAAAAAAA== \"size\" Int 2 1 AAAAAAAAAAA="
+   kernelSource "// Author: Francisco Jose Contreras Cuevas\n// Office: VFX Artist - Senior Compositor\n// Website: vinavfx.com\n\nkernel tile : ImageComputationKernel<ePixelWise>\n\{\n    Image<eRead, eAccessRandom, eEdgeConstant> src;\n    Image<eWrite, eAccessRandom> dst;\n\nparam:\n    bool mirror_x, mirror_y;\n    int4 area;\n\nlocal:\n    int2 size;\n\n    void define()\n    \{\n        defineParam(mirror_x, \"mirror_x\", bool(false));\n        defineParam(mirror_y, \"mirror_y\", bool(false));\n        defineParam(area, \"area\", int4(0, 0, 500, 500));\n    \}\n\n    void init()\n    \{\n    \}\n\n    inline void add_tile(int2 pos, bool reverse_x, bool reverse_y)\n    \{\n        for (int x = area.x; x < area.z; x++)\n        \{\n            int dst_x = pos.x + x - area.x;\n\n            if (dst_x >= src.bounds.width())\n                continue;\n\n            int src_x = x;\n            if (reverse_x)\n                src_x = (size.x - (x - area.x)) + area.x;\n\n            for (int y = area.y; y < area.w; y++)\n            \{\n                int dst_y = pos.y + y - area.y;\n\n                if (dst_y >= src.bounds.height())\n                    continue;\n\n                int src_y = y;\n                if (reverse_y)\n                    src_y = (size.y - (y - area.y)) + area.y;\n\n                dst(dst_x, dst_y) = src(src_x, src_y);\n            \}\n        \}\n    \}\n\n    void process(int2 pos)\n    \{\n        if (pos.x || pos.y)\n            return;\n\n        if (area.x == area.z)\n            area.z ++;\n\n        if (area.y == area.w)\n            area.w++;\n\n        size.x = area.z - area.x;\n        size.y = area.w - area.y;\n\n        int amount_x = src.bounds.width() / size.x;\n        int amount_y = src.bounds.height() / size.y;\n\n        for (int x = 0; x < amount_x + 1; x++)\n        \{\n            bool reverse_x = false;\n            if (mirror_x)\n                reverse_x = x % 2 ? false : true;\n\n            for (int y = 0; y < amount_y + 1; y++)\n            \{\n                bool reverse_y = false;\n                if (mirror_y)\n                    reverse_y = y % 2 ? false : true;\n\n                add_tile(int2\{x * size.x, y * size.y\}, reverse_x, reverse_y);\n            \}\n        \}\n    \}\n\};\n"
+   useGPUIfAvailable false
+   rebuild ""
+   tile_area {{parent.area.x} {parent.area.y} {parent.area.r} {parent.area.t}}
+   rebuild_finalise ""
+   name BlinkScript1
+   xpos 0
+   ypos 141
+  }
+  Output {
+   name Output1
+   xpos 0
+   ypos 300
+  }
+ end_group
+ Mirror2 {
+  flip true
+  name Mirror2_1
+  xpos 897
+  ypos 135
+ }
+set Nf601ce0 [stack 0]
+ EdgeDetectWrapper {
+  threshold 5
+  blurquality 1
+  name EdgeDetect1
+  xpos 1117
+  ypos 131
+ }
+ Shuffle {
+  in alpha
+  name Shuffle1
+  xpos 1117
+  ypos 163
+ }
+ Group {
+  name vHardness
+  tile_color 0x384196ff
+  xpos 1117
+  ypos 195
+  addUserKnob {20 controls l Controls}
+  addUserKnob {41 channels l Channels T grade.channels}
+  addUserKnob {26 ""}
+  addUserKnob {7 hardness l Hardness R -1 1}
+  hardness 1
+  addUserKnob {7 bw l "White -> Black" R -0.5 0.5}
+  addUserKnob {20 about l About}
+  addUserKnob {26 _name l "" +STARTLINE T "<b>Francisco Contreras - 2021</b>\n<br>Senior Compositor"}
+  addUserKnob {26 ""}
+  addUserKnob {26 website l "" +STARTLINE T "<b>Web Site:</b>\n<br>\n<a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ }
+  Input {
+   inputs 0
+   name Image
+   xpos -40
+   ypos -118
+  }
+  Grade {
+   channels rgba
+   blackpoint {{"(hardness / 2) + (bw * ( 1 + ( 1 - hardness)))"}}
+   whitepoint {{"(1 - (hardness / 2) ) + (bw * ( 1 + ( 1 - hardness )))"}}
+   white_clamp true
+   name grade
+   selected true
+   xpos -40
+   ypos -50
+  }
+  Output {
+   name Output1
+   xpos -40
+   ypos 26
+  }
+ end_group
+set N106f8610 [stack 0]
+ FilterErode {
+  size {{"- parent.tile_padding_ + 2"}}
+  name FilterErode1
+  xpos 1300
+  ypos 316
+ }
+push $N106f8610
+ Blur {
+  channels rgba
+  size {{"parent.mask_blur_* 2 -2"}}
+  name Blur2
+  xpos 1117
+  ypos 264
+ }
+ Merge2 {
+  inputs 2
+  operation mask
+  bbox B
+  name Merge3
+  xpos 1117
+  ypos 320
+ }
+push $Nf601ce0
+ Blur {
+  channels rgba
+  size {{"parent.mask_blur_ * 2"}}
+  name Blur1
+  xpos 897
+  ypos 169
+ }
+push $N1097c170
+ Merge2 {
+  inputs 2
+  operation multiply
+  bbox B
+  name Merge1
+  xpos 692
+  ypos 169
+ }
+ Merge2 {
+  inputs 2
+  bbox B
+  name Merge2
+  xpos 692
+  ypos 320
+  disable {{"parent.mask_blur_ < 2"}}
+ }
+ Output {
+  name Output1
+  xpos 692
+  ypos 395
+ }
+end_group

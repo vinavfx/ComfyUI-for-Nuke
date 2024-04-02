@@ -1,0 +1,31 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name ACN_LoadAdvancedControlNetModel
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ tile_color 0x335b7cff
+ label "\[value control_net_name_]"
+ note_font "Bitstream Vera Sans"
+ selected true
+ xpos 2194
+ ypos 1073
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ControlNetLoaderAdvanced',\n    'inputs': \[\n        \{'name': 'timestep_keyframe', 'outputs': \['timestep_keyframe']\}\n    ],\n    'outputs': \['control_net']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {4 control_net_name_ l control_net_name M {control_sd15_canny.pth control_sd15_depth.pth control_sd15_hed.pth control_sd15_mlsd.pth control_sd15_normal.pth control_sd15_openpose.pth control_sd15_scribble.pth control_sd15_seg.pth control_openpose-fp16.safetensors control_v11p_sd15_openpose_fp16.safetensors control_v11p_sd15_lineart_fp16.safetensors controlnet11Models_tileE.safetensors control_v11f1e_sd15_tile.pth control_v11p_sd15_seg.pth control_v11p_sd15_inpaint.pth control_v11f1p_sd15_depth.pth control_v11p_sd15_canny.pth control_v11p_sd15_lineart.pth control_v11p_sd15_openpose.pth control_v11p_sd15_scribble.pth control_v1p_sd15_brightness.safetensors control_v1p_sd15_illumination.safetensors}}
+ control_net_name_ control_sd15_scribble.pth
+ addUserKnob {22 update -STARTLINE T "models = exe('vina.nodes.comfyui.get_models', 'controlnet')\nif models:\n    nuke.thisNode().knob('control_net_name_').setValues(models)"}
+ addUserKnob {20 about l About}
+ addUserKnob {26 _name l "" +STARTLINE T "<b>ACN_LoadAdvancedControlNetModel</b> v1.1<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+ addUserKnob {26 ""}
+}
+ Input {
+  inputs 0
+  name timestep_keyframe
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 300
+ }
+end_group

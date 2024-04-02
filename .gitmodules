@@ -1,0 +1,6 @@
+[submodule "nuke_util"]
+	path = nuke_util
+	url = https://github.com/vinavfx/nuke_util
+[submodule "python_util"]
+	path = python_util
+	url = https://github.com/vinavfx/python_util
