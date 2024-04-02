@@ -6,6 +6,14 @@
 import os
 import nuke  # type: ignore
 from ..settings import COMFYUI_DIR
+from ..nuke_util.nuke_util import get_nuke_path
+
+state_dir = '{}/comfyui_state'.format(get_nuke_path())
+if not os.path.isdir(state_dir):
+    os.mkdir(state_dir)
+
+if not getattr(nuke, 'comfyui_running', False):
+    nuke.comfyui_running = False
 
 image_inputs = ['image', 'frames', 'pixels']
 mask_inputs = ['mask', 'attn_mask', 'mask_optional']
