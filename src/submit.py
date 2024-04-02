@@ -4,14 +4,8 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import nuke  # type: ignore
-import sys
 import uuid
 import traceback
-
-if sys.version_info.major == 2:
-    import urllib2 as urllib2  # type: ignore
-else:
-    import urllib.request as urllib2
 
 import os
 import shutil
@@ -21,24 +15,22 @@ import websocket
 import json
 import threading
 
-from ..nuke_util.nuke_util import get_input, get_connected_nodes, get_project_name, get_vina_path, duplicate_node
-from ..nuke_util.media_util import get_extension
-from ..python_util.util import jwrite, jread, recursive_rename
-from ..settings import IP, COMFYUI_DIR, PORT
-
-
+from ..nuke_util.nuke_util import get_connected_nodes, get_project_name, get_nuke_path
+from ..python_util.util import jwrite, jread
+from ..settings import IP, PORT
+from .common import get_comfyui_dir, image_inputs, mask_inputs
+from .connection import send_request, interrupt
+from .nodes import check_node, extract_node_data, get_connected_comfyui_nodes
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
 
-state_dir = '{}/comfyui_state'.format(get_vina_path())
+state_dir = '{}/comfyui_state'.format(get_nuke_path())
 if not os.path.isdir(state_dir):
     os.mkdir(state_dir)
 
 if not getattr(nuke, 'comfyui_running', False):
     nuke.comfyui_running = False
 
-image_inputs = ['image', 'frames', 'pixels']
-mask_inputs = ['mask', 'attn_mask', 'mask_optional']
 
 def comfyui_submit():
     if nuke.comfyui_running:
@@ -122,7 +114,7 @@ def progress(save_image_node):
             if node and task:
                 task[0].setMessage('Inference: ' + node)
 
-        elif type_data =='execution_error':
+        elif type_data == 'execution_error':
             error = 'Error: {}\n\n'.format(data.get('node_type'))
             error += data.get('exception_message') + '\n\n'
 
@@ -168,7 +160,8 @@ def progress(save_image_node):
             try:
                 post_submit(n)
             except:
-                nuke.executeInMainThread(nuke.message, args=(traceback.format_exc()))
+                nuke.executeInMainThread(
+                    nuke.message, args=(traceback.format_exc()))
 
         nuke.executeInMainThread(post, args=(save_image_node))
 
@@ -180,143 +173,9 @@ def progress(save_image_node):
     threading.Thread(target=progress_bar_life).start()
 
 
-def get_available_name(prefix, directory):
-    prefix += '_'
-    taken_names = set(os.listdir(directory))
-
-    for i in range(10000):
-        potential_name = '{}{:04d}'.format(prefix, i)
-        if potential_name not in taken_names:
-            return potential_name
-
-    return prefix
-
-
-def save_image_backup():
-    nuke.thisKnob().setEnabled(False)
-    this = nuke.thisNode()
-    read = nuke.toNode('read')
-    filename = read.knob('file').value()
-    secdir = os.path.dirname(filename)
-    output_dir = os.path.dirname(secdir)
-
-    if not os.path.isdir(secdir):
-        return
-
-    basename = os.path.basename(secdir)
-    backup_prefix = '{}_backup'.format(basename)
-    backup_name = get_available_name(backup_prefix, output_dir)
-    backup_dir = os.path.join(output_dir, backup_name)
-
-    number = backup_name.split('_')[-1]
-
-    new_filename = '{}/{}/{}_#####_.png'.format(
-        output_dir, backup_name, backup_name)
-
-    shutil.copytree(secdir, backup_dir)
-    recursive_rename(backup_dir, basename, backup_name)
-
-    if not '.nk' in this.parent().name():
-        this = this.parent()
-
-    new_read = duplicate_node(read, parent=this.parent())
-    new_read.knob('file').setValue(new_filename)
-    new_read.setName(this.name() + '_backup_' + number)
-    new_read.knob('reload').execute()
-
-    backup_nodes = []
-    this.parent().begin()
-
-    for n in nuke.allNodes():
-        if not this.name() + '_' in n.name():
-            continue
-
-        num = int(n.name().split('_')[-1])
-        backup_nodes.append((num, n))
-
-    backup_nodes = sorted(backup_nodes, key=lambda x: x[0])
-
-    xpos = this.xpos()
-    for num, n in reversed(backup_nodes):
-        xpos += 150
-        n.setXYpos(xpos, this.ypos())
-
-
-def get_comfyui_dir():
-    if os.path.isdir(os.path.join(COMFYUI_DIR, 'comfy')):
-        return COMFYUI_DIR
-
-    nuke.message('Directory "{}" does not exist'.format(COMFYUI_DIR))
-
-    return ''
-
-
-def get_models(dirname, custom_nodes=False):
-    if custom_nodes:
-        models_dir = '{}/custom_nodes/{}'.format(get_comfyui_dir(), dirname)
-    else:
-        models_dir = '{}/models/{}'.format(get_comfyui_dir(), dirname)
-
-    models = []
-
-    for root, _, files in os.walk(models_dir):
-        for f in files:
-            if not get_extension(f) in ['ckpt', 'pth', 'safetensors']:
-                continue
-
-            relative_path = os.path.relpath(root, models_dir)
-            if '.' == relative_path:
-                relative_path = ''
-
-            models.append(os.path.join(relative_path, f))
-
-    return models
-
-
-def get_sd_connected(root_node, visited=None, ignore_nodes=[]):
-    if visited is None:
-        visited = set()
-
-    def is_disabled(n):
-        disable_knob = n.knob('disable')
-        if not disable_knob:
-            return
-
-        if disable_knob.value():
-            return True
-
-    sd_nodes = []
-
-    for i in range(root_node.maxInputs()):
-        inode = root_node.input(i)
-
-        if not inode:
-            continue
-
-        if not i == 0 and is_disabled(root_node):
-            continue
-
-        if inode in visited:
-            continue
-
-        node_data = extract_node_data(inode)
-        if node_data:
-            if node_data['class_type'] in ignore_nodes:
-                continue
-
-        visited.add(inode)
-
-        if not is_disabled(inode) and node_data:
-            sd_nodes.append((inode, node_data))
-
-        sd_nodes.extend(get_sd_connected(inode, visited, ignore_nodes))
-
-    return sd_nodes
-
-
 def extract_data():
     this = nuke.thisNode()
-    nodes = get_sd_connected(this, ignore_nodes=['SaveImage'])
+    nodes = get_connected_comfyui_nodes(this, ignore_nodes=['SaveImage'])
     nodes.append((this, extract_node_data(this)))
     nuke.root().knob('proxy').setValue(False)
 
@@ -450,183 +309,6 @@ def create_load_images_and_save(node, alpha):
     return load_image_data, True, False
 
 
-def extract_node_data(node):
-    data = get_node_data(node)
-    if not data:
-        return {}
-
-    inputs = {}
-
-    for knob in node.knobs().values():
-        if not knob.name()[-1:] == '_':
-            continue
-
-        value = knob.value()
-        if type(value) in [float, int]:
-            value = int(value) if int(value) == value else value
-
-        name = knob.name()[:-1]
-        inputs[name] = value
-
-    for i in range(node.maxInputs()):
-        inode = get_input(node, i)
-
-        if not inode:
-            continue
-
-        ignore = data['inputs'][i].get('ignore', False)
-        if ignore:
-            continue
-
-        input_name = data['inputs'][i]['name']
-
-        if input_name in image_inputs:
-            output_index = 0
-        elif input_name in mask_inputs:
-            output_index = 1
-        else:
-            output_index = get_output_index(node, data, i)
-            if output_index == -2:
-                continue
-
-        if input_name in inputs:
-            continue
-
-        inputs[input_name] = [inode.name(), output_index]
-
-    return {'inputs': inputs, 'class_type': data['class_type']}
-
-
-def update_input_nodes(node):
-    for n in nuke.allNodes():
-        if n.Class() == 'Input':
-            nuke.delete(n)
-
-    data = get_node_data(node)
-
-    for idx, i in enumerate(data['inputs']):
-        inode = nuke.createNode('Input', inpanel=False)
-        inode.setName(i['name'])
-
-        if idx == 0:
-            nuke.toNode('Output1').setInput(0, inode)
-
-
-def get_node_data(node):
-    data_knob = node.knob('data')
-
-    if not data_knob:
-        return {}
-
-    value = data_knob.value()
-    if not 'class_type' in value:
-        return {}
-
-    data = value.split('#')[0].replace("'", '"').replace(
-        'True', 'true').replace('False', 'false')
-    return json.loads(data)
-
-
-def check_node(node):
-    node_data = get_node_data(node)
-
-    for i in range(node.maxInputs()):
-        inode = get_input(node, i)
-
-        index_data = node_data['inputs'][i]
-        input_name = index_data['name']
-        optional_input = index_data.get('opt', False)
-
-        if optional_input and not inode:
-            continue
-
-        if not inode:
-            nuke.message(
-                node.name() + ' : "{}" input disconnected !'.format(input_name))
-            return
-
-        inode_data = get_node_data(inode)
-
-        if input_name in image_inputs + mask_inputs:
-            if inode_data and inode_data.get('class_type') == 'SaveImage':
-                continue
-            else:
-                if inode.bbox().w() < 10 or inode.bbox().h() < 10:
-                    nuke.message(
-                        'input "{}" without image !'.format(input_name))
-                    return
-                continue
-
-        if not inode_data:
-            nuke.message( '{}: "{}" does not support "{}" !'.format(node.name(), input_name, inode.name()))
-            return
-
-        inode_outputs = inode_data['outputs']
-        allowed_outputs = node_data['inputs'][i]['outputs']
-
-        if not any(o in allowed_outputs for o in inode_outputs):
-            nuke.message(
-                node.name() + ' : "{}" connection not supported !'.format(input_name))
-            return
-
-    return True
-
-
-def get_output_index(node, node_data, input_index):
-    inode_data = get_node_data(get_input(node, input_index))
-    if not inode_data:
-        return -2
-
-    inode_outputs = inode_data['outputs']
-
-    allowed_outputs = node_data['inputs'][input_index]['outputs']
-
-    for allowed_output in allowed_outputs:
-        for i, o in enumerate(inode_outputs):
-            if allowed_output == o:
-                return i
-
-    return -1
-
-
-def send_request(relative_url, data={}):
-    url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
-    headers = {'Content-Type': 'application/json'}
-    request = urllib2.Request(url, json.dumps(data), headers)  # type: ignore
-
-    try:
-        urllib2.urlopen(request)
-        return ''
-
-    except urllib2.HTTPError as e:
-        try:
-            error = json.loads(e.read())
-            errors = 'ERROR: {}\n\n'.format(error['error']['message'].upper())
-
-            for name, value in error['node_errors'].items():
-                nuke.toNode(name).setSelected(True)
-                errors += '{}:\n'.format(name)
-
-                for err in value['errors']:
-                    errors += ' - {}: {}\n'.format(err['details'], err['message'])
-
-                errors += '\n'
-
-            return errors
-        except:
-            nuke.message(traceback.format_exc())
-
-    except Exception as e:
-        return 'Error: {}'.format(e)
-
-
-def interrupt():
-    error = send_request('interrupt')
-
-    if error:
-        nuke.message(error)
-
-
 def outside_read(save_image_node, reload=False):
     save_image_node.begin()
     inside_read = nuke.toNode('read')
@@ -646,7 +328,8 @@ def outside_read(save_image_node, reload=False):
         read = nuke.createNode('Read', inpanel=False)
 
     read.setXYpos(save_image_node.xpos(), save_image_node.ypos() + 35)
-    read.knob('tile_color').setValue(save_image_node.knob('tile_color').value())
+    read.knob('tile_color').setValue(
+        save_image_node.knob('tile_color').value())
     read.knob('on_error').setValue('black')
 
     read.setName(name)
@@ -694,7 +377,7 @@ def post_submit(save_image_node):
 
         if prefix + '_' in f:
             shutil.move(os.path.join(output_dir, f),
-                      os.path.join(sequence_dir, f))
+                        os.path.join(sequence_dir, f))
 
     filename = '{}/{}_#####_.png'.format(sequence_dir, prefix)
 
@@ -712,4 +395,3 @@ def post_submit(save_image_node):
     read.knob('reload').execute()
 
     outside_read(save_image_node, reload=True)
-
