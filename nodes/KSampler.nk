@@ -10,7 +10,7 @@ Group {
  xpos 83
  ypos 122
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'KSampler',\n    'inputs': \[\n        \{'name': 'latent_image', 'outputs': \['latent']\},\n        \{'name': 'model', 'outputs': \['model']\},\n        \{'name': 'positive', 'outputs': \['conditioning', 'positive']\},\n        \{'name': 'negative', 'outputs': \['conditioning', 'negative']\}\n    ],\n    'outputs': \['latent']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'KSampler',\n    'inputs': \[\n        \{'name': 'latent_image', 'outputs': \['latent']\},\n        \{'name': 'model', 'outputs': \['model']\},\n        \{'name': 'positive', 'outputs': \['conditioning', 'positive']\},\n        \{'name': 'negative', 'outputs': \['conditioning', 'negative']\}\n    ],\n    'outputs': \['latent']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {3 seed_ l seed}
  seed_ 1
  addUserKnob {6 fixed_seed l fixed -STARTLINE}

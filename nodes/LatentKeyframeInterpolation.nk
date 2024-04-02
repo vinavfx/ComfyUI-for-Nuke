@@ -8,7 +8,7 @@ Group {
  xpos 538
  ypos 258
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'LatentKeyframeTiming',\n    'inputs': \[\n        \{'name': 'prev_latent_kf', 'outputs': \['latent_kf'], 'opt': True\}\n    ],\n    'outputs': \['latent_kf']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'LatentKeyframeTiming',\n    'inputs': \[\n        \{'name': 'prev_latent_kf', 'outputs': \['latent_kf'], 'opt': True\}\n    ],\n    'outputs': \['latent_kf']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {3 batch_index_from_ l batch_index_from}
  addUserKnob {3 batch_index_to_excl_ l batch_index_to_excl}
  addUserKnob {26 ""}

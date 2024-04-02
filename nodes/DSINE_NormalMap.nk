@@ -9,7 +9,7 @@ Group {
  xpos 1114
  ypos 1254
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'DSINE-NormalMapPreprocessor',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\}\n    ],\n    'outputs': \['image']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'DSINE-NormalMapPreprocessor',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\}\n    ],\n    'outputs': \['image']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {3 fov_ l fov}
  fov_ 60
  addUserKnob {3 iterations_ l iterations}

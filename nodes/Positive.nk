@@ -9,7 +9,7 @@ Group {
  xpos 717
  ypos -38
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'CLIPTextEncode',\n    'inputs': \[\n        \{'name': 'clip', 'outputs': \['clip']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'CLIPTextEncode',\n    'inputs': \[\n        \{'name': 'clip', 'outputs': \['clip']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {43 text_ l text}
  addUserKnob {20 about l About}
  addUserKnob {26 _name l "" +STARTLINE T "<b>sdPositive</b> v1.5<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}

@@ -8,7 +8,7 @@ Group {
  xpos 50
  ypos -88
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'MiDaS-DepthMapPreprocessor',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\}\n    ],\n    'outputs': \['image']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'MiDaS-DepthMapPreprocessor',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\}\n    ],\n    'outputs': \['image']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {7 a_ l a R 0 10}
  a_ 6.28
  addUserKnob {7 bg_threshold_ l bg_threshold}

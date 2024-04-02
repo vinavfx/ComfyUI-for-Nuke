@@ -8,7 +8,7 @@ Group {
  xpos 921
  ypos 1490
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'GroundingDinoSAMSegment (segment anything)',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\},\n        \{'name': 'sam_model', 'outputs': \['sam_model'], 'opt': False\},\n        \{'name': 'grounding_dino_model', 'outputs': \['grounding_dino_model'], 'opt': False\}\n    ],\n    'outputs': \['image', 'mask']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'GroundingDinoSAMSegment (segment anything)',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\},\n        \{'name': 'sam_model', 'outputs': \['sam_model'], 'opt': False\},\n        \{'name': 'grounding_dino_model', 'outputs': \['grounding_dino_model'], 'opt': False\}\n    ],\n    'outputs': \['image', 'mask']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {1 prompt_ l prompt}
  addUserKnob {7 threshold_ l threshold}
  threshold_ 0.3

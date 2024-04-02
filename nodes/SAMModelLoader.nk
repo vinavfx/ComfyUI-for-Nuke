@@ -11,7 +11,7 @@ Group {
  xpos 982
  ypos 1566
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'SAMModelLoader (segment anything)',\n    'inputs': \[],\n    'outputs': \['sam_model']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'SAMModelLoader (segment anything)',\n    'inputs': \[],\n    'outputs': \['sam_model']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 model_name_ l model_name M {"sam_vit_h (2.56GB)" "sam_vit_l (1.25GB)" "sam_vit_b (375MB)" "sam_hq_vit_h (2.57GB)" "sam_hq_vit_l (1.25GB)" "sam_hq_vit_b (379MB)" mobile_sam(39MB)}}
  model_name_ "sam_hq_vit_h (2.57GB)"
  addUserKnob {20 about l About}

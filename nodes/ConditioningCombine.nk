@@ -9,7 +9,7 @@ Group {
  xpos -5
  ypos -111
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ConditioningCombine',\n    'inputs': \[\n        \{'name': 'conditioning_1', 'outputs': \['conditioning']\},\n        \{'name': 'conditioning_2', 'outputs': \['conditioning']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ConditioningCombine',\n    'inputs': \[\n        \{'name': 'conditioning_1', 'outputs': \['conditioning']\},\n        \{'name': 'conditioning_2', 'outputs': \['conditioning']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {20 about l About}
  addUserKnob {26 _name l "" +STARTLINE T "<b>ConditioningCombine</b> v1.0<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
  addUserKnob {26 ""}

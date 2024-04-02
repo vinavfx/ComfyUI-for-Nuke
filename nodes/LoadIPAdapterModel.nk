@@ -11,9 +11,9 @@ Group {
  xpos 2183
  ypos 982
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'IPAdapterModelLoader',\n    'inputs': \[],\n    'outputs': \['ipadapter']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'IPAdapterModelLoader',\n    'inputs': \[],\n    'outputs': \['ipadapter']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 ipadapter_file_ l ipadapter_file M {ip-adapter-plus_sd15.safetensors ip-adapter-plus-face_sd15.safetensors ip-adapter_sd15_light.safetensors ip-adapter_sd15.safetensors}}
- addUserKnob {22 update -STARTLINE T "models = exe('vina.nodes.comfyui.get_models', 'ipadapter')\nif models:\n    nuke.thisNode().knob('ipadapter_file_').setValues(models)"}
+ addUserKnob {22 update -STARTLINE T "models = exe('comfyui.comfyui.get_models', 'ipadapter')\nif models:\n    nuke.thisNode().knob('ipadapter_file_').setValues(models)"}
  addUserKnob {20 about l About}
  addUserKnob {26 _name l "" +STARTLINE T "<b>LoadIPAdapterModel</b> v1.1<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
  addUserKnob {26 ""}

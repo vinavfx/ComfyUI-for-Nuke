@@ -10,7 +10,7 @@ Group {
  xpos 1280
  ypos 332
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'UltimateSDUpscale',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image']\},\n        \{'name': 'model', 'outputs': \['model']\},\n        \{'name': 'positive', 'outputs': \['conditioning', 'positive']\},\n        \{'name': 'negative', 'outputs': \['conditioning', 'negative']\},\n        \{'name': 'vae', 'outputs': \['vae']\},\n        \{'name': 'upscale_model', 'outputs': \['upscale_model']\}\n    ],\n    'outputs': \['image']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'UltimateSDUpscale',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image']\},\n        \{'name': 'model', 'outputs': \['model']\},\n        \{'name': 'positive', 'outputs': \['conditioning', 'positive']\},\n        \{'name': 'negative', 'outputs': \['conditioning', 'negative']\},\n        \{'name': 'vae', 'outputs': \['vae']\},\n        \{'name': 'upscale_model', 'outputs': \['upscale_model']\}\n    ],\n    'outputs': \['image']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {7 upscale_by_ l upscale_by R 1 4}
  upscale_by_ 2
  addUserKnob {26 ""}

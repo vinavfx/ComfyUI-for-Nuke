@@ -8,7 +8,7 @@ Group {
  xpos 327
  ypos 288
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'LatentKeyframeGroup',\n    'inputs': \[\n        \{'name': 'prev_latent_kf', 'outputs': \['latent_kf'], 'opt': True\},\n        \{'name': 'latent_optional', 'outputs': \['latent'], 'opt': True\}\n    ],\n    'outputs': \['latent_kf']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'LatentKeyframeGroup',\n    'inputs': \[\n        \{'name': 'prev_latent_kf', 'outputs': \['latent_kf'], 'opt': True\},\n        \{'name': 'latent_optional', 'outputs': \['latent'], 'opt': True\}\n    ],\n    'outputs': \['latent_kf']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {43 index_strengths_ l index_strengths}
  addUserKnob {20 about l About}
  addUserKnob {26 _name l "" +STARTLINE T "<b>LatentKeyframeGroup</b> v1.1<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}

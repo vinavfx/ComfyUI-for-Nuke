@@ -8,7 +8,7 @@ Group {
  xpos 118
  ypos -109
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'DWPreprocessor',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\}\n    ],\n    'outputs': \['image', 'pose_key_point']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'DWPreprocessor',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\}\n    ],\n    'outputs': \['image', 'pose_key_point']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 detect_hand_ l detect_hand M {enable disable ""}}
  addUserKnob {4 detect_body_ l detect_body M {enable disable ""}}
  addUserKnob {4 detect_face_ l detect_face M {enable disable ""}}

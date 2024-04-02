@@ -4,16 +4,16 @@ push $cut_paste_input
 Group {
  name SaveImage2
  onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
- knobChanged "\nif nuke.thisKnob().name() == 'outside_read':\n    vina.nodes.comfyui.outside_read(nuke.thisNode())\n\n"
+ knobChanged "\nif nuke.thisKnob().name() == 'outside_read':\n    comfyui.comfyui.outside_read(nuke.thisNode())\n\n"
  tile_color 0x609e38ff
  note_font "Bitstream Vera Sans"
  selected true
  xpos -409
  ypos 30
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'SaveImage',\n    'inputs': \[\n        \{'name': 'images', 'outputs': \['image']\}\n    ],\n    'outputs': \[]\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
- addUserKnob {22 comfyui_submit l submit T exe('vina.nodes.comfyui.comfyui_submit') +STARTLINE}
- addUserKnob {22 backup_result -STARTLINE T exe('vina.nodes.comfyui.save_image_backup')}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'SaveImage',\n    'inputs': \[\n        \{'name': 'images', 'outputs': \['image']\}\n    ],\n    'outputs': \[]\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 comfyui_submit l submit T exe('comfyui.comfyui.comfyui_submit') +STARTLINE}
+ addUserKnob {22 backup_result -STARTLINE T exe('comfyui.comfyui.save_image_backup')}
  addUserKnob {6 outside_read +STARTLINE}
  outside_read true
  addUserKnob {20 about l About}

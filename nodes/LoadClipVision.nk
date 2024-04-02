@@ -11,9 +11,9 @@ Group {
  xpos 2200
  ypos 1264
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'CLIPVisionLoader',\n    'inputs': \[],\n    'outputs': \['clip_vision']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'CLIPVisionLoader',\n    'inputs': \[],\n    'outputs': \['clip_vision']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 clip_name_ l clip_name M {IPAdapter_image_encoder_sd15.safetensors}}
- addUserKnob {22 update -STARTLINE T "models = exe('vina.nodes.comfyui.get_models', 'clip_vision')\nif models:\n    nuke.thisNode().knob('clip_name_').setValues(models)"}
+ addUserKnob {22 update -STARTLINE T "models = exe('comfyui.comfyui.get_models', 'clip_vision')\nif models:\n    nuke.thisNode().knob('clip_name_').setValues(models)"}
  addUserKnob {20 about l About}
  addUserKnob {26 _name l "" +STARTLINE T "<b>LoadClipVision</b> v1.1<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
  addUserKnob {26 ""}

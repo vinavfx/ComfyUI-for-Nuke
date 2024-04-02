@@ -12,7 +12,7 @@ Group {
  xpos 216
  ypos -28
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ControlNetApply',\n    'inputs': \[\n        \{'name': 'conditioning', 'outputs': \['conditioning']\},\n        \{'name': 'control_net', 'outputs': \['control_net']\},\n        \{'name': 'image', 'outputs': \['image']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ControlNetApply',\n    'inputs': \[\n        \{'name': 'conditioning', 'outputs': \['conditioning']\},\n        \{'name': 'control_net', 'outputs': \['control_net']\},\n        \{'name': 'image', 'outputs': \['image']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {7 strength_ l strength R 0.1 1}
  strength_ 1
  addUserKnob {20 about l About}

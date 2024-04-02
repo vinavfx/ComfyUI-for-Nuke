@@ -11,7 +11,7 @@ Group {
  xpos 1095
  ypos 1517
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'GroundingDinoModelLoader (segment anything)',\n    'inputs': \[],\n    'outputs': \['grounding_dino_model']\n\}\n\n# Save and Run to update inputs\nvina.nodes.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'GroundingDinoModelLoader (segment anything)',\n    'inputs': \[],\n    'outputs': \['grounding_dino_model']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 model_name_ l model_name M {"GroundingDINO_SwinT_OGC (694MB)" "GroundingDINO_SwinB (938MB)"}}
  model_name_ "GroundingDINO_SwinB (938MB)"
  addUserKnob {20 about l About}
