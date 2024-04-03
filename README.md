@@ -1,6 +1,7 @@
 # Nuke - ComfyUI
 API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 
+
 ## Installation
 1 - Copy to nuke folder
 ```sh
@@ -44,3 +45,22 @@ IP = '127.0.0.1'
 PORT = 8188
 ```
 
+## Nodes
+Currently these [Nodes](./nodes) have been transferred from ComfyUI,
+to transfer new nodes use 'ComfyuiBase' node as base
+Since ComfyUI has multiple outputs and Nuke only has one output,
+you use a knob called data and there are the outputs and you enter.
+
+<img src='images/comfyui_base.png' width=30%>
+<img src='images/data_knob.png' width=70%>
+
+<b>class_type:</b> you have to set the exact class of the ComfyUI node, otherwise it won't work
+
+<b>inputs:</b> is a list with all the inputs that the node
+has, and each input has as an attribute the name of the input
+and a list of 'outputs' that contains the names that are allowed to connect to that input,
+and the 'opt' is to say if the node The input It is mandatory to connect.
+
+<b>outputs:</b> is a list with all outputs that the node has since nuclear only has one
+
+The <b>comfyui.nodes.update_input_nodes(nuke.thisNode())</b> function creates the node entries automatically depending on the list above
