@@ -8,9 +8,9 @@ Group {
  xpos -32
  ypos 1045
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'RIFE VFI',\n    'inputs': \[\n        \{'name': 'frames', 'outputs': \['image'], 'opt': False\},\n        \{'name': 'optional_interpolation_states', 'outputs': \['image'], 'opt': True\}\n    ],\n    'outputs': \['image']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'RIFE VFI',\n    'inputs': \[\n        \{'name': 'frames', 'outputs': \['image'], 'opt': False\},\n        \{'name': 'optional_interpolation_states', 'outputs': \['image'], 'opt': True\}\n    ],\n    'outputs': \['image']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 ckpt_name_ l ckpt_name M {rife47.pth}}
- addUserKnob {22 update l update_models -STARTLINE T "nuke.thisNode().knob('ckpt_name_').setValues(\n    comfyui.comfyui.get_models('ComfyUI-Frame-Interpolation/ckpts/rife', True))"}
+ addUserKnob {22 update l update_models -STARTLINE T "nuke.thisNode().knob('ckpt_name_').setValues(\n    comfyui.models_node.get_models('ComfyUI-Frame-Interpolation/ckpts/rife', True))"}
  addUserKnob {3 clear_cache_after_n_frames_ l clear_cache_after_n_frames}
  clear_cache_after_n_frames_ 10
  addUserKnob {3 multiplier_ l multiplier}

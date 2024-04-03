@@ -12,7 +12,7 @@ Group {
  xpos -807
  ypos 516
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'VAEEncodeForInpaint',\n    'inputs': \[\n        \{'name': 'pixels', 'outputs': \['image']\},\n        \{'name': 'vae', 'outputs': \['vae']\},\n        \{'name': 'mask', 'outputs': \['mask']\}\n\n    ],\n    'outputs': \['latent']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'VAEEncodeForInpaint',\n    'inputs': \[\n        \{'name': 'pixels', 'outputs': \['image']\},\n        \{'name': 'vae', 'outputs': \['vae']\},\n        \{'name': 'mask', 'outputs': \['mask']\}\n\n    ],\n    'outputs': \['latent']\n\}\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {3 grow_mask_by_ l grow_mask_by}
  grow_mask_by_ 6
  addUserKnob {20 about l About}

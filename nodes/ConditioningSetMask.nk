@@ -9,7 +9,7 @@ Group {
  xpos 94
  ypos -121
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ConditioningSetMask',\n    'inputs': \[\n        \{'name': 'conditioning', 'outputs': \['conditioning']\},\n        \{'name': 'mask', 'outputs': \['mask']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ConditioningSetMask',\n    'inputs': \[\n        \{'name': 'conditioning', 'outputs': \['conditioning']\},\n        \{'name': 'mask', 'outputs': \['mask']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {7 conditioning_to_strength_ l strength}
  conditioning_to_strength_ 1
  addUserKnob {4 set_cond_area_ l set_cond_area M {default "mask bounds"}}

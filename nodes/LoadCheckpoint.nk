@@ -11,9 +11,9 @@ Group {
  xpos 2189
  ypos 776
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'CheckpointLoaderSimple',\n    'inputs': \[],\n    'outputs': \['model', 'clip', 'vae']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'CheckpointLoaderSimple',\n    'inputs': \[],\n    'outputs': \['model', 'clip', 'vae']\n\}\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 ckpt_name_ l ckpt_name M {v1-5-pruned-emaonly.ckpt majicmixRealistic_v7.safetensors revAnimated_v122EOL.safetensors Deliberate_v3.safetensors dreamshaper_8.safetensors epicrealism_naturalSinRC1VAE.safetensors realisticVisionV60B1_v51VAE.safetensors alkaidRealisticFill_v10Inpainting.safetensors dvPNW_v1.ckpt landscapeRealistic_v11BetterRender.safetensors}}
- addUserKnob {22 update -STARTLINE T "models = exe('comfyui.comfyui.get_models', 'checkpoints')\nif models:\n    nuke.thisNode().knob('ckpt_name_').setValues(models)"}
+ addUserKnob {22 update -STARTLINE T "models = exe('comfyui.models_node.get_models', 'checkpoints')\nif models:\n    nuke.thisNode().knob('ckpt_name_').setValues(models)"}
  addUserKnob {20 about l About}
  addUserKnob {26 _name l "" +STARTLINE T "<b>LoadCheckpoint</b> v1.17<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
  addUserKnob {26 ""}

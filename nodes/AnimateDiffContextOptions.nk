@@ -9,7 +9,7 @@ Group {
  ypos -175
  hide_input true
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ADE_AnimateDiffUniformContextOptions',\n    'inputs': \[\n        \{'name': 'prev_context', 'outputs': \['prev_context'], 'opt': True\},\n        \{'name': 'view_opts', 'outputs': \['view_opts'], 'opt': True\}\n    ],\n    'outputs': \['context_opts']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ADE_AnimateDiffUniformContextOptions',\n    'inputs': \[\n        \{'name': 'prev_context', 'outputs': \['prev_context'], 'opt': True\},\n        \{'name': 'view_opts', 'outputs': \['view_opts'], 'opt': True\}\n    ],\n    'outputs': \['context_opts']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {3 context_length_ l context_length}
  context_length_ 16
  addUserKnob {3 context_stride_ l context_stride}

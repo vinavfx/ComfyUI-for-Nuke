@@ -8,7 +8,7 @@ Group {
  xpos -2005
  ypos 1084
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ScaledSoftControlNetWeights',\n    'inputs': \[],\n    'outputs': \['control_net_weights', 'timestep_keyframe']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'ScaledSoftControlNetWeights',\n    'inputs': \[],\n    'outputs': \['control_net_weights', 'timestep_keyframe']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {7 base_multiplier_ l base_multiplier}
  base_multiplier_ 0.825
  addUserKnob {6 flip_weights_ l flip_weights +STARTLINE}

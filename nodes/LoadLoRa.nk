@@ -11,9 +11,9 @@ Group {
  xpos 2188
  ypos 1103
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'Lora Loader',\n    'inputs': \[\n        \{'name': 'model', 'outputs': \['model'], 'opt': False\},\n        \{'name': 'clip', 'outputs': \['clip'], 'opt': False\}\n    ],\n    'outputs': \['model', 'clip']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'Lora Loader',\n    'inputs': \[\n        \{'name': 'model', 'outputs': \['model'], 'opt': False\},\n        \{'name': 'clip', 'outputs': \['clip'], 'opt': False\}\n    ],\n    'outputs': \['model', 'clip']\n\}\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 lora_name_ l lora_name M {catman.safetensors underwater-photos.safetensors p1r4t3s_v6.safetensors lcm/LCM_LoRA_Weights_SD15.safetensors}}
- addUserKnob {22 update -STARTLINE T "models = exe('comfyui.comfyui.get_models', 'loras')\nif models:\n    nuke.thisNode().knob('lora_name_').setValues(models)"}
+ addUserKnob {22 update -STARTLINE T "models = exe('comfyui.models_node.get_models', 'loras')\nif models:\n    nuke.thisNode().knob('lora_name_').setValues(models)"}
  addUserKnob {26 ""}
  addUserKnob {7 strength_model_ l strength_model}
  strength_model_ 1

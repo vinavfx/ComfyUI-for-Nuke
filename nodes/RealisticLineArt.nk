@@ -8,7 +8,7 @@ Group {
  xpos -46
  ypos 39
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'LineArtPreprocessor',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\}\n    ],\n    'outputs': \['image']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'LineArtPreprocessor',\n    'inputs': \[\n        \{'name': 'image', 'outputs': \['image'], 'opt': False\}\n    ],\n    'outputs': \['image']\n\}\n\n# If there is a 'knob' and an 'input' with the same name, \n# the 'knob' will take priority with the name and the input will be disabled, \n# remove the controller for the input to work !!\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 coarse_ l coarse M {enable disable}}
  coarse_ disable
  addUserKnob {3 resolution_ l resolution}

@@ -10,7 +10,7 @@ Group {
  xpos 493
  ypos 86
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'CLIPTextEncode',\n    'inputs': \[\n        \{'name': 'clip', 'outputs': \['clip']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'CLIPTextEncode',\n    'inputs': \[\n        \{'name': 'clip', 'outputs': \['clip']\}\n    ],\n    'outputs': \['conditioning']\n\}\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {43 text_ l text}
  text_ "art, concept, paint, painting, sketch, anime, cartoon, graphic, text, crayon, abstract, drawing, draw, 3d, render, illustration, cgi, digital art, design, unrealistic, semi-realistic, low quality, graphite, impressionist, artstation, watermark, overexposed, draft, blender, amateur, manga, out of focus, airbrushed, glitch, ugly, jpeg artifacts, cropped, frame, brush, watercolor, strokes, cubism, renaissance, baroque, rococo, romanticism, neoclassicism, fauvism, dadaism, post-impressionism, contemporary art, framed, stamping, impressed"
  addUserKnob {20 about l About}

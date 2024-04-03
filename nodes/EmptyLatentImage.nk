@@ -11,7 +11,7 @@ Group {
  xpos -39
  ypos 1323
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'EmptyLatentImage',\n    'inputs': \[],\n    'outputs': \['latent']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'EmptyLatentImage',\n    'inputs': \[],\n    'outputs': \['latent']\n\}\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 format M {"Square - 512" "Portrait - 512" "Landscape - 512" "Square - 768" "Portrait - 768" "Landscape - 768" "Square - 1024" "Portrait - 1024" "Landscape - 1024" custom "" "" "" "" "" "" "" "" "" "" "" "" ""}}
  addUserKnob {3 width_ l pixels +DISABLED}
  width_ 512

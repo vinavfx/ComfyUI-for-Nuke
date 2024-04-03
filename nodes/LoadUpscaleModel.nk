@@ -11,10 +11,10 @@ Group {
  xpos 2189
  ypos 887
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'UpscaleModelLoader',\n    'inputs': \[],\n    'outputs': \['upscale_model']\n\}\n\n# Save and Run to update inputs\ncomfyui.comfyui.update_input_nodes(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'UpscaleModelLoader',\n    'inputs': \[],\n    'outputs': \['upscale_model']\n\}\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {4 model_name_ l model_name M {RealESRGAN_x8.pth RealESRGAN_x4.pth RealESRGAN_x2.pth 8x_NMKD-Superscale_150000_G.pth 4x-UltraSharp.pth 4x_RealisticRescaler_100000_G.pth 4x_UniversalUpscalerV2-Neutral_115000_swaG.pth 4x_UniversalUpscalerV2-Sharper_103000_G.pth 4x_UniversalUpscalerV2-Sharp_101000_G.pth 4x_foolhardy_Remacri.pth}}
  model_name_ 4x_foolhardy_Remacri.pth
- addUserKnob {22 update -STARTLINE T "models = exe('comfyui.comfyui.get_models', 'upscale_models')\nif models:\n    nuke.thisNode().knob('model_name_').setValues(models)"}
+ addUserKnob {22 update -STARTLINE T "models = exe('comfyui.models_node.get_models', 'upscale_models')\nif models:\n    nuke.thisNode().knob('model_name_').setValues(models)"}
  addUserKnob {20 about l About}
  addUserKnob {26 _name l "" +STARTLINE T "<b>LoadUpscaleModel</b> v1.18<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
  addUserKnob {26 ""}
