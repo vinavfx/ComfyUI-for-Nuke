@@ -19,7 +19,7 @@ def setup():
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI', icon=icon)
 
     icon_gray = '{}/icons/comfyui_icon_gray.png'.format(path)
-    nodes_dir = os.path.join(path, 'nodes')
+    nodes_dir = os.path.join(path, 'nodes', 'ComfyUI')
 
     def create_node(nk):
         node = nuke.nodePaste(os.path.join(nodes_dir, nk))
