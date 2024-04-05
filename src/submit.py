@@ -6,6 +6,7 @@
 import nuke  # type: ignore
 import uuid
 import traceback
+import copy
 
 import os
 import shutil
@@ -52,7 +53,7 @@ def comfyui_submit():
             nuke.comfyui_running = False
             return
 
-    jwrite(state_file, data)
+    state_data = copy.deepcopy(data)
 
     filename_prefix = get_filename_prefix(save_image_node)
     data[save_image_node.name()]['inputs']['filename_prefix'] = filename_prefix
@@ -72,10 +73,10 @@ def comfyui_submit():
         save_image_node.knob('comfyui_submit').setEnabled(True)
         return
 
-    progress(save_image_node)
+    progress(save_image_node, state_file, state_data)
 
 
-def progress(save_image_node):
+def progress(save_image_node, state_file, state_data):
     url = "ws://{}:{}/ws?clientId={}".format(IP, PORT, client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
@@ -151,6 +152,7 @@ def progress(save_image_node):
         def post(n):
             try:
                 post_submit(n)
+                jwrite(state_file, state_data)
             except:
                 nuke.executeInMainThread(
                     nuke.message, args=(traceback.format_exc()))
