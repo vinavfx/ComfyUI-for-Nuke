@@ -1,6 +1,9 @@
 # Nuke - ComfyUI
 API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 
+<img src='images/menu.png' width=32.4%>
+<img src='images/nodes.png' width=66%>
+
 ## Requirements
 1 - Python 3.9 (only for comfyui, nuke works with any python)
 
