@@ -1,6 +1,9 @@
 # Nuke - ComfyUI
 API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 
+## Requirements
+1 - Python 3.9 (only for comfyui, nuke works with any python)
+
 
 ## Installation
 1 - Copy to nuke folder
@@ -27,6 +30,36 @@ comfyui.setup()
 3 - Clone ComfyUI to any directory
 ```sh
 git clone https://github.com/comfyanonymous/ComfyUI
+```
+
+4 - Some nodes need additional repositories to work (Optional)
+```sh
+cd <ComfyUI Directory>/custom_nodes
+
+# Upscale
+git clone https://github.com/ssitu/ComfyUI_UltimateSDUpscale
+
+# AnimateDiff
+git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git
+
+# Video Nodes
+git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+
+# IPAdapter
+git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus
+
+# Advanced ControlNet
+git clone https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git
+```
+
+5 - Download some models 
+```sh
+cd <ComfyUI Directory>/models/checkpoints
+wget https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors
+
+# to download more models on these pages !
+# https://civitai.com
+# https://huggingface.co
 ```
 
 ## Setup
