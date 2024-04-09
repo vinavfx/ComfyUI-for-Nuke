@@ -42,7 +42,8 @@ pip install websocket-client
 3 - Copy this lines to <b>menu.py</b>
 ```python
 # Include path where websocket-client was installed
-nuke.pluginAddPath('/home/<USER>/.local/lib/python3.6/site-packages')
+# Windows: 'C:/Users/<USER>/AppData/Local/Programs/Python/Python37/Lib/site-packages'
+nuke.pluginAddPath('/home/<USER>/.local/lib/python3.7/site-packages') # Linux
 
 import nuke_comfyui as comfyui
 comfyui.setup()
