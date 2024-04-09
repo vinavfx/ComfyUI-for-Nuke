@@ -32,6 +32,10 @@ git clone --recursive https://github.com/vinavfx/nuke_comfyui.git
 ```sh
 # Since nuke cannot install external packages, websocket must be installed 
 # in system Python and then included in nuke !
+
+# The version of python where websocket will be installed
+# has to be the same as the python version of nuke !
+
 pip install websocket-client
 ```
 
