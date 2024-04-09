@@ -19,7 +19,8 @@ from ..settings import IP, PORT
 def send_request(relative_url, data={}):
     url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
     headers = {'Content-Type': 'application/json'}
-    request = urllib2.Request(url, json.dumps(data), headers)  # type: ignore
+    bytes_data = json.dumps(data).encode('utf-8')
+    request = urllib2.Request(url, bytes_data, headers)
 
     try:
         urllib2.urlopen(request)
