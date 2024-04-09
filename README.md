@@ -9,6 +9,8 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 ## Requirements
 1 - Python 3.9 (only for comfyui, nuke works with any python)
 
+2 - websocket-client
+
 
 ## Installation
 1 - Copy to nuke folder
@@ -26,18 +28,28 @@ git clone --recursive https://github.com/vinavfx/nuke_comfyui.git
 # submodules to the nuke user folder
 ```
 
-2 - Copy this lines to <b>menu.py</b>
+2 - Install Websocket Client in python
+```sh
+# Since nuke cannot install external packages, websocket must be installed 
+# in system Python and then included in nuke !
+pip install websocket-client
+```
+
+3 - Copy this lines to <b>menu.py</b>
 ```python
+# Include path where websocket-client was installed
+nuke.pluginAddPath('/home/<USER>/.local/lib/python3.6/site-packages')
+
 import nuke_comfyui as comfyui
 comfyui.setup()
 ```
 
-3 - Clone ComfyUI to any directory
+4 - Clone ComfyUI to any directory
 ```sh
 git clone https://github.com/comfyanonymous/ComfyUI
 ```
 
-4 - Some nodes need additional repositories to work (Optional)
+5 - Some nodes need additional repositories to work (Optional)
 ```sh
 cd <ComfyUI Directory>/custom_nodes
 
@@ -57,7 +69,7 @@ git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus
 git clone https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git
 ```
 
-5 - Download some models 
+6 - Download some models 
 ```sh
 cd <ComfyUI Directory>/models/checkpoints
 wget https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors
