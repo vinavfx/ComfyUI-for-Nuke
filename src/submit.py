@@ -238,6 +238,7 @@ def post_submit(save_image_node):
                         os.path.join(sequence_dir, f))
 
     filename = '{}/{}_#####_.png'.format(sequence_dir, prefix)
+    filename = filename.replace('\\', '/')
 
     save_image_node.begin()
     read = nuke.toNode('read')
