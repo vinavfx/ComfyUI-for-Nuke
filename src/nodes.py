@@ -104,6 +104,7 @@ def create_load_images_and_save(node, alpha):
 
     dirname = '{}_{}'.format(get_project_name(), node.fullName())
     sequence_dir = os.path.join(input_dir, dirname)
+    sequence_dir = sequence_dir.replace('\\', '/')
 
     if os.path.isdir(sequence_dir):
         shutil.rmtree(sequence_dir)
