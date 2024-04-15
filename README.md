@@ -100,7 +100,11 @@ IP = '127.0.0.1'
 PORT = 8188
 ```
 
-## Nodes
+## Tips
+1 - Ksampler only works with images with a multiple of 8, add the '<b>PrepareImageForLatent</b>' reformat
+before passing the image to latent, only if your image does not match the resolution.
+
+## New Nodes:
 Currently these [Nodes](./nodes) have been transferred from ComfyUI,
 to transfer new nodes use 'ComfyuiBase' node as base
 Since ComfyUI has multiple outputs and Nuke only has one output,
