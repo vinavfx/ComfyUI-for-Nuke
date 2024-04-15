@@ -6,6 +6,7 @@
 import os
 from ..nuke_util.media_util import get_extension
 from .common import get_comfyui_dir
+import nuke  # type: ignore
 
 
 def get_models(dirname, custom_nodes=False):
@@ -26,5 +27,9 @@ def get_models(dirname, custom_nodes=False):
                 relative_path = ''
 
             models.append(os.path.join(relative_path, f))
+
+    if not models:
+        nuke.message(
+            'There is no model in the folder "{}" !'.format(models_dir))
 
     return models
