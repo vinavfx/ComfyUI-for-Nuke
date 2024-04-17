@@ -245,12 +245,15 @@ def post_submit(save_image_node):
     output_node = nuke.toNode('Output')
     save_image_node.end()
 
+    ocio = nuke.Root().knob('colorManagement').value()
+
     output_node.setInput(0, read)
     read.knob('file').setValue(filename)
     read.knob('first').setValue(1)
     read.knob('last').setValue(last_frame)
     read.knob('origfirst').setValue(1)
     read.knob('origlast').setValue(last_frame)
+    read.knob('colorspace').setValue('sRGB' if ocio == 'Nuke' else 'Output - sRGB')
     read.knob('reload').execute()
 
     outside_read(save_image_node, reload=True)

@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import random
+import traceback
 import nuke  # type: ignore
 
 from ..python_util.util import jwrite, jread
@@ -122,6 +123,8 @@ def create_load_images_and_save(node, alpha):
         invert.setXYpos(node.xpos(), node.ypos())
         invert.setInput(0, node)
 
+    ocio = nuke.Root().knob('colorManagement').value()
+
     write = nuke.createNode('Write', inpanel=False)
     write.knob('hide_input').setValue(True)
     write.setName(node.name() + '_write')
@@ -129,7 +132,7 @@ def create_load_images_and_save(node, alpha):
     write.setSelected(False)
     write.setInput(0, invert if invert else node)
     write.knob('file').setValue(filename)
-    write.knob('colorspace').setValue('sRGB')
+    write.knob('colorspace').setValue('sRGB' if ocio == 'Nuke' else 'Output - sRGB')
     write.knob('raw').setValue(False)
     write.knob('file_type').setValue('png')
     write.knob('channels').setValue('rgba' if alpha else 'rgb')
@@ -139,6 +142,7 @@ def create_load_images_and_save(node, alpha):
     except:
         nuke.delete(invert)
         nuke.delete(write)
+        nuke.message(traceback.format_exc())
         return {}, None, True
 
     nuke.delete(invert)
