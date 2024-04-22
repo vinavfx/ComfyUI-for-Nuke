@@ -28,7 +28,11 @@ def send_request(relative_url, data={}):
 
     except urllib2.HTTPError as e:
         try:
-            error = json.loads(e.read())
+            error_str = str(e.read()).strip()
+            if not error_str:
+                return 'ERROR: HTTPError'
+
+            error = json.loads(error_str)
             errors = 'ERROR: {}\n\n'.format(error['error']['message'].upper())
 
             for name, value in error['node_errors'].items():
