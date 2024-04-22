@@ -30,6 +30,7 @@ def send_request(relative_url, data={}):
         try:
             error_str = str(e.read()).strip()
             if not error_str:
+                nuke.message(traceback.format_exc())
                 return 'ERROR: HTTPError'
 
             error = json.loads(error_str)
