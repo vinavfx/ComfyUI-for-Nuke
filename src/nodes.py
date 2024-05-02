@@ -135,6 +135,7 @@ def create_load_images_and_save(node, alpha):
     write.knob('colorspace').setValue('sRGB' if ocio == 'Nuke' else 'Output - sRGB')
     write.knob('raw').setValue(False)
     write.knob('file_type').setValue('png')
+    write.knob('datatype').setValue('16 bit')
     write.knob('channels').setValue('rgba' if alpha else 'rgb')
 
     try:
