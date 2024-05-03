@@ -72,6 +72,9 @@ git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus
 
 # Advanced ControlNet
 git clone https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git
+
+# Interpolation
+git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git
 ```
 
 6 - Download some models 
