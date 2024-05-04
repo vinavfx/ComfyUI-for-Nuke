@@ -1,5 +1,5 @@
 # -----------------------------------------------------------
-# AUTHOR --------> Francisco Jose Contreras Cuevas
+# AUTHOR --------> Francisco Contreras
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
