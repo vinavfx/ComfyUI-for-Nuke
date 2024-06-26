@@ -10,7 +10,7 @@ from .nuke_util.nuke_util import get_nuke_path
 from functools import partial
 
 
-path = '{}/nuke_comfyui'.format(get_nuke_path())
+path = os.getenv("NUKE_COMFYUI_PATH") or '{}/nuke_comfyui'.format(get_nuke_path())
 
 
 def setup():
