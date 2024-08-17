@@ -5,10 +5,10 @@
 # -----------------------------------------------------------
 from functools import partial
 import re
+import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_nuke_path
 from .connection import GET
-import nuke
 
 path = '{}/nuke_comfyui'.format(get_nuke_path())
 
@@ -19,6 +19,17 @@ def create_node(data):
     name = re.sub(r'\(.*?\)', '', data['name'])
     name = re.sub(r'[^a-zA-Z0-9]', '', name)
     n.setName(name)
+
+    # Knobs
+    for k, _input in data['input']['required'].items():
+
+        if _input[0] == 'INT':
+            knob = nuke.Int_Knob(k)
+            n.addKnob(knob)
+
+        elif type(_input[0]) == list:
+            knob = nuke.Enumeration_Knob(k, k, _input[0])
+            n.addKnob(knob)
 
 
 def update():
