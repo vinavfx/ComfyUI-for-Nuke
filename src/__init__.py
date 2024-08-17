@@ -5,5 +5,6 @@ from . import (
     models_node,
     nodes,
     saveimage_node,
-    submit
+    submit,
+    update_menu
 )

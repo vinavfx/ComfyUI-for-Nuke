@@ -16,7 +16,18 @@ import nuke  # type: ignore
 from ..settings import IP, PORT
 
 
-def send_request(relative_url, data={}):
+def GET(relative_url):
+    url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
+
+    try:
+        response = urllib2.urlopen(url)
+        data = response.read().decode()
+        return json.loads(data)
+    except:
+        nuke.message(traceback.format_exc())
+
+
+def POST(relative_url, data={}):
     url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
     headers = {'Content-Type': 'application/json'}
     bytes_data = json.dumps(data).encode('utf-8')
@@ -55,7 +66,7 @@ def send_request(relative_url, data={}):
 
 
 def interrupt():
-    error = send_request('interrupt')
+    error = POST('interrupt')
 
     if error:
         nuke.message(error)

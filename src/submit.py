@@ -19,7 +19,7 @@ from ..nuke_util.nuke_util import get_project_name
 from ..python_util.util import jwrite, jread
 from ..settings import IP, PORT
 from .common import get_comfyui_dir, state_dir
-from .connection import send_request, interrupt
+from .connection import POST, interrupt
 from .nodes import extract_data
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
@@ -66,7 +66,7 @@ def comfyui_submit():
         'extra_data': {}
     }
 
-    error = send_request('prompt', body)
+    error = POST('prompt', body)
     if error:
         nuke.comfyui_running = False
         nuke.message(error)
