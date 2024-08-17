@@ -68,6 +68,7 @@ def create_node(data):
         n.addKnob(knob)
 
     _inputs = []
+
     n.begin()
     for key, _class in inputs:
         inode = nuke.createNode('Input', inpanel=False)
@@ -78,6 +79,7 @@ def create_node(data):
             'outputs': [_class.lower()]
         })
 
+    nuke.createNode('Output', inpanel=False)
     n.end()
 
     data_knob = nuke.PyScript_Knob('data')
