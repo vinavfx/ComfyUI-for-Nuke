@@ -14,17 +14,20 @@ path = os.getenv("NUKE_COMFYUI_PATH") or '{}/nuke_comfyui'.format(get_nuke_path(
 
 
 def setup():
-
     icon = '{}/icons/comfyui_icon.png'.format(path)
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI', icon=icon)
 
     icon_gray = '{}/icons/comfyui_icon_gray.png'.format(path)
     nodes_dir = os.path.join(path, 'nodes', 'ComfyUI')
 
+    refresh_icon = '{}/icons/refresh.png'.format(path)
+    comfyui_menu.addCommand(
+        'Load All Nodes', update_menu.update, '', refresh_icon)
+
     def create_node(nk):
         node = nuke.nodePaste(os.path.join(nodes_dir, nk))
         node.showControlPanel()
 
     for nk in os.listdir(nodes_dir):
-        name = nk.split('.')[0]
+        name = 'Basic Nodes/' + nk.split('.')[0]
         comfyui_menu.addCommand(name, partial(create_node, nk), '', icon_gray)

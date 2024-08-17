@@ -8,7 +8,7 @@ import re
 import json
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import get_nuke_path
+from ..nuke_util.nuke_util import get_nuke_path, set_tile_color
 from .connection import GET
 
 path = '{}/nuke_comfyui'.format(get_nuke_path())
@@ -20,6 +20,13 @@ def create_node(data):
     name = re.sub(r'\(.*?\)', '', data['name'])
     name = re.sub(r'[^a-zA-Z0-9]', '', name)
     n.setName(name)
+
+    category = data['category'].split('/')[-1]
+
+    if category == 'loaders':
+        set_tile_color(n, [.57, .58, .48])
+    elif category == 'mask':
+        set_tile_color(n, [.33, .42, .77])
 
     inputs = []
 
@@ -108,6 +115,7 @@ def update():
             char) < 128 else '' for char in category)
         category = category.replace(' /', '/').replace('/ ', '/')
 
+        value['category'] = category
         name = value['name'].replace('+', '')
 
         item_name = '{}/{}'.format(category.strip(), name.strip())
