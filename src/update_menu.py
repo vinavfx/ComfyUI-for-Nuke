@@ -5,9 +5,9 @@
 # -----------------------------------------------------------
 from functools import partial
 import re
+import json
 import nuke  # type: ignore
 
-from ..python_util.util import jprint
 from ..nuke_util.nuke_util import get_nuke_path
 from .connection import GET
 
@@ -20,6 +20,8 @@ def create_node(data):
     name = re.sub(r'\(.*?\)', '', data['name'])
     name = re.sub(r'[^a-zA-Z0-9]', '', name)
     n.setName(name)
+
+    inputs = []
 
     # Knobs
     for k in data['input_order']['required']:
@@ -60,9 +62,34 @@ def create_node(data):
             knob.setTooltip(tooltip)
 
         else:
+            inputs.append([k, _class])
             continue
 
         n.addKnob(knob)
+
+    _inputs = []
+    n.begin()
+    for key, _class in inputs:
+        inode = nuke.createNode('Input', inpanel=False)
+        inode.setName(key)
+
+        _inputs.append({
+            'name': key,
+            'outputs': [_class.lower()]
+        })
+
+    n.end()
+
+    data_knob = nuke.PyScript_Knob('data')
+    data_knob.setVisible(False)
+
+    data_knob.setValue(json.dumps({
+        'class_type': data['name'],
+        'inputs': _inputs,
+        'outputs': [o.lower() for o in data['output_name']]
+    }, indent=4).replace('"', "'"))
+
+    n.addKnob(data_knob)
 
 
 def update():
