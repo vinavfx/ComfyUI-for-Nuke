@@ -113,6 +113,9 @@ def create_node(data):
 
     n.addKnob(data_knob)
 
+    if n.knob('User'):
+        n.knob('User').setName('Controls')
+
 
 def update():
     info = GET('object_info')
