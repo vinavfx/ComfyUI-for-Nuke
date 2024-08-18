@@ -127,7 +127,6 @@ def progress(queue_prompt_node):
         ws.close()
 
         if cancelled:
-            queue_prompt_node.knob('backup_result').setEnabled(True)
             queue_prompt_node.knob('comfyui_submit').setEnabled(True)
             nuke.comfyui_running = False
             return
@@ -141,7 +140,6 @@ def progress(queue_prompt_node):
 
         nuke.executeInMainThread(post, args=(queue_prompt_node))
 
-        queue_prompt_node.knob('backup_result').setEnabled(True)
         queue_prompt_node.knob('comfyui_submit').setEnabled(True)
         nuke.comfyui_running = False
 

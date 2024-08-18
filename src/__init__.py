@@ -4,7 +4,6 @@ from . import (
     connection,
     models_node,
     nodes,
-    saveimage_node,
     queue_prompt,
     update_menu,
     read_image

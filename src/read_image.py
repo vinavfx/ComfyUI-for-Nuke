@@ -8,6 +8,7 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_input
 from ..settings import COMFYUI_DIR
+from ..nuke_util.media_util import get_name_no_padding
 
 
 def create_read(queue_prompt_node):
@@ -39,3 +40,30 @@ def create_read(queue_prompt_node):
     read.setXYpos(queue_prompt_node.xpos(), queue_prompt_node.ypos() + 35)
     read.knob('tile_color').setValue(
         queue_prompt_node.knob('tile_color').value())
+
+
+def save_image_backup():
+    queue_prompt_node = nuke.thisNode()
+    queue_prompt_node.parent().begin()
+
+    read = nuke.toNode(queue_prompt_node.name() + 'Read')
+
+    filename = '{} {}-{}'.format(read.knob('file').value(),
+                                 read.knob('first').value(), read.knob('last').value())
+
+    basename = get_name_no_padding(filename).replace(' ', '_')
+    name = '{}Backup_{}'.format(queue_prompt_node.name(), basename)
+
+    if not nuke.toNode(name):
+        new_read = nuke.createNode('Read', inpanel=False)
+        new_read.setName(name)
+        new_read.knob('file').fromUserText(filename)
+
+    xpos = read.xpos() + 50
+
+    for n in nuke.allNodes():
+        if not queue_prompt_node.name() + 'Backup_' in n.name():
+            continue
+
+        xpos += 100
+        n.setXYpos(xpos, read.ypos())
