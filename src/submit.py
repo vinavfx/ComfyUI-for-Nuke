@@ -18,7 +18,7 @@ import threading
 from ..nuke_util.nuke_util import get_project_name
 from ..python_util.util import jwrite, jread
 from ..settings import IP, PORT
-from .common import get_comfyui_dir, state_dir
+from .common import get_comfyui_dir, state_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt
 from .nodes import extract_data
 
@@ -26,6 +26,8 @@ client_id = str(uuid.uuid4())[:32].replace('-', '')
 
 
 def comfyui_submit():
+    update_images_and_mask_inputs()
+
     if nuke.comfyui_running:
         nuke.message('Inference in execution !')
         return
