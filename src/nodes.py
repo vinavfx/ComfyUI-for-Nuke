@@ -33,10 +33,11 @@ def extract_data():
         class_type = node_data['class_type']
 
         if class_type == 'KSampler':
-            if not n.knob('fixed_seed').value():
-                random_value = random.randrange(1, 9999)
-                n.knob('seed_').setValue(random_value)
-                node_data['inputs']['seed'] = random_value
+            if n.knob('fixed_seed'):
+                if not n.knob('fixed_seed').value():
+                    random_value = random.randrange(1, 9999)
+                    n.knob('seed_').setValue(random_value)
+                    node_data['inputs']['seed'] = random_value
 
         for key in image_inputs + mask_inputs:
             input_key = node_data['inputs'].get(key)

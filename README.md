@@ -7,9 +7,11 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 </div>
 
 ## Requirements
-1 - Python 3.9 (only for comfyui, nuke works with any python)
+1 . Python 3.9 (only for comfyui, nuke works with any python)
 
-2 - websocket-client
+2 . websocket-client
+
+3 - ComfyUI-VideoHelperSuite (required to load images and sequences)
 
 
 ## Installation
@@ -54,7 +56,15 @@ comfyui.setup()
 git clone https://github.com/comfyanonymous/ComfyUI
 ```
 
-5 - Some nodes need additional repositories to work (Optional)
+5 - Install ComfyUI-VideoHelperSuite (required to load images and sequences)
+```sh
+cd <ComfyUI Directory>/custom_nodes
+git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+cd ./ComfyUI-VideoHelperSuite
+pip install -r requirements.txt
+```
+
+6 - Some nodes need additional repositories to work (Optional)
 ```sh
 cd <ComfyUI Directory>/custom_nodes
 
@@ -63,9 +73,6 @@ git clone https://github.com/ssitu/ComfyUI_UltimateSDUpscale
 
 # AnimateDiff
 git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git
-
-# Video Nodes
-git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
 
 # IPAdapter
 git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus
@@ -107,22 +114,3 @@ PORT = 8188
 1 - Ksampler only works with images with a multiple of 8, add the '<b>PrepareImageForLatent</b>' reformat
 before passing the image to latent, only if your image does not match the resolution.
 
-## New Nodes:
-Currently these [Nodes](./nodes) have been transferred from ComfyUI,
-to transfer new nodes use 'ComfyuiBase' node as base
-Since ComfyUI has multiple outputs and Nuke only has one output,
-you use a knob called data and there are the outputs and you enter.
-
-<img src='images/comfyui_base.png' width=30%>
-<img src='images/data_knob.png' width=70%>
-
-<b>class_type:</b> you have to set the exact class of the ComfyUI node, otherwise it won't work
-
-<b>inputs:</b> is a list with all the inputs that the node
-has, and each input has as an attribute the name of the input
-and a list of 'outputs' that contains the names that are allowed to connect to that input,
-and the 'opt' is to say if the node The input It is mandatory to connect.
-
-<b>outputs:</b> is a list with all outputs that the node has since nuclear only has one
-
-The <b>comfyui.nodes.update_input_nodes(nuke.thisNode())</b> function creates the node entries automatically depending on the list above

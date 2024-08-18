@@ -31,8 +31,8 @@ def create_node(data):
     inputs = []
 
     # Knobs
-    for k in data['input_order']['required']:
-        _input = data['input']['required'][k]
+    for key in data['input_order']['required']:
+        _input = data['input']['required'][key]
 
         _class = _input[0]
         info = _input[1] if len(_input) == 2 else {}
@@ -40,8 +40,10 @@ def create_node(data):
         tooltip = info.get('tooltip', '')
         default_value = info.get('default', 0)
 
+        knob_name = key + '_'
+
         if _class == 'INT':
-            knob = nuke.Int_Knob(k)
+            knob = nuke.Int_Knob(knob_name, key)
             knob.setDefaultValue([default_value])
             knob.setTooltip(tooltip)
 
@@ -49,7 +51,7 @@ def create_node(data):
             min_value = info.get('min', 0)
             max_value = info.get('max', 1)
 
-            knob = nuke.Double_Knob(k)
+            knob = nuke.Double_Knob(knob_name, key)
             knob.setRange(min_value, max_value)
             knob.setDefaultValue([default_value])
             knob.setTooltip(tooltip)
@@ -58,18 +60,18 @@ def create_node(data):
             multiline = info.get('multiline', False)
 
             if multiline:
-                knob = nuke.Multiline_Eval_String_Knob(k)
+                knob = nuke.Multiline_Eval_String_Knob(knob_name, key)
             else:
-                knob = nuke.String_Knob(k)
+                knob = nuke.String_Knob(knob_name, key)
 
             knob.setTooltip(tooltip)
 
         elif type(_class) == list:
-            knob = nuke.Enumeration_Knob(k, k, _class)
+            knob = nuke.Enumeration_Knob(knob_name, key, _class)
             knob.setTooltip(tooltip)
 
         else:
-            inputs.append([k, _class])
+            inputs.append([key, _class])
             continue
 
         n.addKnob(knob)
@@ -106,17 +108,22 @@ def update():
     if not info:
         return
 
+    ignore_nodes = ['SaveImage', 'EmptyLatentImage']
+
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI')
     nodes = {}
 
     for _, value in info.items():
+        name = value['name'].replace('+', '')
+        if name in ignore_nodes:
+            continue
+
         category = value['category']
         category = ''.join(char if ord(
             char) < 128 else '' for char in category)
         category = category.replace(' /', '/').replace('/ ', '/')
 
         value['category'] = category
-        name = value['name'].replace('+', '')
 
         item_name = '{}/{}'.format(category.strip(), name.strip())
         nodes[item_name] = value
