@@ -29,13 +29,13 @@ def create_read(queue_prompt_node):
     if not filename:
         return
 
-    read = nuke.createNode('Read', inpanel=False)
+    name = '{}Read'.format(queue_prompt_node.name())
+    read = nuke.toNode(name)
+    if not read:
+        read = nuke.createNode('Read', inpanel=False)
+
+    read.setName(name)
     read.knob('file').fromUserText(os.path.join(comfyui_output, filename))
     read.setXYpos(queue_prompt_node.xpos(), queue_prompt_node.ypos() + 35)
     read.knob('tile_color').setValue(
         queue_prompt_node.knob('tile_color').value())
-
-    name = '{}Read'.format(queue_prompt_node.name())
-    nuke.delete(nuke.toNode(name))
-
-    read.setName(name)
