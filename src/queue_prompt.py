@@ -6,18 +6,13 @@
 import nuke  # type: ignore
 import uuid
 import traceback
-import copy
-
-import os
 from time import sleep
 import websocket
 import json
 import threading
 
-from ..nuke_util.nuke_util import get_project_name
-from ..python_util.util import jwrite, jread
 from ..settings import IP, PORT
-from .common import get_comfyui_dir, state_dir, update_images_and_mask_inputs
+from .common import get_comfyui_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt
 from .nodes import extract_data
 from .read_image import create_read
@@ -40,22 +35,12 @@ def comfyui_submit():
         return
 
     queue_prompt_node = nuke.thisNode()
-    data, input_node_changed = extract_data()
+    data = extract_data()
 
     if not data:
         nuke.comfyui_running = False
         return
 
-    state_file = '{}/comfyui_{}_{}_state.txt'.format(
-        state_dir,  get_project_name(), queue_prompt_node.name())
-
-    if os.path.isfile(state_file):
-        if data == jread(state_file) and not input_node_changed:
-            nuke.message('No new changes !')
-            nuke.comfyui_running = False
-            return
-
-    state_data = copy.deepcopy(data)
     queue_prompt_node.knob('comfyui_submit').setEnabled(False)
 
     body = {
@@ -71,10 +56,10 @@ def comfyui_submit():
         queue_prompt_node.knob('comfyui_submit').setEnabled(True)
         return
 
-    progress(queue_prompt_node, state_file, state_data)
+    progress(queue_prompt_node)
 
 
-def progress(queue_prompt_node, state_file, state_data):
+def progress(queue_prompt_node):
     url = "ws://{}:{}/ws?clientId={}".format(IP, PORT, client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
@@ -150,7 +135,6 @@ def progress(queue_prompt_node, state_file, state_data):
         def post(n):
             try:
                 create_read(n)
-                jwrite(state_file, state_data)
             except:
                 nuke.executeInMainThread(
                     nuke.message, args=(traceback.format_exc()))

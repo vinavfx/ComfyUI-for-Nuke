@@ -22,23 +22,22 @@ def extract_data():
 
     if not output_node:
         nuke.message('QueuePrompt is not connected!')
-        return {}, None
+        return {}
 
     output_node_data = get_node_data(output_node)
     if not output_node_data.get('output_node', False):
         nuke.message('Connect only to output nodes like SaveImage or PreviewImage !')
-        return {}, None
+        return {}
 
     nodes = get_connected_comfyui_nodes(queue_prompt_node)
     nuke.root().knob('proxy').setValue(False)
 
     comfyui_nodes = [n.name() for n, _ in nodes]
     data = {}
-    input_node_changed = False
 
     for n, node_data in nodes:
         if not check_node(n):
-            return {}, None
+            return {}
 
         class_type = node_data['class_type']
 
@@ -57,18 +56,17 @@ def extract_data():
                 continue
 
             if not input_node.name() in comfyui_nodes:
-                load_image_data, changed_node, execution_canceled = create_load_images_and_save(
+                load_image_data, execution_canceled = create_load_images_and_save(
                     input_node, key in mask_inputs)
 
                 if execution_canceled:
-                    return {}, None
+                    return {}
 
-                input_node_changed = True if changed_node else input_node_changed
                 data[input_node.name()] = load_image_data
 
         data[n.name()] = node_data
 
-    return data, input_node_changed
+    return data
 
 def create_load_images_and_save(node, alpha):
     # State : verifica si las entradas del nodo se modificaron para determinar si reescribir
@@ -112,7 +110,7 @@ def create_load_images_and_save(node, alpha):
         if os.path.isdir(sequence_dir):
             if os.listdir(sequence_dir):
                 load_image_data['inputs']['directory'] = dirname
-                return load_image_data, False, False
+                return load_image_data, False
 
     dirname = '{}_{}'.format(get_project_name(), node.fullName())
     sequence_dir = os.path.join(input_dir, dirname)
@@ -155,7 +153,7 @@ def create_load_images_and_save(node, alpha):
         nuke.delete(invert)
         nuke.delete(write)
         nuke.message(traceback.format_exc())
-        return {}, None, True
+        return {}, True
 
     nuke.delete(invert)
     nuke.delete(write)
@@ -164,7 +162,7 @@ def create_load_images_and_save(node, alpha):
     jwrite(state_file, current_state)
 
     load_image_data['inputs']['directory'] = dirname
-    return load_image_data, True, False
+    return load_image_data, False
 
 def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
     if visited is None:
