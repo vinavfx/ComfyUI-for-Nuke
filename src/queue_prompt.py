@@ -39,7 +39,7 @@ def comfyui_submit():
         nuke.comfyui_running = False
         return
 
-    save_image_node = nuke.thisNode()
+    queue_prompt_node = nuke.thisNode()
     data, input_node_changed = extract_data()
 
     if not data:
@@ -47,7 +47,7 @@ def comfyui_submit():
         return
 
     state_file = '{}/comfyui_{}_{}_state.txt'.format(
-        state_dir,  get_project_name(), save_image_node.name())
+        state_dir,  get_project_name(), queue_prompt_node.name())
 
     if os.path.isfile(state_file):
         if data == jread(state_file) and not input_node_changed:
@@ -57,10 +57,10 @@ def comfyui_submit():
 
     state_data = copy.deepcopy(data)
 
-    filename_prefix = get_filename_prefix(save_image_node)
-    data[save_image_node.name()]['inputs']['filename_prefix'] = filename_prefix
+    filename_prefix = get_filename_prefix(queue_prompt_node)
+    data[queue_prompt_node.name()]['inputs']['filename_prefix'] = filename_prefix
 
-    save_image_node.knob('comfyui_submit').setEnabled(False)
+    queue_prompt_node.knob('comfyui_submit').setEnabled(False)
 
     body = {
         'client_id': client_id,
@@ -72,13 +72,13 @@ def comfyui_submit():
     if error:
         nuke.comfyui_running = False
         nuke.message(error)
-        save_image_node.knob('comfyui_submit').setEnabled(True)
+        queue_prompt_node.knob('comfyui_submit').setEnabled(True)
         return
 
-    progress(save_image_node, state_file, state_data)
+    progress(queue_prompt_node, state_file, state_data)
 
 
-def progress(save_image_node, state_file, state_data):
+def progress(queue_prompt_node, state_file, state_data):
     url = "ws://{}:{}/ws?clientId={}".format(IP, PORT, client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
@@ -146,8 +146,8 @@ def progress(save_image_node, state_file, state_data):
         ws.close()
 
         if cancelled:
-            save_image_node.knob('backup_result').setEnabled(True)
-            save_image_node.knob('comfyui_submit').setEnabled(True)
+            queue_prompt_node.knob('backup_result').setEnabled(True)
+            queue_prompt_node.knob('comfyui_submit').setEnabled(True)
             nuke.comfyui_running = False
             return
 
@@ -159,25 +159,25 @@ def progress(save_image_node, state_file, state_data):
                 nuke.executeInMainThread(
                     nuke.message, args=(traceback.format_exc()))
 
-        nuke.executeInMainThread(post, args=(save_image_node))
+        nuke.executeInMainThread(post, args=(queue_prompt_node))
 
-        save_image_node.knob('backup_result').setEnabled(True)
-        save_image_node.knob('comfyui_submit').setEnabled(True)
+        queue_prompt_node.knob('backup_result').setEnabled(True)
+        queue_prompt_node.knob('comfyui_submit').setEnabled(True)
         nuke.comfyui_running = False
 
     threading.Thread(target=ws.run_forever).start()
     threading.Thread(target=progress_bar_life).start()
 
 
-def outside_read(save_image_node, reload=False):
-    save_image_node.begin()
+def outside_read(queue_prompt_node, reload=False):
+    queue_prompt_node.begin()
     inside_read = nuke.toNode('read')
-    save_image_node.end()
+    queue_prompt_node.end()
 
-    name = '{}Read'.format(save_image_node.name())
-    outside_read = save_image_node.knob('outside_read').value()
+    name = '{}Read'.format(queue_prompt_node.name())
+    outside_read = queue_prompt_node.knob('outside_read').value()
 
-    save_image_node.parent().begin()
+    queue_prompt_node.parent().begin()
 
     if not outside_read:
         nuke.delete(nuke.toNode(name))
@@ -187,9 +187,9 @@ def outside_read(save_image_node, reload=False):
     if not read:
         read = nuke.createNode('Read', inpanel=False)
 
-    read.setXYpos(save_image_node.xpos(), save_image_node.ypos() + 35)
+    read.setXYpos(queue_prompt_node.xpos(), queue_prompt_node.ypos() + 35)
     read.knob('tile_color').setValue(
-        save_image_node.knob('tile_color').value())
+        queue_prompt_node.knob('tile_color').value())
     read.knob('on_error').setValue('black')
 
     read.setName(name)
@@ -200,24 +200,24 @@ def outside_read(save_image_node, reload=False):
     if reload:
         read.knob('reload').execute()
 
-    save_image_node.parent().end()
+    queue_prompt_node.parent().end()
 
 
-def get_filename_prefix(save_image_node):
+def get_filename_prefix(queue_prompt_node):
     filename_prefix = '{}_{}'.format(
-        get_project_name(), save_image_node.fullName())
+        get_project_name(), queue_prompt_node.fullName())
     return filename_prefix
 
 
-def post_submit(save_image_node):
-    prefix = get_filename_prefix(save_image_node)
+def post_submit(queue_prompt_node):
+    prefix = get_filename_prefix(queue_prompt_node)
     output_dir = '{}/output'.format(get_comfyui_dir())
     sequence_dir = '{}/{}'.format(output_dir, prefix)
 
     shutil.rmtree(sequence_dir, ignore_errors=True)
     os.mkdir(sequence_dir)
 
-    frames = save_image_node.input(0).lastFrame()
+    frames = queue_prompt_node.input(0).lastFrame()
     last_frame = 0
 
     for i in range(frames):
@@ -242,10 +242,10 @@ def post_submit(save_image_node):
     filename = '{}/{}_#####_.png'.format(sequence_dir, prefix)
     filename = filename.replace('\\', '/')
 
-    save_image_node.begin()
+    queue_prompt_node.begin()
     read = nuke.toNode('read')
     output_node = nuke.toNode('Output')
-    save_image_node.end()
+    queue_prompt_node.end()
 
     ocio = nuke.Root().knob('colorManagement').value()
 
@@ -258,4 +258,4 @@ def post_submit(save_image_node):
     read.knob('colorspace').setValue('sRGB' if ocio == 'Nuke' else 'Output - sRGB')
     read.knob('reload').execute()
 
-    outside_read(save_image_node, reload=True)
+    outside_read(queue_prompt_node, reload=True)
