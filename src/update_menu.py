@@ -76,6 +76,12 @@ def create_node(data):
 
             knob.setTooltip(tooltip)
 
+        elif _class == 'BOOLEAN':
+            knob = nuke.Boolean_Knob(knob_name, key)
+            knob.setFlag(nuke.STARTLINE)
+            knob.setValue(default_value)
+            knob.setTooltip(tooltip)
+
         elif type(_class) == list:
             knob = nuke.Enumeration_Knob(knob_name, key, _class)
             knob.setTooltip(tooltip)
