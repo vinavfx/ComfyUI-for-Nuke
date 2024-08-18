@@ -114,7 +114,7 @@ def create_node(data):
     data_knob.setValue(json.dumps({
         'class_type': data['name'],
         'inputs': _inputs,
-        'outputs': [o.lower() for o in data['output_name']]
+        'outputs': [o.lower() for o in data['output']]
     }, indent=4).replace('"', "'"))
 
     n.addKnob(data_knob)
