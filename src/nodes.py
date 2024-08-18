@@ -26,7 +26,7 @@ def extract_data():
 
     output_node_data = get_node_data(output_node)
     if not output_node_data.get('output_node', False):
-        nuke.message('Connect only to output nodes like SaveImage or PreviewImage !')
+        nuke.message('Connect only to output nodes like SaveImage or SaveEXR !')
         return {}
 
     nodes = get_connected_comfyui_nodes(queue_prompt_node)

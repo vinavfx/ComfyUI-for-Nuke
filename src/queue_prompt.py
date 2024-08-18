@@ -15,7 +15,7 @@ from ..settings import IP, PORT
 from .common import get_comfyui_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt
 from .nodes import extract_data
-from .read_image import create_read
+from .read_image import create_read, update_filename_prefix
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
 
@@ -35,6 +35,7 @@ def comfyui_submit():
         return
 
     queue_prompt_node = nuke.thisNode()
+    update_filename_prefix(queue_prompt_node)
     data = extract_data()
 
     if not data:
