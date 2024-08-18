@@ -4,7 +4,6 @@ push $cut_paste_input
 Group {
  name QueuePrompt
  onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
- knobChanged "\nif nuke.thisKnob().name() == 'outside_read':\n    comfyui.submit.outside_read(nuke.thisNode())\n\n"
  tile_color 0x609e38ff
  note_font "Bitstream Vera Sans"
  selected true
@@ -13,24 +12,10 @@ Group {
  addUserKnob {20 controls l Controls}
  addUserKnob {22 comfyui_submit l submit T exe('comfyui.queue_prompt.comfyui_submit') +STARTLINE}
  addUserKnob {22 backup_result -STARTLINE T exe('comfyui.saveimage_node.save_image_backup')}
- addUserKnob {6 outside_read +STARTLINE}
- outside_read true
  addUserKnob {20 about l About}
  addUserKnob {26 _name l "" +STARTLINE T "<b>SaveImage</b> v1.24<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
  addUserKnob {26 ""}
 }
- Read {
-  inputs 0
-  file_type png
-  format "2276 1280 0 0 2276 1280 1 "
-  origset true
-  on_error black
-  version 472
-  colorspace sRGB
-  name read
-  xpos -120
-  ypos 25
- }
  Input {
   inputs 0
   name Input

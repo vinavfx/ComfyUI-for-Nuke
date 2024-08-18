@@ -20,6 +20,7 @@ from ..settings import IP, PORT
 from .common import get_comfyui_dir, state_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt
 from .nodes import extract_data
+from .read_image import create_read
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
 
@@ -148,7 +149,7 @@ def progress(queue_prompt_node, state_file, state_data):
 
         def post(n):
             try:
-                #  post_submit(n)
+                create_read(n)
                 jwrite(state_file, state_data)
             except:
                 nuke.executeInMainThread(
