@@ -66,6 +66,10 @@ def create_node(data):
             knob.setValue(default_value)
             knob.setTooltip(tooltip)
 
+        elif _class == 'STRING' and key in ['filepath', 'file', 'directory']:
+            knob = nuke.File_Knob(knob_name, key)
+            knob.setTooltip(tooltip)
+
         elif _class == 'STRING':
             multiline = info.get('multiline', False)
 
