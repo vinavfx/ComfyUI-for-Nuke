@@ -17,8 +17,7 @@ path = '{}/nuke_comfyui'.format(get_nuke_path())
 def create_node(data):
     n = nuke.createNode('Group')
 
-    name = re.sub(r'\(.*?\)', '', data['name'])
-    name = re.sub(r'[^a-zA-Z0-9]', '', name)
+    name = re.sub(r'[^a-zA-Z0-9_]', '', data['name'])
     n.setName(name)
 
     category = data['category'].split('/')[-1]
@@ -30,9 +29,20 @@ def create_node(data):
 
     inputs = []
 
-    # Knobs
-    for key in data['input_order']['required']:
-        _input = data['input']['required'][key]
+    input_order = data['input_order']
+    required_order = input_order.get('required', [])
+    optional_order = input_order.get('optional', [])
+
+    input_data = data['input']
+    required = input_data.get('required', {})
+    optional = input_data.get('optional', {})
+
+    for key in required_order + optional_order:
+        _input = required.get(key, [])
+        is_optional = not _input
+
+        if is_optional:
+            _input = optional.get(key)
 
         _class = _input[0]
         info = _input[1] if len(_input) == 2 else {}
@@ -44,7 +54,7 @@ def create_node(data):
 
         if _class == 'INT':
             knob = nuke.Int_Knob(knob_name, key)
-            knob.setDefaultValue([default_value])
+            knob.setValue(default_value)
             knob.setTooltip(tooltip)
 
         elif _class == 'FLOAT':
@@ -53,7 +63,7 @@ def create_node(data):
 
             knob = nuke.Double_Knob(knob_name, key)
             knob.setRange(min_value, max_value)
-            knob.setDefaultValue([default_value])
+            knob.setValue(default_value)
             knob.setTooltip(tooltip)
 
         elif _class == 'STRING':
@@ -71,7 +81,7 @@ def create_node(data):
             knob.setTooltip(tooltip)
 
         else:
-            inputs.append([key, _class])
+            inputs.append([key, _class, is_optional])
             continue
 
         n.addKnob(knob)
@@ -79,13 +89,14 @@ def create_node(data):
     _inputs = []
 
     n.begin()
-    for key, _class in inputs:
+    for key, _class, is_optional in inputs:
         inode = nuke.createNode('Input', inpanel=False)
         inode.setName(key)
 
         _inputs.append({
             'name': key,
-            'outputs': [_class.lower()]
+            'outputs': [_class.lower()],
+            'opt': is_optional
         })
 
     nuke.createNode('Output', inpanel=False)
