@@ -297,20 +297,18 @@ def check_node(node):
 
         inode_data = get_node_data(inode)
 
-        if input_name in image_inputs + mask_inputs:
-            if inode_data and inode_data.get('class_type') == 'SaveImage':
-                continue
-            else:
+        if not inode_data:
+            if input_name in image_inputs + mask_inputs:
                 if inode.bbox().w() < 10 or inode.bbox().h() < 10:
                     nuke.message(
-                        'input "{}" without image !'.format(input_name))
+                        '{}: input "{}" without image !'.format(node.name(), input_name))
                     return
                 continue
 
-        if not inode_data:
-            nuke.message('{}: "{}" does not support "{}" !'.format(
-                node.name(), input_name, inode.name()))
-            return
+            else:
+                nuke.message('{}: "{}" does not support "{}" !'.format(
+                    node.name(), input_name, inode.name()))
+                return
 
         inode_outputs = inode_data['outputs']
         allowed_outputs = node_data['inputs'][i]['outputs']

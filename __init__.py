@@ -22,7 +22,7 @@ def setup():
 
     refresh_icon = '{}/icons/refresh.png'.format(path)
     comfyui_menu.addCommand(
-        'Load All Nodes', update_menu.update, '', refresh_icon)
+        'Update all ComfyUI', update_menu.update, '', refresh_icon)
 
     def create_node(nk):
         node = nuke.nodePaste(os.path.join(nodes_dir, nk))

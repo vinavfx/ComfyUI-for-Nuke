@@ -15,7 +15,7 @@ if not os.path.isdir(state_dir):
 if not getattr(nuke, 'comfyui_running', False):
     nuke.comfyui_running = False
 
-image_inputs = ['image', 'frames', 'pixels']
+image_inputs = ['image', 'frames', 'pixels', 'images']
 mask_inputs = ['mask', 'attn_mask', 'mask_optional']
 
 
