@@ -17,9 +17,19 @@ from .common import image_inputs, mask_inputs, get_comfyui_dir, state_dir
 
 
 def extract_data():
-    this = nuke.thisNode()
-    nodes = get_connected_comfyui_nodes(this, ignore_nodes=['SaveImage'])
-    nodes.append((this, extract_node_data(this)))
+    queue_prompt_node = nuke.thisNode()
+    output_node = get_input(queue_prompt_node, 0)
+
+    if not output_node:
+        nuke.message('QueuePrompt is not connected!')
+        return {}, None
+
+    output_node_data = get_node_data(output_node)
+    if not output_node_data.get('output_node', False):
+        nuke.message('Connect only to output nodes like SaveImage or PreviewImage !')
+        return {}, None
+
+    nodes = get_connected_comfyui_nodes(queue_prompt_node)
     nuke.root().knob('proxy').setValue(False)
 
     comfyui_nodes = [n.name() for n, _ in nodes]

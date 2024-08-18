@@ -11,7 +11,6 @@ Group {
  xpos -409
  ypos 30
  addUserKnob {20 controls l Controls}
- addUserKnob {22 data +HIDDEN T "\{\n    'class_type': 'SaveImage',\n    'inputs': \[\n        \{'name': 'images', 'outputs': \['image']\}\n    ],\n    'outputs': \[]\n\}\n\n# Save and Run to update inputs\ncomfyui.nodes.update_input_nodes(nuke.thisNode())" +STARTLINE}
  addUserKnob {22 comfyui_submit l submit T exe('comfyui.queue_prompt.comfyui_submit') +STARTLINE}
  addUserKnob {22 backup_result -STARTLINE T exe('comfyui.saveimage_node.save_image_backup')}
  addUserKnob {6 outside_read +STARTLINE}
@@ -34,7 +33,7 @@ Group {
  }
  Input {
   inputs 0
-  name images
+  name Input
   xpos 145
   ypos 93
  }
