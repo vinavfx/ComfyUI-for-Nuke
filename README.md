@@ -11,7 +11,7 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 
 2 . websocket-client
 
-3 - ComfyUI-VideoHelperSuite (required to load images and sequences)
+3 - ComfyUI-HQ-Image-Save (required to load images and sequences and work with EXR)
 
 
 ## Installation
@@ -56,11 +56,11 @@ comfyui.setup()
 git clone https://github.com/comfyanonymous/ComfyUI
 ```
 
-5 - Install ComfyUI-VideoHelperSuite (required to load images and sequences)
+5 - Install ComfyUI-HQ-Image-Save (required to work with EXR)
 ```sh
 cd <ComfyUI Directory>/custom_nodes
-git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
-cd ./ComfyUI-VideoHelperSuite
+git clone https://github.com/spacepxl/ComfyUI-HQ-Image-Save.git
+cd ./ComfyUI-HQ-Image-Save.git
 pip install -r requirements.txt
 ```
 
@@ -84,7 +84,7 @@ git clone https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git
 git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git
 ```
 
-6 - Download some models 
+7 - Download some models 
 ```sh
 cd <ComfyUI Directory>/models/checkpoints
 wget https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors
