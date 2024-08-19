@@ -2,8 +2,7 @@
 API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 
 <div style="display: flex;">
-  <img src="images/menu.png" style="width: 32%;" />
-  <img src="images/nodes.png" style="width: 66%;" />
+  <img src="images/screenshot.png"/>
 </div>
 
 ## Requirements
