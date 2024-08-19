@@ -69,7 +69,7 @@ def create_read(queue_prompt_node):
 
     queue_prompt_node.parent().begin()
     name = '{}Read'.format(queue_prompt_node.name())
-    ext = filename.split('.')[-1].lower()
+    ext = filename.split('.')[-1].split(' ')[0].lower()
 
     if ext in ['jpg', 'exr', 'tiff', 'png']:
         read = nuke.toNode(name)
