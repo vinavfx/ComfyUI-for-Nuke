@@ -5,11 +5,10 @@
 # -----------------------------------------------------------
 import os
 import nuke  # type: ignore
-from ..settings import COMFYUI_DIR
-from ..nuke_util.nuke_util import get_nuke_path
+from ..settings import COMFYUI_DIR, NUKE_USER
 from .connection import GET
 
-state_dir = '{}/comfyui_state'.format(get_nuke_path())
+state_dir = os.path.join(NUKE_USER, 'comfyui_state')
 if not os.path.isdir(state_dir):
     os.mkdir(state_dir)
 

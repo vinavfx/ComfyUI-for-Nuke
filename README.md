@@ -107,6 +107,7 @@ python main.py
 COMFYUI_DIR = '<ComfyUI>'
 IP = '127.0.0.1'
 PORT = 8188
+NUKE_USER = '<.../USER/.nuke>' # Change only if your path is different !
 ```
 
 ## Tips

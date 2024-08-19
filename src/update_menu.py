@@ -5,13 +5,15 @@
 # -----------------------------------------------------------
 from functools import partial
 import re
+import os
 import json
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import get_nuke_path, set_tile_color
+from ..nuke_util.nuke_util import set_tile_color
 from .connection import GET
+from ..settings import NUKE_USER
 
-path = '{}/nuke_comfyui'.format(get_nuke_path())
+path = os.path.join(NUKE_USER, 'nuke_comfyui')
 
 
 def create_node(data):
