@@ -5,5 +5,6 @@ from . import (
     nodes,
     queue_prompt,
     update_menu,
-    read_image
+    read_image,
+    upload
 )

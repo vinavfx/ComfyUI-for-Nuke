@@ -98,6 +98,11 @@ def create_node(data):
 
         n.addKnob(knob)
 
+        if name in ['LoadAudio', 'LoadImage']:
+            upload_knob = nuke.PyScript_Knob('upload', '+')
+            upload_knob.setValue('comfyui.upload.upload_media()')
+            n.addKnob(upload_knob)
+
     _inputs = []
 
     n.begin()
