@@ -8,8 +8,22 @@ import random
 import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_input
+from ..nuke_util.media_util import get_padding
 from ..settings import COMFYUI_DIR
 from ..nuke_util.media_util import get_name_no_padding
+from .nodes import get_connected_comfyui_nodes
+
+
+def exr_filepath_fixed(queue_prompt_node):
+    nodes = get_connected_comfyui_nodes(queue_prompt_node)
+    for n, _ in nodes:
+        filepath_knob = n.knob('filepath_')
+        if not filepath_knob:
+            continue
+
+        filepath = filepath_knob.value()
+        filepath = filepath.replace(get_padding(filepath), '%04d')
+        filepath_knob.setText(filepath)
 
 
 def update_filename_prefix(queue_prompt_node):
