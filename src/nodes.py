@@ -93,12 +93,13 @@ def create_load_images_and_save(node, alpha):
 
     load_image_data = {
         'inputs': {
-            'directory': '',
+            'filepath': '',
+            'linear_to_sRGB': True,
             'image_load_cap': 0,
             'select_every_nth': 1,
             'skip_first_images': 0
         },
-        'class_type': 'VHS_LoadImages'
+        'class_type': 'LoadEXR'
     }
 
     input_dir = '{}/input'.format(get_comfyui_dir())
@@ -109,7 +110,7 @@ def create_load_images_and_save(node, alpha):
 
         if os.path.isdir(sequence_dir):
             if os.listdir(sequence_dir):
-                load_image_data['inputs']['directory'] = dirname
+                load_image_data['inputs']['filepath'] = sequence_dir
                 return load_image_data, False
 
     dirname = '{}_{}'.format(get_project_name(), node.fullName())
@@ -120,7 +121,7 @@ def create_load_images_and_save(node, alpha):
         shutil.rmtree(sequence_dir)
 
     os.mkdir(sequence_dir)
-    filename = '{}/{}_#####.png'.format(sequence_dir, dirname)
+    filename = '{}/{}_#####.exr'.format(sequence_dir, dirname)
 
     # el write se crea dentro de SaveImage
     [n.setSelected(False) for n in nuke.selectedNodes()]
@@ -132,8 +133,6 @@ def create_load_images_and_save(node, alpha):
         invert.setXYpos(node.xpos(), node.ypos())
         invert.setInput(0, node)
 
-    ocio = nuke.Root().knob('colorManagement').value()
-
     write = nuke.createNode('Write', inpanel=False)
     write.knob('hide_input').setValue(True)
     write.setName(node.name() + '_write')
@@ -141,10 +140,8 @@ def create_load_images_and_save(node, alpha):
     write.setSelected(False)
     write.setInput(0, invert if invert else node)
     write.knob('file').setValue(filename)
-    write.knob('colorspace').setValue('sRGB' if ocio == 'Nuke' else 'Output - sRGB')
-    write.knob('raw').setValue(False)
-    write.knob('file_type').setValue('png')
-    write.knob('datatype').setValue('16 bit')
+    write.knob('raw').setValue(True)
+    write.knob('file_type').setValue('exr')
     write.knob('channels').setValue('rgba' if alpha else 'rgb')
 
     try:
@@ -161,7 +158,7 @@ def create_load_images_and_save(node, alpha):
     current_state['dirname'] = dirname
     jwrite(state_file, current_state)
 
-    load_image_data['inputs']['directory'] = dirname
+    load_image_data['inputs']['filepath'] = sequence_dir
     return load_image_data, False
 
 def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
