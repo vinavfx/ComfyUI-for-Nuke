@@ -67,6 +67,9 @@ def create_read(queue_prompt_node):
     if not filename:
         return
 
+    if not filename.split('.')[-1].lower() in ['jpg', 'exr', 'tiff', 'png']:
+        return
+
     queue_prompt_node.parent().begin()
 
     name = '{}Read'.format(queue_prompt_node.name())
