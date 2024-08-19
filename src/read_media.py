@@ -9,7 +9,7 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_input
 from ..nuke_util.media_util import get_padding
-from ..settings import COMFYUI_DIR
+from ..settings import COMFYUI_DIR, NUKE_USER
 from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes
 
@@ -35,7 +35,7 @@ def update_filename_prefix(queue_prompt_node):
     if not filename_prefix_knob:
         return
 
-    prefix = filename_prefix_knob.value().rsplit('_', 1)[0]
+    prefix = filename_prefix_knob.value().rsplit('_', 1)[0].replace('/', '_')
     rand = random.randint(10000, 99999)
     new_filename = '{}_{}'.format(prefix, rand)
     filename_prefix_knob.setValue(new_filename)
@@ -67,18 +67,29 @@ def create_read(queue_prompt_node):
     if not filename:
         return
 
-    if not filename.split('.')[-1].lower() in ['jpg', 'exr', 'tiff', 'png']:
+    queue_prompt_node.parent().begin()
+    name = '{}Read'.format(queue_prompt_node.name())
+    ext = filename.split('.')[-1].lower()
+
+    if ext in ['jpg', 'exr', 'tiff', 'png']:
+        read = nuke.toNode(name)
+        if not read:
+            read = nuke.createNode('Read', inpanel=False)
+
+        read.knob('file').fromUserText(os.path.join(sequence_output, filename))
+
+    elif ext in ['flac', 'mp3', 'wav']:
+        read = nuke.toNode(name)
+        if not read:
+            read = nuke.nodePaste(os.path.join(
+                NUKE_USER, 'nuke_comfyui', 'nodes', 'ComfyUI', 'AudioPlay.nk'))
+
+        read.knob('audio').setValue(
+            os.path.join(sequence_output, filename))
+    else:
         return
 
-    queue_prompt_node.parent().begin()
-
-    name = '{}Read'.format(queue_prompt_node.name())
-    read = nuke.toNode(name)
-    if not read:
-        read = nuke.createNode('Read', inpanel=False)
-
     read.setName(name)
-    read.knob('file').fromUserText(os.path.join(sequence_output, filename))
     read.setXYpos(queue_prompt_node.xpos(), queue_prompt_node.ypos() + 35)
     read.knob('tile_color').setValue(
         queue_prompt_node.knob('tile_color').value())

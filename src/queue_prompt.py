@@ -15,7 +15,7 @@ from ..settings import IP, PORT
 from .common import get_comfyui_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt
 from .nodes import extract_data
-from .read_image import create_read, update_filename_prefix, exr_filepath_fixed
+from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
 
