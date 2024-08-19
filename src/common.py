@@ -38,7 +38,7 @@ def update_images_and_mask_inputs():
         required = input_data.get('required', {})
         optional = input_data.get('optional', {})
 
-        for name, value in required.items() + optional.items():
+        for name, value in list(required.items()) + list(optional.items()):
             if value[0] == 'IMAGE':
                 if not name in image_inputs:
                     image_inputs.append(name)
