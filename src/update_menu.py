@@ -146,7 +146,10 @@ def update():
         category = value['category']
         category = ''.join(char if ord(
             char) < 128 else '' for char in category)
-        category = category.replace(' /', '/').replace('/ ', '/')
+        category = category.replace(' /', '/').replace('/ ', '/').strip()
+
+        if not category:
+            category = 'Uncategorized'
 
         value['category'] = category
 
