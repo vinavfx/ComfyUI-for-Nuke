@@ -53,6 +53,8 @@ def create_read(queue_prompt_node):
     if not filename:
         return
 
+    queue_prompt_node.parent().begin()
+
     name = '{}Read'.format(queue_prompt_node.name())
     read = nuke.toNode(name)
     if not read:
