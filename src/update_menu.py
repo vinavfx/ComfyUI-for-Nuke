@@ -80,6 +80,8 @@ def create_node(data):
             else:
                 knob = nuke.String_Knob(knob_name, key)
 
+            default_string = info.get('default', '')
+            knob.setText(default_string)
             knob.setTooltip(tooltip)
 
         elif _class == 'BOOLEAN':
