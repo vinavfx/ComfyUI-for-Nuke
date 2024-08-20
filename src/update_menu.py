@@ -11,7 +11,7 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import set_tile_color
 from .connection import GET
-from ..settings import NUKE_USER
+from ..env import NUKE_USER
 
 path = os.path.join(NUKE_USER, 'nuke_comfyui')
 

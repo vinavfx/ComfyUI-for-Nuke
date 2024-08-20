@@ -9,7 +9,7 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_input
 from ..nuke_util.media_util import get_padding
-from ..settings import COMFYUI_DIR, NUKE_USER
+from ..env import COMFYUI_DIR, NUKE_USER
 from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes
 

@@ -7,7 +7,7 @@ import os
 import nuke  # type: ignore
 from .src import *
 from functools import partial
-from .settings import NUKE_USER
+from .env import NUKE_USER
 
 
 path = os.path.join(NUKE_USER, 'nuke_comfyui')

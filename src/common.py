@@ -5,7 +5,7 @@
 # -----------------------------------------------------------
 import os
 import nuke  # type: ignore
-from ..settings import COMFYUI_DIR, NUKE_USER
+from ..env import COMFYUI_DIR, NUKE_USER
 from .connection import GET
 
 state_dir = os.path.join(NUKE_USER, 'comfyui_state')

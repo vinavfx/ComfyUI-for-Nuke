@@ -13,7 +13,7 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
-from ..settings import IP, PORT
+from ..env import IP, PORT
 
 
 def GET(relative_url):

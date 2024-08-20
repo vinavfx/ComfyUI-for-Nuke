@@ -101,7 +101,7 @@ python main.py
 ```
 <img src='images/run_server.png' width=100%>
 
-2 - Modify general variables in [settings.py](./settings.py)
+2 - Modify environment variables in [env.py](./env.py)
 
 ```python
 COMFYUI_DIR = '<ComfyUI>'

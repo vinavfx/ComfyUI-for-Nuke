@@ -11,7 +11,7 @@ import websocket
 import json
 import threading
 
-from ..settings import IP, PORT
+from ..env import IP, PORT
 from .common import get_comfyui_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt
 from .nodes import extract_data
