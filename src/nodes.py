@@ -26,7 +26,8 @@ def extract_data():
 
     output_node_data = get_node_data(output_node)
     if not output_node_data.get('output_node', False):
-        nuke.message('Connect only to output nodes like SaveImage or SaveEXR !')
+        nuke.message(
+            'Connect only to output nodes like SaveImage or SaveEXR !')
         return {}
 
     nodes = get_connected_comfyui_nodes(queue_prompt_node)
@@ -68,6 +69,7 @@ def extract_data():
 
     return data
 
+
 def create_load_images_and_save(node, alpha):
     # State : verifica si las entradas del nodo se modificaron para determinar si reescribir
     state_file = '{}/comfyui_{}_{}_state.json'.format(
@@ -84,7 +86,7 @@ def create_load_images_and_save(node, alpha):
             str(n.xpos()), '').replace(str(n.ypos()), '')
         state += node_state
 
-    current_state = {'connected_nodes': state.strip()}
+    current_state = {'connected_nodes': state.strip(), 'state_id': 0}
 
     try:
         prev_state = jread(state_file)
@@ -112,7 +114,7 @@ def create_load_images_and_save(node, alpha):
             files = os.listdir(sequence_dir)
             if files:
                 load_image_data['inputs']['filepath'] = sequence_dir
-                load_image_data['inputs']['image_load_cap'] = len(files)
+                load_image_data['inputs']['id'] = prev_state.get('state_id', 0)
                 return load_image_data, False
 
     dirname = '{}_{}'.format(get_project_name(), node.fullName())
@@ -146,8 +148,6 @@ def create_load_images_and_save(node, alpha):
     write.knob('file_type').setValue('exr')
     write.knob('channels').setValue('rgba' if alpha else 'rgb')
 
-    total_frames = node.lastFrame() - node.firstFrame() + 1
-
     try:
         nuke.execute(write, node.firstFrame(), node.lastFrame())
     except:
@@ -159,12 +159,17 @@ def create_load_images_and_save(node, alpha):
     nuke.delete(invert)
     nuke.delete(write)
 
+    state_id = random.randrange(1, 9999)
     current_state['dirname'] = dirname
+    current_state['state_id'] = state_id
+
     jwrite(state_file, current_state)
 
     load_image_data['inputs']['filepath'] = sequence_dir
-    load_image_data['inputs']['image_load_cap'] = total_frames
+    load_image_data['inputs']['id'] = state_id
+
     return load_image_data, False
+
 
 def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
     if visited is None:
