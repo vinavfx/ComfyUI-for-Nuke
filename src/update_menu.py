@@ -97,6 +97,7 @@ def create_node(data):
 
         elif type(_class) == list:
             knob = nuke.Enumeration_Knob(knob_name, key, _class)
+            knob.setValue(str(info.get('default', '')))
             knob.setTooltip(tooltip)
 
         else:
