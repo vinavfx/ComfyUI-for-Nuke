@@ -56,8 +56,8 @@ def comfyui_submit():
             create_read(queue_prompt_node)
             return
 
-    update_filename_prefix(queue_prompt_node)
-    data, _ = extract_data()
+        update_filename_prefix(queue_prompt_node)
+        data, _ = extract_data()
 
     state_data = copy.deepcopy(data)
     queue_prompt_node.knob('comfyui_submit').setEnabled(False)
