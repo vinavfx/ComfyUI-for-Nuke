@@ -109,8 +109,10 @@ def create_load_images_and_save(node, alpha):
         sequence_dir = os.path.join(input_dir, dirname)
 
         if os.path.isdir(sequence_dir):
-            if os.listdir(sequence_dir):
+            files = os.listdir(sequence_dir)
+            if files:
                 load_image_data['inputs']['filepath'] = sequence_dir
+                load_image_data['inputs']['image_load_cap'] = len(files)
                 return load_image_data, False
 
     dirname = '{}_{}'.format(get_project_name(), node.fullName())
@@ -144,6 +146,8 @@ def create_load_images_and_save(node, alpha):
     write.knob('file_type').setValue('exr')
     write.knob('channels').setValue('rgba' if alpha else 'rgb')
 
+    total_frames = node.lastFrame() - node.firstFrame() + 1
+
     try:
         nuke.execute(write, node.firstFrame(), node.lastFrame())
     except:
@@ -159,6 +163,7 @@ def create_load_images_and_save(node, alpha):
     jwrite(state_file, current_state)
 
     load_image_data['inputs']['filepath'] = sequence_dir
+    load_image_data['inputs']['image_load_cap'] = total_frames
     return load_image_data, False
 
 def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
