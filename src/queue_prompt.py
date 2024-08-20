@@ -51,12 +51,15 @@ def comfyui_submit():
         state_dir,  get_project_name(), queue_prompt_node.name()
     )
     if os.path.isfile(state_file):
-        if not data == jread(state_file) or input_node_changed:
-            update_filename_prefix(queue_prompt_node)
-            data, _ = extract_data()
+        if data == jread(state_file) and not input_node_changed:
+            nuke.comfyui_running = False
+            create_read(queue_prompt_node)
+            return
+
+    update_filename_prefix(queue_prompt_node)
+    data, _ = extract_data()
 
     state_data = copy.deepcopy(data)
-
     queue_prompt_node.knob('comfyui_submit').setEnabled(False)
 
     body = {
