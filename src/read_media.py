@@ -70,6 +70,9 @@ def create_read(queue_prompt_node):
         return
 
     filenames = nuke.getFileNameList(sequence_output)
+    if not filenames:
+        return
+
     filename = next((fn for fn in filenames if filename_prefix in fn), None)
 
     if not filename:
