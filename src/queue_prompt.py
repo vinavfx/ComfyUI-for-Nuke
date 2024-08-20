@@ -60,9 +60,6 @@ def comfyui_submit():
 
     progress(queue_prompt_node)
 
-    # se repite ya que es necesario para que websocket retorne error !
-    POST('prompt', body)
-
 
 def progress(queue_prompt_node):
     url = "ws://{}:{}/ws?clientId={}".format(IP, PORT, client_id)
