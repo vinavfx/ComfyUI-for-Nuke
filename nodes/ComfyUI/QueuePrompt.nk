@@ -11,7 +11,7 @@ Group {
  ypos 30
  addUserKnob {20 controls l Controls}
  addUserKnob {22 comfyui_submit l submit T exe('comfyui.queue_prompt.comfyui_submit') +STARTLINE}
- addUserKnob {22 backup_result -STARTLINE T exe('comfyui.read_image.save_image_backup')}
+ addUserKnob {22 backup_result -STARTLINE T exe('comfyui.read_media.save_image_backup')}
  addUserKnob {20 about l About}
  addUserKnob {26 _name l "" +STARTLINE T "<b>SaveImage</b> v1.24<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
  addUserKnob {26 ""}
