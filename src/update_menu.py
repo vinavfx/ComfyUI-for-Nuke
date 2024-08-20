@@ -28,6 +28,10 @@ def create_node(data):
         set_tile_color(n, [.57, .58, .48])
     elif category == 'mask':
         set_tile_color(n, [.33, .42, .77])
+    elif 'VAE' in name:
+        set_tile_color(n, [.08, .8, .97])
+    elif 'Save' in name:
+        set_tile_color(n, [.16, 1, .74])
 
     inputs = []
 
