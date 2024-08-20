@@ -3,6 +3,7 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
+import os
 import nuke  # type: ignore
 import uuid
 import traceback
@@ -10,9 +11,12 @@ from time import sleep
 import websocket
 import json
 import threading
+import copy
 
+from ..python_util.util import jread, jwrite
+from ..nuke_util.nuke_util import get_project_name
 from ..env import IP, PORT
-from .common import get_comfyui_dir, update_images_and_mask_inputs
+from .common import get_comfyui_dir, update_images_and_mask_inputs, state_dir
 from .connection import POST, interrupt
 from .nodes import extract_data
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
@@ -35,13 +39,23 @@ def comfyui_submit():
         return
 
     queue_prompt_node = nuke.thisNode()
-    update_filename_prefix(queue_prompt_node)
     exr_filepath_fixed(queue_prompt_node)
-    data = extract_data()
+
+    data, input_node_changed = extract_data()
 
     if not data:
         nuke.comfyui_running = False
         return
+
+    state_file = '{}/comfyui_{}_{}_state.json'.format(
+        state_dir,  get_project_name(), queue_prompt_node.name()
+    )
+    if os.path.isfile(state_file):
+        if not data == jread(state_file) or input_node_changed:
+            update_filename_prefix(queue_prompt_node)
+            data, _ = extract_data()
+
+    state_data = copy.deepcopy(data)
 
     queue_prompt_node.knob('comfyui_submit').setEnabled(False)
 
@@ -58,10 +72,10 @@ def comfyui_submit():
         queue_prompt_node.knob('comfyui_submit').setEnabled(True)
         return
 
-    progress(queue_prompt_node)
+    progress(queue_prompt_node, state_file, state_data)
 
 
-def progress(queue_prompt_node):
+def progress(queue_prompt_node, state_file, state_data):
     url = "ws://{}:{}/ws?clientId={}".format(IP, PORT, client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
@@ -136,6 +150,7 @@ def progress(queue_prompt_node):
         def post(n):
             try:
                 create_read(n)
+                jwrite(state_file, state_data)
             except:
                 nuke.executeInMainThread(
                     nuke.message, args=(traceback.format_exc()))
