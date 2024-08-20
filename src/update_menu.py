@@ -51,10 +51,15 @@ def create_node(data):
 
         tooltip = info.get('tooltip', '')
         default_value = info.get('default', 0)
+        force_input = info.get('forceInput', False)
 
         knob_name = key + '_'
 
-        if _class == 'INT':
+        if force_input:
+            inputs.append([key, _class, is_optional])
+            continue
+
+        elif _class == 'INT':
             knob = nuke.Int_Knob(knob_name, key)
             knob.setValue(default_value)
             knob.setTooltip(tooltip)
