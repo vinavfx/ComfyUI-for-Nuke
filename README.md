@@ -6,7 +6,7 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 </div>
 
 ## Requirements
-1 . Python 3.9 (only for comfyui, nuke works with any python)
+1 . Nuke 12 or higher
 
 2 . websocket-client
 
@@ -59,7 +59,7 @@ git clone https://github.com/comfyanonymous/ComfyUI
 ```sh
 cd <ComfyUI Directory>/custom_nodes
 git clone https://github.com/spacepxl/ComfyUI-HQ-Image-Save.git
-cd ./ComfyUI-HQ-Image-Save.git
+cd ./ComfyUI-HQ-Image-Save
 pip install -r requirements.txt
 ```
 
@@ -79,8 +79,8 @@ git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus
 # Advanced ControlNet
 git clone https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git
 
-# Interpolation
-git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git
+# LivePortrait
+git clone https://github.com/kijai/ComfyUI-LivePortraitKJ.git
 ```
 
 7 - Download some models 
@@ -107,13 +107,12 @@ python main.py
 COMFYUI_DIR = '<ComfyUI>'
 IP = '127.0.0.1'
 PORT = 8188
-NUKE_USER = '<.../USER/.nuke>' # Change only if your path is different !
+NUKE_USER = '<.../.nuke>' # Change only if your path is different !
 ```
 
 ## Tips
-1 - Ksampler only works with images with a multiple of 8, add the '<b>PrepareImageForLatent</b>' reformat
-before passing the image to latent, only if your image does not match the resolution.
-
-2 - When connecting any image or roto from Nuke, take into consideration the <b>'FrameRange'</b>
+1 - When connecting any image or roto from Nuke, take into consideration the <b>'FrameRange'</b>
 of the output because that will be the batch size.
 
+2 - Ksampler only works with images with a multiple of 8, add the '<b>PrepareImageForLatent</b>' reformat
+before passing the image to latent, only if your image does not match the resolution.
