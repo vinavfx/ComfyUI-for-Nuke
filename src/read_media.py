@@ -35,10 +35,15 @@ def update_filename_prefix(queue_prompt_node):
     if not filename_prefix_knob:
         return
 
-    prefix = filename_prefix_knob.value().rsplit('_', 1)[0].replace('/', '_')
+    prefix = filename_prefix_knob.value()
+    old_rand = prefix.split('/')[0]
+
+    if old_rand.isdigit():
+        prefix = prefix.replace(old_rand + '/', '')
+
     rand = random.randint(10000, 99999)
-    new_filename = '{}_{}'.format(prefix, rand)
-    filename_prefix_knob.setValue(new_filename)
+    new_prefix = os.path.join(str(rand), prefix)
+    filename_prefix_knob.setValue(new_prefix)
 
 
 def create_read(queue_prompt_node):
@@ -50,8 +55,11 @@ def create_read(queue_prompt_node):
     filepath_knob = output_node.knob('filepath_')
 
     if filename_prefix_knob:
-        filename_prefix = filename_prefix_knob.value()
-        sequence_output = os.path.join(COMFYUI_DIR, 'output')
+        filename = filename_prefix_knob.value()
+        filename_prefix = os.path.basename(filename)
+
+        sequence_output = os.path.join(
+            COMFYUI_DIR, 'output', os.path.dirname(filename))
 
     elif filepath_knob:
         filename = filepath_knob.value()
