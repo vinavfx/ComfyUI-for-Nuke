@@ -40,12 +40,8 @@ def create_node(data):
     optional = input_data.get('optional', {})
 
     input_order = data.get('input_order', {})
-    if input_order:
-        required_order = input_order.get('required', [])
-        optional_order = input_order.get('optional', [])
-    else:
-        required_order = list(required)
-        optional_order = list(optional)
+    required_order = input_order.get('required', [])
+    optional_order = input_order.get('optional', [])
 
     for key in required_order + optional_order:
         _input = required.get(key, [])
@@ -197,5 +193,16 @@ def update():
     icon_gray = '{}/icons/comfyui_icon_gray.png'.format(path)
 
     for fullname, value in sorted(nodes.items()):
+        input_data = value.get('input', {})
+        input_order = value.get('input_order', {})
+
+        if not input_order:
+            value['input_order'] = {
+                'required': list(input_data.get('required', {})),
+                'optional': list(input_data.get('optional', {}))
+            }
+
+        value = json.loads(json.dumps(value))  # OrderedDict to Dict
+
         comfyui_menu.addCommand(fullname, partial(
             create_node, value), '', icon_gray)
