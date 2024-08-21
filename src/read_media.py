@@ -116,7 +116,8 @@ def save_image_backup():
                                  read.knob('first').value(), read.knob('last').value())
 
     basename = get_name_no_padding(filename).replace(' ', '_')
-    name = '{}Backup_{}'.format(queue_prompt_node.name(), basename)
+    rand = os.path.basename(os.path.dirname(filename)).strip()
+    name = '{}Backup_{}_{}'.format(queue_prompt_node.name(), rand, basename)
 
     if not nuke.toNode(name):
         new_read = nuke.createNode('Read', inpanel=False)
