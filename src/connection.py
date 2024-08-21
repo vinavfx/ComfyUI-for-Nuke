@@ -6,6 +6,7 @@
 import sys
 import json
 import traceback
+from collections import OrderedDict
 
 if sys.version_info.major == 2:
     import urllib2 as urllib2  # type: ignore
@@ -22,7 +23,7 @@ def GET(relative_url):
     try:
         response = urllib2.urlopen(url)
         data = response.read().decode()
-        return json.loads(data)
+        return json.loads(data, object_pairs_hook=OrderedDict)
     except:
         nuke.message(traceback.format_exc())
 

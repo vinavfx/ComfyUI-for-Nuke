@@ -35,13 +35,17 @@ def create_node(data):
 
     inputs = []
 
-    input_order = data['input_order']
-    required_order = input_order.get('required', [])
-    optional_order = input_order.get('optional', [])
-
     input_data = data['input']
     required = input_data.get('required', {})
     optional = input_data.get('optional', {})
+
+    input_order = data.get('input_order', {})
+    if input_order:
+        required_order = input_order.get('required', [])
+        optional_order = input_order.get('optional', [])
+    else:
+        required_order = list(required)
+        optional_order = list(optional)
 
     for key in required_order + optional_order:
         _input = required.get(key, [])
@@ -156,6 +160,9 @@ def update():
 
     for item in comfyui_menu.items():
         if item.name() in ['Update all ComfyUI', 'Basic Nodes']:
+            continue
+
+        if not hasattr(item, 'clearMenu'):
             continue
         item.clearMenu()
 
