@@ -82,6 +82,8 @@ def progress(queue_prompt_node, state_file, state_data):
     url = "ws://{}:{}/ws?clientId={}".format(IP, PORT, client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
+    execution_error = [False]
+
     def on_message(_, message):
         message = json.loads(message)
 
@@ -116,6 +118,7 @@ def progress(queue_prompt_node, state_file, state_data):
             for tb in data.get('traceback'):
                 error += tb + '\n'
 
+            execution_error[0] = True
             nuke.executeInMainThread(nuke.message, args=(error))
 
     def on_error(ws, error):
@@ -126,6 +129,7 @@ def progress(queue_prompt_node, state_file, state_data):
         if 'connected' in str(error):
             return
 
+        execution_error[0] = True
         nuke.executeInMainThread(nuke.message, args=('error: ' + str(error)))
 
     ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
@@ -153,7 +157,8 @@ def progress(queue_prompt_node, state_file, state_data):
         def post(n):
             try:
                 create_read(n)
-                jwrite(state_file, state_data)
+                if not execution_error[0]:
+                    jwrite(state_file, state_data)
             except:
                 nuke.executeInMainThread(
                     nuke.message, args=(traceback.format_exc()))
