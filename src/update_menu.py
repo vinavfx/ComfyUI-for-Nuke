@@ -167,12 +167,16 @@ def update():
         item.clearMenu()
 
     ignore_nodes = ['EmptyLatentImage']
+    load_exr_exist = False
     nodes = {}
 
     for _, value in info.items():
         name = value['name'].replace('+', '')
         if name in ignore_nodes:
             continue
+
+        if name == 'LoadEXR':
+            load_exr_exist = True
 
         category = value['category']
         category = ''.join(char if ord(
@@ -186,6 +190,9 @@ def update():
 
         item_name = '{}/{}'.format(category.strip(), name.strip())
         nodes[item_name] = value
+
+    if not load_exr_exist:
+        nuke.message('ComfyUI-HQ-Image-Save module is required !')
 
     icon_gray = '{}/icons/comfyui_icon_gray.png'.format(path)
 
