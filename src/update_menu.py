@@ -115,6 +115,11 @@ def create_node(data):
             upload_knob.setValue('comfyui.upload.upload_media()')
             n.addKnob(upload_knob)
 
+        if 'seed' in key:
+            fixed_knob = nuke.Boolean_Knob('fixed_seed')
+            fixed_knob.setValue(True)
+            n.addKnob(fixed_knob)
+
     _inputs = []
 
     n.begin()
