@@ -152,9 +152,14 @@ def update():
     if not info:
         return
 
-    ignore_nodes = ['EmptyLatentImage']
-
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI')
+
+    for item in comfyui_menu.items():
+        if item.name() in ['Update all ComfyUI', 'Basic Nodes']:
+            continue
+        item.clearMenu()
+
+    ignore_nodes = ['EmptyLatentImage']
     nodes = {}
 
     for _, value in info.items():
