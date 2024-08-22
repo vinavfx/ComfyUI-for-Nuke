@@ -20,7 +20,8 @@ def create_node(data):
     n = nuke.createNode('Group')
 
     name = re.sub(r'[^a-zA-Z0-9_]', '', data['name'])
-    n.setName(name)
+    display_name = re.sub(r'[^a-zA-Z0-9_]', '', data['display_name'])
+    n.setName(display_name)
 
     category = data['category'].split('/')[-1]
 
@@ -171,6 +172,11 @@ def update():
     load_exr_exist = False
     nodes = {}
 
+    def normalize_string(string):
+        string = ''.join(char if ord(
+            char) < 128 else '' for char in string)
+        return string.replace(' /', '/').replace('/ ', '/').strip()
+
     for _, value in info.items():
         name = value['name'].replace('+', '')
         if name in ignore_nodes:
@@ -179,17 +185,15 @@ def update():
         if name == 'LoadEXR':
             load_exr_exist = True
 
-        category = value['category']
-        category = ''.join(char if ord(
-            char) < 128 else '' for char in category)
-        category = category.replace(' /', '/').replace('/ ', '/').strip()
+        display_name = normalize_string(value['display_name'])
+        category = normalize_string(value['category'])
 
         if not category:
             category = 'Uncategorized'
 
         value['category'] = category
 
-        item_name = '{}/{}'.format(category.strip(), name.strip())
+        item_name = '{}/{}'.format(category, display_name)
         nodes[item_name] = value
 
     if not load_exr_exist:
