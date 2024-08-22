@@ -44,8 +44,14 @@ def extract_data():
         if n.knob('fixed_seed'):
             if not n.knob('fixed_seed').value():
                 random_value = random.randrange(1, 9999)
-                n.knob('seed_').setValue(random_value)
-                node_data['inputs']['seed'] = random_value
+
+                seed_knob = n.knob('seed_')
+                if not seed_knob:
+                    seed_knob = n.knob('noise_seed_')
+
+                if seed_knob:
+                    seed_knob.setValue(random_value)
+                    node_data['inputs'][seed_knob.name()[:-1]] = random_value
 
         for key in image_inputs + mask_inputs:
             input_key = node_data['inputs'].get(key)
