@@ -47,8 +47,9 @@ def POST(relative_url, data={}):
 
             error = json.loads(error_str)
             errors = 'ERROR: {}\n\n'.format(error['error']['message'].upper())
+            node_errors = error['node_errors'] if error['node_errors'] else {}
 
-            for name, value in error['node_errors'].items():
+            for name, value in node_errors.items():
                 nuke.toNode(name).setSelected(True)
                 errors += '{}:\n'.format(name)
 

@@ -68,21 +68,11 @@ def comfyui_submit():
         'extra_data': {}
     }
 
-    error = POST('prompt', body)
-    if error:
-        nuke.comfyui_running = False
-        nuke.message(error)
-        queue_prompt_node.knob('comfyui_submit').setEnabled(True)
-        return
-
-    progress(queue_prompt_node, state_file, state_data)
-
-
-def progress(queue_prompt_node, state_file, state_data):
     url = "ws://{}:{}/ws?clientId={}".format(IP, PORT, client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
     execution_error = [False]
+    wait_to_close = [True]
 
     def on_message(_, message):
         message = json.loads(message)
@@ -98,7 +88,8 @@ def progress(queue_prompt_node, state_file, state_data):
                 'exec_info', {}).get('queue_remaining')
 
             if not queue_remaining and task:
-                del task[0]
+                if not wait_to_close[0]:
+                    del task[0]
 
         elif type_data == 'progress':
             progress = int(data['value'] * 100 / data['max'])
@@ -132,9 +123,7 @@ def progress(queue_prompt_node, state_file, state_data):
         execution_error[0] = True
         nuke.executeInMainThread(nuke.message, args=('error: ' + str(error)))
 
-    ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
-
-    def progress_bar_life():
+    def progress_task_loop():
         cancelled = False
         while task:
             if task[0].isCancelled():
@@ -154,19 +143,30 @@ def progress(queue_prompt_node, state_file, state_data):
             nuke.comfyui_running = False
             return
 
-        def post(n):
-            try:
-                create_read(n)
-                if not execution_error[0]:
-                    jwrite(state_file, state_data)
-            except:
-                nuke.executeInMainThread(
-                    nuke.message, args=(traceback.format_exc()))
-
-        nuke.executeInMainThread(post, args=(queue_prompt_node))
-
+        nuke.executeInMainThread(progress_finished, args=(queue_prompt_node))
         queue_prompt_node.knob('comfyui_submit').setEnabled(True)
         nuke.comfyui_running = False
 
+    def progress_finished(n):
+        try:
+            create_read(n)
+            if not execution_error[0]:
+                jwrite(state_file, state_data)
+        except:
+            nuke.executeInMainThread(
+                nuke.message, args=(traceback.format_exc()))
+
+    ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
     threading.Thread(target=ws.run_forever).start()
-    threading.Thread(target=progress_bar_life).start()
+    threading.Thread(target=progress_task_loop).start()
+
+    error = POST('prompt', body)
+    wait_to_close[0] = False
+
+    if error:
+        execution_error[0] = True
+        if task:
+            del task[0]
+        nuke.comfyui_running = False
+        nuke.message(error)
+        queue_prompt_node.knob('comfyui_submit').setEnabled(True)
