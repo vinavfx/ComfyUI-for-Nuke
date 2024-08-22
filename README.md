@@ -1,4 +1,4 @@
-# Nuke - ComfyUI
+# ComfyUI for Nuke
 API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 
 <div style="display: flex;">
