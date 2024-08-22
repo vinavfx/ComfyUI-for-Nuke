@@ -24,6 +24,31 @@ from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
 client_id = str(uuid.uuid4())[:32].replace('-', '')
 
 
+def show_text_uptate(node_name, data):
+    output = data.get('output', {})
+    texts = output.get('text', [])
+    text = texts[0] if texts else ''
+
+    show_text_node = nuke.toNode(node_name)
+
+    if not show_text_node:
+        return
+
+    if not text:
+        return
+
+    text_knob = show_text_node.knob('text')
+    if text_knob:
+        nuke.executeInMainThread(text_knob.setText, args=(text))
+
+    output_text_node = nuke.toNode(node_name + 'Output')
+    if not output_text_node:
+        return
+
+    nuke.executeInMainThread(
+        output_text_node.knob('label').setValue, args=('[value {}.text]'.format(node_name)))
+
+
 def comfyui_submit():
     update_images_and_mask_inputs()
 
@@ -81,6 +106,10 @@ def comfyui_submit():
 
         if not data:
             return
+
+        elif type_data == 'executed':
+            node = data.get('node')
+            show_text_uptate(node, data)
 
         elif type_data == 'progress':
             progress = int(data['value'] * 100 / data['max'])

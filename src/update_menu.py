@@ -34,6 +34,16 @@ def create_node(data):
     elif 'Save' in name:
         set_tile_color(n, [.16, 1, .74])
 
+    if 'ShowText' in name:
+        show_knob = nuke.Multiline_Eval_String_Knob('text', '')
+        show_knob.setFlag(nuke.READ_ONLY)
+        n.addKnob(show_knob)
+        output_text_node = nuke.createNode('StickyNote')
+        output_text_node.setName(display_name + 'Output')
+        output_text_node.setXYpos(n.xpos() + 100, n.ypos())
+        output_text_node.knob('label').setText(
+            '[value {}.text]'.format(n.name()))
+
     inputs = []
 
     input_data = data['input']
