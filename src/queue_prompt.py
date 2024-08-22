@@ -104,6 +104,10 @@ def comfyui_submit():
                 error += tb + '\n'
 
             execution_error[0] = True
+
+            if task:
+                del task[0]
+
             nuke.executeInMainThread(nuke.message, args=(error))
 
     def on_error(ws, error):
