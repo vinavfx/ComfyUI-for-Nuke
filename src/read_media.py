@@ -111,6 +111,8 @@ def save_image_backup():
     queue_prompt_node.parent().begin()
 
     read = nuke.toNode(queue_prompt_node.name() + 'Read')
+    if not read:
+        return
 
     filename = '{} {}-{}'.format(read.knob('file').value(),
                                  read.knob('first').value(), read.knob('last').value())
