@@ -72,7 +72,6 @@ def comfyui_submit():
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
     execution_error = [False]
-    wait_to_close = [True]
 
     def on_message(_, message):
         message = json.loads(message)
@@ -83,14 +82,6 @@ def comfyui_submit():
         if not data:
             return
 
-        if type_data == 'status':
-            queue_remaining = data.get('status', {}).get(
-                'exec_info', {}).get('queue_remaining')
-
-            if not queue_remaining and task:
-                if not wait_to_close[0]:
-                    del task[0]
-
         elif type_data == 'progress':
             progress = int(data['value'] * 100 / data['max'])
             if task:
@@ -99,8 +90,11 @@ def comfyui_submit():
         elif type_data == 'executing':
             node = data.get('node')
 
-            if node and task:
-                task[0].setMessage('Inference: ' + node)
+            if task:
+                if node:
+                    task[0].setMessage('Inference: ' + node)
+                else:
+                    del task[0]
 
         elif type_data == 'execution_error':
             error = 'Error: {}\n\n'.format(data.get('node_type'))
@@ -157,11 +151,11 @@ def comfyui_submit():
                 nuke.message, args=(traceback.format_exc()))
 
     ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
+
     threading.Thread(target=ws.run_forever).start()
     threading.Thread(target=progress_task_loop).start()
 
     error = POST('prompt', body)
-    wait_to_close[0] = False
 
     if error:
         execution_error[0] = True
@@ -170,3 +164,4 @@ def comfyui_submit():
         nuke.comfyui_running = False
         nuke.message(error)
         queue_prompt_node.knob('comfyui_submit').setEnabled(True)
+
