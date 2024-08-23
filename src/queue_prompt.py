@@ -37,16 +37,23 @@ def show_text_uptate(node_name, data):
     if not text:
         return
 
+    text = text.replace('\n', '')
+    formatted_text = '\n'.join(text[i:i+50] for i in range(0, len(text), 50))
+
     text_knob = show_text_node.knob('text')
     if text_knob:
-        nuke.executeInMainThread(text_knob.setText, args=(text))
+        text_knob.setValue(text)
 
     output_text_node = nuke.toNode(node_name + 'Output')
     if not output_text_node:
         return
 
-    nuke.executeInMainThread(
-        output_text_node.knob('label').setValue, args=('[value {}.text]'.format(node_name)))
+    label = '( [value {}.name] )\n{}\n\n'.format(node_name, formatted_text)
+    output_text_node.knob('label').setValue(label)
+    xpos = show_text_node.xpos() - output_text_node.screenWidth() - 50
+    ypos = show_text_node.ypos() - (output_text_node.screenHeight() / 2) + (show_text_node.screenHeight() / 2)
+    output_text_node.knob('label')
+    output_text_node.setXYpos(xpos, ypos)
 
 
 def comfyui_submit():
@@ -109,7 +116,7 @@ def comfyui_submit():
 
         elif type_data == 'executed':
             node = data.get('node')
-            show_text_uptate(node, data)
+            nuke.executeInMainThread(show_text_uptate, args=(node, data))
 
         elif type_data == 'progress':
             progress = int(data['value'] * 100 / data['max'])
