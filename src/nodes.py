@@ -55,6 +55,9 @@ def extract_data():
 
         for key in image_inputs + mask_inputs:
             input_key = node_data['inputs'].get(key)
+            if not input_key or not type(input_key) == list:
+                continue
+
             input_node = nuke.toNode(input_key[0]) if input_key else None
 
             if not input_node:
