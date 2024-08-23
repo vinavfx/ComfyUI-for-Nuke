@@ -36,8 +36,9 @@ def create_node(data):
 
     if 'ShowText' in name:
         show_knob = nuke.Multiline_Eval_String_Knob('text', '')
-        show_knob.setFlag(nuke.READ_ONLY)
         n.addKnob(show_knob)
+        n.knob('onCreate').setValue(
+            'nuke.thisNode().knob("text").setFlag(nuke.READ_ONLY)')
         output_text_node = nuke.createNode('StickyNote', inpanel=False)
         output_text_node.setName(display_name + 'Output')
         output_text_node.setXYpos(n.xpos() - 100, n.ypos())
