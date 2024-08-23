@@ -6,6 +6,7 @@
 import os
 import nuke  # type: ignore
 from .src import *
+from .testing import *
 from functools import partial
 from .env import NUKE_USER
 
