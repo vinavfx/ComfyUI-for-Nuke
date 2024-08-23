@@ -66,8 +66,9 @@ def create_node(data):
         info = _input[1] if len(_input) == 2 else {}
 
         tooltip = info.get('tooltip', '')
-        default_value = info.get('default', 0)
         force_input = info.get('forceInput', False)
+        default_value = info.get('default', 0)
+        default_value = default_value if default_value < 1e9 else 1e9
 
         knob_name = key + '_'
 
@@ -77,7 +78,7 @@ def create_node(data):
 
         elif _class == 'INT':
             knob = nuke.Int_Knob(knob_name, key)
-            knob.setValue(default_value)
+            knob.setValue(int(default_value))
             knob.setTooltip(tooltip)
 
         elif _class == 'FLOAT':
