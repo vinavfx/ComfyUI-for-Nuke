@@ -105,7 +105,7 @@ def create_node(data):
             knob.setText(default_string)
             knob.setTooltip(tooltip)
 
-        elif _class == 'BOOLEAN':
+        elif _class == 'BOOLEAN' or _class == [True, False]:
             knob = nuke.Boolean_Knob(knob_name, key)
             knob.setFlag(nuke.STARTLINE)
             knob.setValue(default_value)
