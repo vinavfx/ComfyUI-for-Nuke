@@ -82,10 +82,7 @@ def create_node(data):
 
         knob_name = key + '_'
 
-        if not _class:
-            continue
-
-        elif force_input:
+        if force_input:
             inputs.append([key, _class, is_optional])
             continue
 
@@ -152,6 +149,9 @@ def create_node(data):
 
     n.begin()
     for key, _class, is_optional in inputs:
+        if not _class:
+            continue
+
         inode = nuke.createNode('Input', inpanel=False)
         inode.setName(remove_signs(key))
 
