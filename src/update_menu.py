@@ -126,8 +126,12 @@ def create_node(data):
         elif type(_class) == list:
             knob = nuke.Enumeration_Knob(
                 knob_name, key, [str(i) for i in _class])
-            knob.setValue(str(info.get('default', '')))
+
             knob.setTooltip(tooltip)
+            default_item = str(info.get('default', ''))
+
+            if default_item:
+                knob.setValue(default_item)
 
         else:
             inputs.append([key, _class, is_optional])
