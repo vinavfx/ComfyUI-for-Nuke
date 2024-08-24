@@ -11,6 +11,7 @@ from functools import partial
 from .env import NUKE_USER
 
 
+update_menu_at_start = False
 path = os.path.join(NUKE_USER, 'nuke_comfyui')
 
 
@@ -32,3 +33,6 @@ def setup():
     for nk in os.listdir(nodes_dir):
         name = 'Basic Nodes/' + nk.split('.')[0]
         comfyui_menu.addCommand(name, partial(create_node, nk), '', icon_gray)
+
+    if update_menu_at_start:
+        update_menu.update()

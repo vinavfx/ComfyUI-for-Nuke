@@ -120,3 +120,5 @@ if anyone has another solution please put it in this [issue](https://github.com/
 
 3 - Ksampler only works with images with a multiple of 8, add the '<b>PrepareImageForLatent</b>' reformat
 before passing the image to latent, only if your image does not match the resolution.
+
+4 - To load all ComfyUI nodes when Nuke starts, change the '<b>update_menu_at_start</b>' variable in the [__init__.py](./__init__.py) file
