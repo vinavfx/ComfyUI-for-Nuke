@@ -9,7 +9,7 @@ import os
 import json
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import set_tile_color
+from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import GET, convert_to_utf8
 from ..env import NUKE_USER
 
@@ -21,6 +21,11 @@ def remove_signs(string):
 
 
 def create_node(data):
+    try:
+        selected_node = nuke.selectedNode()
+    except:
+        selected_node = None
+
     n = nuke.createNode('Group')
 
     name = remove_signs(data['name'])
@@ -189,6 +194,14 @@ def create_node(data):
 
     if n.knob('User'):
         n.knob('User').setName('Controls')
+
+    if not selected_node:
+        return
+
+    n.setXYpos(selected_node.xpos(), selected_node.ypos() + 24)
+    n.setInput(0, selected_node)
+    for i, onode in get_output_nodes(selected_node):
+        onode.setInput(i, n)
 
 
 def update():
