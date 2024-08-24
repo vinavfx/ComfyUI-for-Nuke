@@ -3,6 +3,7 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
+import sys
 import os
 import nuke  # type: ignore
 import uuid
@@ -38,6 +39,7 @@ def show_text_uptate(node_name, data):
         return
 
     text = text.replace('\n', '')
+    text = text.encode('utf-8') if sys.version_info[0] < 3 else text
     formatted_text = '\n'.join(text[i:i+50] for i in range(0, len(text), 50))
 
     text_knob = show_text_node.knob('text')
