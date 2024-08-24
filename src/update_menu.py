@@ -200,6 +200,7 @@ def create_node(data):
         output_text_node.setXYpos(n.xpos() - 100, n.ypos())
         output_text_node.knob('label').setText(
             '[value {}.name]'.format(n.name()))
+        n.setSelected(True)
 
 
 def update():
