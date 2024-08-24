@@ -46,17 +46,6 @@ def create_node(data):
     elif 'Save' in name:
         set_tile_color(n, [.16, 1, .74])
 
-    if 'ShowText' in name:
-        show_knob = nuke.Multiline_Eval_String_Knob('text', '')
-        n.addKnob(show_knob)
-        n.knob('onCreate').setValue(
-            'nuke.thisNode().knob("text").setFlag(nuke.READ_ONLY)')
-        output_text_node = nuke.createNode('StickyNote', inpanel=False)
-        output_text_node.setName(display_name + 'Output')
-        output_text_node.setXYpos(n.xpos() - 100, n.ypos())
-        output_text_node.knob('label').setText(
-            '[value {}.name]'.format(n.name()))
-
     inputs = []
 
     input_data = data['input']
@@ -195,13 +184,22 @@ def create_node(data):
     if n.knob('User'):
         n.knob('User').setName('Controls')
 
-    if not selected_node:
-        return
+    if selected_node:
+        n.setXYpos(selected_node.xpos(), selected_node.ypos() + 24)
+        n.setInput(0, selected_node)
+        for i, onode in get_output_nodes(selected_node):
+            onode.setInput(i, n)
 
-    n.setXYpos(selected_node.xpos(), selected_node.ypos() + 24)
-    n.setInput(0, selected_node)
-    for i, onode in get_output_nodes(selected_node):
-        onode.setInput(i, n)
+    if 'ShowText' in name:
+        show_knob = nuke.Multiline_Eval_String_Knob('text', '')
+        n.addKnob(show_knob)
+        n.knob('onCreate').setValue(
+            'nuke.thisNode().knob("text").setFlag(nuke.READ_ONLY)')
+        output_text_node = nuke.createNode('StickyNote', inpanel=False)
+        output_text_node.setName(display_name + 'Output')
+        output_text_node.setXYpos(n.xpos() - 100, n.ypos())
+        output_text_node.knob('label').setText(
+            '[value {}.name]'.format(n.name()))
 
 
 def update():
