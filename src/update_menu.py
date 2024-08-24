@@ -76,6 +76,7 @@ def create_node(data):
             continue
 
         tooltip = info.get('tooltip', '')
+        placeholder = info.get('placeholder', '')
         force_input = info.get('forceInput', False)
         default_value = info.get('default', 0)
 
@@ -117,7 +118,7 @@ def create_node(data):
 
             default_string = info.get('default', '')
             knob.setText(str(default_string))
-            knob.setTooltip(tooltip)
+            knob.setTooltip(tooltip + placeholder)
 
         elif _class in ['BOOLEAN', [True, False], [[True, False]]]:
             knob = nuke.Boolean_Knob(knob_name, key)
