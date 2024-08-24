@@ -128,9 +128,9 @@ def create_node(data):
                 knob_name, key, [str(i) for i in _class])
 
             knob.setTooltip(tooltip)
-            default_item = str(info.get('default', ''))
+            default_item = str(info.get('default', None))
 
-            if default_item:
+            if not default_item == 'None':
                 knob.setValue(default_item)
 
         else:
