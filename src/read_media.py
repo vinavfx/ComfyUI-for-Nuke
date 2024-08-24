@@ -46,6 +46,19 @@ def update_filename_prefix(queue_prompt_node):
     filename_prefix_knob.setValue(new_prefix)
 
 
+def set_correct_colorspace(read):
+    ocio = nuke.Root().knob('colorManagement').value()
+    filename = read.knob('file').value()
+    ext = filename.split('.')[-1]
+
+    if ext == 'exr':
+        read.knob('raw').setValue(True)
+    else:
+        read.knob('raw').setValue(False)
+        read.knob('colorspace').setValue(
+            'sRGB' if ocio == 'Nuke' else 'Output - sRGB')
+
+
 def create_read(queue_prompt_node):
     output_node = get_input(queue_prompt_node, 0)
     if not output_node:
@@ -88,6 +101,7 @@ def create_read(queue_prompt_node):
             read = nuke.createNode('Read', inpanel=False)
 
         read.knob('file').fromUserText(os.path.join(sequence_output, filename))
+        set_correct_colorspace(read)
 
     elif ext in ['flac', 'mp3', 'wav']:
         read = nuke.toNode(name)
@@ -125,6 +139,7 @@ def save_image_backup():
         new_read = nuke.createNode('Read', inpanel=False)
         new_read.setName(name)
         new_read.knob('file').fromUserText(filename)
+        set_correct_colorspace(new_read)
 
     xpos = read.xpos() + 50
 
