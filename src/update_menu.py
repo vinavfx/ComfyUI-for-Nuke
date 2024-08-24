@@ -10,17 +10,24 @@ import json
 import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import set_tile_color
-from .connection import GET
+from .connection import GET, convert_to_utf8
 from ..env import NUKE_USER
 
 path = os.path.join(NUKE_USER, 'nuke_comfyui')
 
 
+def remove_signs(string):
+    return re.sub(r'[^a-zA-Z0-9_]', '', string)
+
+
 def create_node(data):
     n = nuke.createNode('Group')
 
-    name = re.sub(r'[^a-zA-Z0-9_]', '', data['name'])
-    display_name = re.sub(r'[^a-zA-Z0-9_]', '', data['display_name'])
+    name = remove_signs(data['name'])
+    display_name = remove_signs(data['display_name'])
+    if display_name[0].isdigit():
+        display_name = '_' + display_name
+
     n.setName(display_name)
 
     category = data['category'].split('/')[-1]
@@ -65,19 +72,25 @@ def create_node(data):
         _class = _input[0]
         info = _input[1] if len(_input) == 2 else {}
 
+        if not type(info) == dict:
+            continue
+
         tooltip = info.get('tooltip', '')
         force_input = info.get('forceInput', False)
         default_value = info.get('default', 0)
-        default_value = default_value if default_value < 1e9 else 1e9
 
         knob_name = key + '_'
 
-        if force_input:
+        if not _class:
+            continue
+
+        elif force_input:
             inputs.append([key, _class, is_optional])
             continue
 
         elif _class == 'INT':
             knob = nuke.Int_Knob(knob_name, key)
+            default_value = default_value if default_value < 1e9 else 1e9
             knob.setValue(int(default_value))
             knob.setTooltip(tooltip)
 
@@ -103,17 +116,18 @@ def create_node(data):
                 knob = nuke.String_Knob(knob_name, key)
 
             default_string = info.get('default', '')
-            knob.setText(default_string)
+            knob.setText(str(default_string))
             knob.setTooltip(tooltip)
 
-        elif _class == 'BOOLEAN' or _class == [True, False]:
+        elif _class in ['BOOLEAN', [True, False], [[True, False]]]:
             knob = nuke.Boolean_Knob(knob_name, key)
             knob.setFlag(nuke.STARTLINE)
             knob.setValue(default_value)
             knob.setTooltip(tooltip)
 
         elif type(_class) == list:
-            knob = nuke.Enumeration_Knob(knob_name, key, _class)
+            knob = nuke.Enumeration_Knob(
+                knob_name, key, [str(i) for i in _class])
             knob.setValue(str(info.get('default', '')))
             knob.setTooltip(tooltip)
 
@@ -138,7 +152,7 @@ def create_node(data):
     n.begin()
     for key, _class, is_optional in inputs:
         inode = nuke.createNode('Input', inpanel=False)
-        inode.setName(key)
+        inode.setName(remove_signs(key))
 
         _inputs.append({
             'name': key,
@@ -152,11 +166,18 @@ def create_node(data):
     data_knob = nuke.PyScript_Knob('data')
     data_knob.setVisible(False)
 
+    outputs = []
+    for output, output_name in zip(data['output'], data['output_name']):
+        if type(output) == list:
+            outputs.append(output_name)
+        else:
+            outputs.append(output.lower())
+
     data_knob.setValue(json.dumps({
         'class_type': data['name'],
         'output_node': data.get('output_node', False),
         'inputs': _inputs,
-        'outputs': [o.lower() for o in data['output']]
+        'outputs': outputs,
     }, indent=4).replace('"', "'"))
 
     n.addKnob(data_knob)
@@ -226,4 +247,4 @@ def update():
         value = json.loads(json.dumps(value))  # OrderedDict to Dict
 
         comfyui_menu.addCommand(fullname, partial(
-            create_node, value), '', icon_gray)
+            create_node, convert_to_utf8(value)), '', icon_gray)

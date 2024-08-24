@@ -67,6 +67,19 @@ def POST(relative_url, data={}):
         return 'Error: {}'.format(e)
 
 
+def convert_to_utf8(data):
+    if isinstance(data, dict):
+        return {convert_to_utf8(key): convert_to_utf8(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [convert_to_utf8(element) for element in data]
+    elif isinstance(data, str):
+        return data.encode('utf-8') if sys.version_info[0] < 3 else data
+    elif sys.version_info[0] < 3 and isinstance(data, unicode):
+        return data.encode('utf-8')
+    else:
+        return data
+
+
 def interrupt():
     error = POST('interrupt')
 
