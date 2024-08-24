@@ -25,7 +25,8 @@ def GET(relative_url):
         data = response.read().decode()
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
-        nuke.message(traceback.format_exc())
+        nuke.message(
+            'Error connecting to server {} on port {} !'.format(IP, PORT))
 
 
 def POST(relative_url, data={}):
