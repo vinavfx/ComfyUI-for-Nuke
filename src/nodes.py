@@ -248,6 +248,13 @@ def extract_node_data(node):
             continue
 
         value = knob.value()
+
+        if type(knob) == nuke.Enumeration_Knob:
+            try:
+                value = float(value)
+            except:
+                pass
+
         if type(value) in [float, int]:
             value = int(value) if int(value) == value else value
 
