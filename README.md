@@ -114,5 +114,9 @@ NUKE_USER = '<.../.nuke>' # Change only if your path is different !
 1 - When connecting any image or roto from Nuke, take into consideration the <b>'FrameRange'</b>
 of the output because that will be the batch size.
 
-2 - Ksampler only works with images with a multiple of 8, add the '<b>PrepareImageForLatent</b>' reformat
+2 - ComfyUI doesn't support pixel values greater than 1 and less than 0 even with EXR,
+make sure the image doesn't have values greater than 1 or use log2lin node and then revert it in nuke, 
+if anyone has another solution please put it in this issue #11.
+
+3 - Ksampler only works with images with a multiple of 8, add the '<b>PrepareImageForLatent</b>' reformat
 before passing the image to latent, only if your image does not match the resolution.
