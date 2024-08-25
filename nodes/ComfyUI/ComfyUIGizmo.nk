@@ -1,0 +1,99 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name ComfyUIGizmo
+ onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ tile_color 0xa2b275ff
+ selected true
+ xpos -162
+ ypos -55
+ addUserKnob {20 controls l Controls}
+ addUserKnob {26 comfyui_gizmo l ComfyUIGizmo +INVISIBLE T "This knob only allows the read and backup to be outside the gizmo !"}
+ addUserKnob {41 comfyui_submit l submit T QueuePrompt.comfyui_submit}
+ addUserKnob {41 backup_result -STARTLINE T QueuePrompt.backup_result}
+}
+ BackdropNode {
+  inputs 0
+  name COMFYUI_NODES_BD
+  tile_color 0x467d9c01
+  label "<font face=\"Bitstream Vera Sans\" size=4>COMFYUI NODES</font>\n<font face=\"Bitstream Vera Sans\" size=1><i>Here put all the nodes needed for the comfyui gizmo</i></font>"
+  note_font_size 20
+  xpos -284
+  ypos -235
+  bdwidth 656
+  bdheight 420
+  addUserKnob {20 "Setup Tools" +INVISIBLE}
+  addUserKnob {1 data l Data}
+  data "\{\"color_code\": \"c2\"\}"
+ }
+ Input {
+  inputs 0
+  name Input
+  xpos 0
+  ypos -396
+ }
+ Group {
+  name SaveEXR
+  tile_color 0xbcb50001
+  xpos 0
+  ypos 328
+  addUserKnob {20 Controls}
+  addUserKnob {1 filename_prefix_ l filename_prefix}
+  filename_prefix_ image
+  addUserKnob {6 sRGB_to_linear_ l sRGB_to_linear +STARTLINE}
+  sRGB_to_linear_ true
+  addUserKnob {3 version_ l version}
+  version_ 1
+  addUserKnob {3 start_frame_ l start_frame}
+  start_frame_ 1001
+  addUserKnob {3 frame_pad_ l frame_pad}
+  frame_pad_ 4
+  addUserKnob {4 save_workflow_ l save_workflow M {ui api "ui + api" none}}
+  addUserKnob {22 data -STARTLINE +HIDDEN T "\{\n    'knobs_order': \[\n        'filename_prefix_', \n        'sRGB_to_linear_', \n        'version_', \n        'start_frame_', \n        'frame_pad_', \n        'save_workflow_'\n    ], \n    'inputs': \[\n        \{\n            'opt': false, \n            'outputs': \[\n                'image'\n            ], \n            'name': 'images'\n        \}\n    ], \n    'class_type': 'SaveEXR', \n    'outputs': \[], \n    'output_node': true\n\}"}
+ }
+  Input {
+   inputs 0
+   name images
+   xpos 400
+   ypos -9
+  }
+  Output {
+   name Output1
+   selected true
+   xpos 400
+   ypos 15
+  }
+ end_group
+ Group {
+  name QueuePrompt
+  tile_color 0x609e38ff
+  note_font "Bitstream Vera Sans"
+  xpos 0
+  ypos 352
+  addUserKnob {20 controls l Controls}
+  addUserKnob {22 comfyui_submit l submit T comfyui.queue_prompt.comfyui_submit() +STARTLINE}
+  addUserKnob {22 backup_result -STARTLINE T comfyui.read_media.save_image_backup()}
+  addUserKnob {20 about l About}
+  addUserKnob {26 _name l "" +STARTLINE T "<b>QueuePrompt</b> v1.1<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
+  addUserKnob {26 ""}
+ }
+  Input {
+   inputs 0
+   name Input
+   xpos 145
+   ypos 93
+  }
+  Output {
+   name Output
+   xpos 145
+   ypos 257
+  }
+ end_group
+ Output {
+  name Output1
+  xpos 0
+  ypos 424
+ }
+end_group
+
