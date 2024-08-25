@@ -14,19 +14,28 @@ from .connection import GET, convert_to_utf8
 from ..env import NUKE_USER
 
 path = os.path.join(NUKE_USER, 'nuke_comfyui')
+comfyui_nodes = {}
 
 
 def remove_signs(string):
     return re.sub(r'[^a-zA-Z0-9_]', '', string)
 
 
-def create_node(data):
+def create_comfyui_node(node_type, inpanel=True):
+    node_data = comfyui_nodes.get(node_type)
+    if not node_data:
+        return
+
+    return create_node(node_data, inpanel)
+
+
+def create_node(data, inpanel=True):
     try:
         selected_node = nuke.selectedNode()
     except:
         selected_node = None
 
-    n = nuke.createNode('Group')
+    n = nuke.createNode('Group', inpanel=inpanel)
 
     name = remove_signs(data['name'])
     display_name = remove_signs(data['display_name'])
@@ -55,6 +64,8 @@ def create_node(data):
     input_order = data.get('input_order', {})
     required_order = input_order.get('required', [])
     optional_order = input_order.get('optional', [])
+
+    knobs_order = []
 
     for key in required_order + optional_order:
         _input = required.get(key, [])
@@ -132,6 +143,7 @@ def create_node(data):
             continue
 
         n.addKnob(knob)
+        knobs_order.append(knob.name())
 
         if name in ['LoadAudio', 'LoadImage']:
             upload_knob = nuke.PyScript_Knob('upload', '+')
@@ -173,6 +185,7 @@ def create_node(data):
             outputs.append(output.lower())
 
     data_knob.setValue(json.dumps({
+        'knobs_order': knobs_order,
         'class_type': data['name'],
         'output_node': data.get('output_node', False),
         'inputs': _inputs,
@@ -202,6 +215,8 @@ def create_node(data):
         output_text_node.knob('label').setText(
             '[value {}.name]'.format(n.name()))
         n.setSelected(True)
+
+    return n
 
 
 def update():
@@ -263,6 +278,8 @@ def update():
             }
 
         value = json.loads(json.dumps(value))  # OrderedDict to Dict
+        value_utf8 = convert_to_utf8(value)
 
+        comfyui_nodes[value['name']] = value_utf8
         comfyui_menu.addCommand(fullname, partial(
-            create_node, convert_to_utf8(value)), '', icon_gray)
+            create_node, value_utf8), '', icon_gray)

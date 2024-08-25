@@ -23,8 +23,12 @@ def setup():
     nodes_dir = os.path.join(path, 'nodes', 'ComfyUI')
 
     refresh_icon = '{}/icons/refresh.png'.format(path)
+    workflow_icon = '{}/icons/workflow.png'.format(path)
     comfyui_menu.addCommand(
         'Update all ComfyUI', update_menu.update, '', refresh_icon)
+
+    comfyui_menu.addCommand(
+        'Import Workflow', workflow_importer.import_workflow, '', workflow_icon)
 
     def create_node(nk):
         node = nuke.nodePaste(os.path.join(nodes_dir, nk))
