@@ -5,7 +5,7 @@
 # -----------------------------------------------------------
 import nuke  # type: ignore
 from ..python_util.util import jread
-from .update_menu import create_comfyui_node, remove_signs
+from .update_menu import create_comfyui_node, remove_signs, update_menu
 from .queue_prompt import error_node_style
 from .nodes import get_node_data
 from .connection import convert_to_utf8
@@ -16,6 +16,7 @@ def import_workflow():
     if not workflow_path:
         return
 
+    update_menu()
     data = jread(workflow_path)
 
     [n.setSelected(False) for n in nuke.selectedNodes()]

@@ -15,6 +15,7 @@ from ..env import NUKE_USER
 
 path = os.path.join(NUKE_USER, 'nuke_comfyui')
 comfyui_nodes = {}
+menu_updated = False
 
 
 def remove_signs(string):
@@ -219,10 +220,21 @@ def create_node(data, inpanel=True):
     return n
 
 
+def update_menu():
+    if menu_updated:
+        return
+
+    update()
+
+
 def update():
+    global menu_updated
+
     info = GET('object_info')
     if not info:
         return
+
+    menu_updated = True
 
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI')
 
