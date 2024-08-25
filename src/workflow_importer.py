@@ -3,12 +3,14 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
+import os
 import nuke  # type: ignore
 from ..python_util.util import jread
 from .update_menu import create_comfyui_node, remove_signs, update_menu
 from .queue_prompt import error_node_style
 from .nodes import get_node_data
 from .connection import convert_to_utf8
+from ..env import NUKE_USER
 
 
 def center_nodes(nodes):
@@ -33,6 +35,7 @@ def import_workflow():
 
     create_nodes = {}
     not_installed = []
+    nodes = []
 
     for attrs in data['nodes']:
         node = create_comfyui_node(attrs['type'], inpanel=False)
@@ -44,10 +47,13 @@ def import_workflow():
             not_installed.append(attrs['type'])
 
         create_nodes[attrs['id']] = (node, attrs)
+        nodes.append(node)
 
         node.setSelected(False)
         xpos, ypos = attrs['pos']
         node.setXYpos(int(xpos/2), int(ypos/2))
+
+    center_nodes([n[0] for n in create_nodes.values()])
 
     def find_node_link(link):
         if not link:
@@ -63,8 +69,6 @@ def import_workflow():
                     return node
 
     for node, attrs in create_nodes.values():
-        node.setSelected(True)
-
         node_data = get_node_data(node)
         if not node_data:
             continue
@@ -96,7 +100,16 @@ def import_workflow():
             onode = find_node_link(link)
             node.setInput(i, onode)
 
-    center_nodes([n[0] for n in create_nodes.values()])
+        if 'Save' in attrs['type']:
+            queue_prompt_nk = os.path.join(
+                NUKE_USER, 'nuke_comfyui/nodes/ComfyUI/QueuePrompt.nk')
+            queue_prompt = nuke.nodePaste(queue_prompt_nk)
+            queue_prompt.setInput(0, node)
+            queue_prompt.setSelected(False)
+            queue_prompt.setXYpos(node.xpos(), node.ypos() + 25)
+            nodes.append(queue_prompt)
+
+    [n.setSelected(True) for n in nodes]
 
     if not_installed:
         nodes_list = '\n'.join(not_installed)
