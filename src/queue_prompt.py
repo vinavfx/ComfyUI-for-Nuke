@@ -3,6 +3,7 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
+import textwrap
 import sys
 import os
 import nuke  # type: ignore
@@ -32,8 +33,7 @@ def error_node_style(node_name, enable, message=''):
 
     if enable:
         set_tile_color(node, [0, 1, 1])
-        formatted_message = '\n'.join(message[i:i+30]
-                                      for i in range(0, len(message), 30))
+        formatted_message = '\n'.join(textwrap.wrap(message, width=30))
         node.knob('label').setValue('ERROR:\n' + formatted_message)
     else:
         node['tile_color'].setValue(0)
@@ -62,7 +62,7 @@ def show_text_uptate(node_name, data):
 
     text = text.replace('\n', '')
     text = text.encode('utf-8') if sys.version_info[0] < 3 else text
-    formatted_text = '\n'.join(text[i:i+50] for i in range(0, len(text), 50))
+    formatted_text = '\n'.join(textwrap.wrap(text, width=50))
 
     text_knob = show_text_node.knob('text')
     if text_knob:
