@@ -41,8 +41,8 @@ def extract_data():
         if not check_node(n):
             return {}, None
 
-        if n.knob('fixed_seed'):
-            if not n.knob('fixed_seed').value():
+        if n.knob('randomize'):
+            if n.knob('randomize').value():
                 random_value = random.randrange(1, 9999)
 
                 seed_knob = n.knob('seed_')

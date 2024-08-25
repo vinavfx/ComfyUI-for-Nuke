@@ -79,6 +79,9 @@ def import_workflow():
         for value in attrs.get('widgets_values', []):
             if value in ['fixed', 'increment', 'decrement', 'randomize']:
                 if any('seed' in s for s in knobs_order):
+                    randomize_knob = node.knob('randomize')
+                    if randomize_knob:
+                        randomize_knob.setValue(not value == 'fixed')
                     continue
             values.append(value)
 

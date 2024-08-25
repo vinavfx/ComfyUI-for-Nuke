@@ -152,9 +152,9 @@ def create_node(data, inpanel=True):
             n.addKnob(upload_knob)
 
         if 'seed' in key:
-            fixed_knob = nuke.Boolean_Knob('fixed_seed')
-            fixed_knob.setValue(True)
-            n.addKnob(fixed_knob)
+            randomize_knob = nuke.Boolean_Knob('randomize')
+            randomize_knob.setValue(False)
+            n.addKnob(randomize_knob)
 
     _inputs = []
 
