@@ -32,8 +32,7 @@ def import_workflow():
         else:
             node = nuke.createNode('NoOp', inpanel=False)
             node.setName(remove_signs(attrs['type']))
-            error_node_style(node.fullName(), True,
-                             'ERROR: Node not installed !')
+            error_node_style(node.fullName(), True, 'Node not installed !')
 
         node.setSelected(False)
         xpos, ypos = attrs['pos']
