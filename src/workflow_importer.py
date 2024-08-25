@@ -70,14 +70,26 @@ def import_workflow():
             continue
 
         knobs_order = node_data['knobs_order']
+        values = []
 
-        for i, value in enumerate(attrs.get('widgets_values', [])):
+        for value in attrs.get('widgets_values', []):
+            if value in ['fixed', 'increment', 'decrement', 'randomize']:
+                if any('seed' in s for s in knobs_order):
+                    continue
+            values.append(value)
+
+        for i, value in enumerate(values):
             if i >= len(knobs_order):
                 continue
 
             value = convert_to_utf8(value)
             knob = node.knob(knobs_order[i])
-            knob.setValue(value)
+
+            if type(value) == int:
+                value = value if value < 1e9 else 1e9
+                knob.setValue(int(value))
+            else:
+                knob.setValue(value)
 
         for i, idata in enumerate(attrs.get('inputs', {})):
             link = idata['link']

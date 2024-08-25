@@ -246,7 +246,6 @@ def update():
             continue
         item.clearMenu()
 
-    ignore_nodes = ['EmptyLatentImage']
     load_exr_exist = False
     nodes = {}
 
@@ -257,8 +256,6 @@ def update():
 
     for _, value in info.items():
         name = value['name'].replace('+', '')
-        if name in ignore_nodes:
-            continue
 
         if name == 'LoadEXR':
             load_exr_exist = True
