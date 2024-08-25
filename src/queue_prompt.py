@@ -15,14 +15,36 @@ import threading
 import copy
 
 from ..python_util.util import jread, jwrite
-from ..nuke_util.nuke_util import get_project_name
+from ..nuke_util.nuke_util import get_project_name, set_tile_color
 from ..env import IP, PORT
 from .common import get_comfyui_dir, update_images_and_mask_inputs, state_dir
 from .connection import POST, interrupt
-from .nodes import extract_data
+from .nodes import extract_data, get_connected_comfyui_nodes
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
+
+
+def error_node_style(node_name, enable, message=''):
+    node = nuke.toNode(node_name)
+    if not node:
+        return
+
+    if enable:
+        set_tile_color(node, [0, 1, 1])
+        formatted_message = '\n'.join(message[i:i+30]
+                                      for i in range(0, len(message), 30))
+        node.knob('label').setValue('ERROR:\n' + formatted_message)
+    else:
+        node['tile_color'].setValue(0)
+        node.knob('label').setValue('')
+
+
+def remove_all_error_style(root_node):
+    for n, _ in get_connected_comfyui_nodes(root_node):
+        label_knob = n.knob('label')
+        if 'ERROR' in label_knob.value():
+            error_node_style(n.fullName(), False)
 
 
 def show_text_uptate(node_name, data):
@@ -135,8 +157,9 @@ def comfyui_submit():
                     del task[0]
 
         elif type_data == 'execution_error':
+            execution_message = data.get('exception_message')
             error = 'Error: {}\n\n'.format(data.get('node_type'))
-            error += data.get('exception_message') + '\n\n'
+            error += execution_message + '\n\n'
 
             for tb in data.get('traceback'):
                 error += tb + '\n'
@@ -146,6 +169,8 @@ def comfyui_submit():
             if task:
                 del task[0]
 
+            nuke.executeInMainThread(
+                error_node_style, args=(data.get('node_id'), True, execution_message))
             nuke.executeInMainThread(nuke.message, args=(error))
 
     def on_error(ws, error):
@@ -186,8 +211,11 @@ def comfyui_submit():
     def progress_finished(n):
         try:
             create_read(n)
+
             if not execution_error[0]:
+                remove_all_error_style(queue_prompt_node)
                 jwrite(state_file, state_data)
+
         except:
             nuke.executeInMainThread(
                 nuke.message, args=(traceback.format_exc()))
