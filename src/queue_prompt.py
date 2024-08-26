@@ -47,11 +47,12 @@ def remove_all_error_style(root_node):
             error_node_style(n.fullName(), False)
 
 
-def show_text_uptate(node_name, data):
+def show_text_uptate(node_name, data, queue_prompt_node):
     output = data.get('output', {})
     texts = output.get('text', [])
     text = texts[0] if texts else ''
 
+    queue_prompt_node.parent().begin()
     show_text_node = nuke.toNode(node_name)
 
     if not show_text_node:
@@ -140,7 +141,7 @@ def comfyui_submit():
 
         elif type_data == 'executed':
             node = data.get('node')
-            nuke.executeInMainThread(show_text_uptate, args=(node, data))
+            nuke.executeInMainThread(show_text_uptate, args=(node, data, queue_prompt_node))
 
         elif type_data == 'progress':
             progress = int(data['value'] * 100 / data['max'])
