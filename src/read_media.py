@@ -59,6 +59,18 @@ def set_correct_colorspace(read):
             'sRGB' if ocio == 'Nuke' else 'Output - sRGB')
 
 
+def get_gizmo_group(queue_prompt_node):
+    gizmo = queue_prompt_node
+
+    while gizmo:
+        gizmo = gizmo.parent()
+        if not hasattr(gizmo, 'knob'):
+            return
+
+        if gizmo.knob('comfyui_gizmo'):
+            return gizmo
+
+
 def create_read(queue_prompt_node):
     output_node = get_input(queue_prompt_node, 0)
     if not output_node:
@@ -91,8 +103,13 @@ def create_read(queue_prompt_node):
     if not filename:
         return
 
-    queue_prompt_node.parent().begin()
-    name = '{}Read'.format(queue_prompt_node.name())
+    main_node = get_gizmo_group(queue_prompt_node)
+    if not main_node:
+        main_node = queue_prompt_node
+
+    main_node.parent().begin()
+
+    name = '{}Read'.format(main_node.name())
     ext = filename.split('.')[-1].split(' ')[0].lower()
 
     if ext in ['jpg', 'exr', 'tiff', 'png']:
@@ -115,16 +132,21 @@ def create_read(queue_prompt_node):
         return
 
     read.setName(name)
-    read.setXYpos(queue_prompt_node.xpos(), queue_prompt_node.ypos() + 35)
+    read.setXYpos(main_node.xpos(), main_node.ypos() + 35)
     read.knob('tile_color').setValue(
-        queue_prompt_node.knob('tile_color').value())
+        main_node.knob('tile_color').value())
 
 
 def save_image_backup():
     queue_prompt_node = nuke.thisNode()
-    queue_prompt_node.parent().begin()
 
-    read = nuke.toNode(queue_prompt_node.name() + 'Read')
+    main_node = get_gizmo_group(queue_prompt_node)
+    if not main_node:
+        main_node = queue_prompt_node
+
+    main_node.parent().begin()
+
+    read = nuke.toNode(main_node.name() + 'Read')
     if not read:
         return
 
@@ -133,7 +155,7 @@ def save_image_backup():
 
     basename = get_name_no_padding(filename).replace(' ', '_')
     rand = os.path.basename(os.path.dirname(filename)).strip()
-    name = '{}Backup_{}_{}'.format(queue_prompt_node.name(), rand, basename)
+    name = '{}Backup_{}_{}'.format(main_node.name(), rand, basename)
 
     if not nuke.toNode(name):
         new_read = nuke.createNode('Read', inpanel=False)
@@ -144,7 +166,7 @@ def save_image_backup():
     xpos = read.xpos() + 50
 
     for n in nuke.allNodes():
-        if not queue_prompt_node.name() + 'Backup_' in n.name():
+        if not main_node.name() + 'Backup_' in n.name():
             continue
 
         xpos += 100
