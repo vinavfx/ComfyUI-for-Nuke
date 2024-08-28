@@ -29,8 +29,8 @@ def import_workflow():
         return
 
     update_menu()
-    data = jread(workflow_path)
 
+    data = jread(workflow_path)
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
     create_nodes = {}
@@ -48,9 +48,16 @@ def import_workflow():
 
         create_nodes[attrs['id']] = (node, attrs)
         nodes.append(node)
-
         node.setSelected(False)
-        xpos, ypos = attrs['pos']
+
+        pos = attrs['pos']
+
+        if type(pos) == list:
+            xpos, ypos = attrs['pos']
+        else:
+            xpos = attrs['pos']['0']
+            ypos = attrs['pos']['1']
+
         node.setXYpos(int(xpos/2), int(ypos/2))
 
     center_nodes([n[0] for n in create_nodes.values()])
@@ -85,6 +92,12 @@ def import_workflow():
                     continue
             values.append(value)
 
+        if not len(values) == len(knobs_order):
+            values = list(filter(None, values))
+
+        if not len(values) == len(knobs_order):
+            continue
+
         for i, value in enumerate(values):
             if i >= len(knobs_order):
                 continue
@@ -96,7 +109,11 @@ def import_workflow():
                 value = value if value < 1e9 else 1e9
                 knob.setValue(int(value))
             else:
-                knob.setValue(value)
+                try:
+                    knob.setValue(value)
+                except:
+                    nuke.message('Could not set the knob "{}" value for this node "{}" !'.format(
+                        knob.name(), node.name()))
 
         for i, idata in enumerate(attrs.get('inputs', {})):
             link = idata['link']
