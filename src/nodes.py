@@ -11,7 +11,7 @@ import traceback
 import nuke  # type: ignore
 
 from ..python_util.util import jwrite, jread
-from ..nuke_util.nuke_util import get_connected_nodes, get_project_name, get_input
+from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
 
 from .common import image_inputs, mask_inputs, get_comfyui_dir, state_dir
 
@@ -61,6 +61,9 @@ def extract_data():
             input_node = nuke.toNode(input_key[0]) if input_key else None
 
             if not input_node:
+                continue
+
+            if is_switch_any(input_node):
                 continue
 
             if not input_node.name() in comfyui_nodes:
@@ -201,6 +204,10 @@ def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
 
         if not i == 0 and is_disabled(root_node):
             continue
+
+        if is_switch_any(root_node):
+            if not root_node.knob('which').value() == i:
+                continue
 
         if inode in visited:
             continue
@@ -364,3 +371,47 @@ def update_input_nodes(node):
 
         if idx == 0:
             nuke.toNode('Output1').setInput(0, inode)
+
+
+def is_switch_any(node):
+    if not node.Class() == 'Switch':
+        return
+
+    if not node.knob('switch_any'):
+        return
+
+    return True
+
+
+def get_input(node, i, ignore_disabled=True):
+    if not node:
+        return
+
+    inode = node.input(i)
+
+    for _ in range(100):
+        if not inode:
+            return
+
+        disable_knob = inode.knob('disable')
+        disabled_node = False
+
+        if disable_knob and ignore_disabled:
+            disabled_node = inode.knob('disable').value()
+
+        if inode.Class() == 'Dot' or disabled_node:
+            if inode.input(0):
+                inode = inode.input(0)
+                continue
+            else:
+                return
+
+        if is_switch_any(inode):
+            which = int(inode.knob('which').value())
+            if inode.input(which):
+                inode = inode.input(which)
+                continue
+            else:
+                return
+
+        return inode
