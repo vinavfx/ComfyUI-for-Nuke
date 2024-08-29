@@ -3,6 +3,7 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
+import textwrap
 import os
 import nuke  # type: ignore
 from ..python_util.util import jread
@@ -41,7 +42,13 @@ def import_workflow():
     for attrs in data['nodes']:
         node = create_comfyui_node(attrs['type'], inpanel=False)
 
-        if not node:
+        if attrs['type'] == 'Note':
+            node = nuke.createNode('StickyNote', inpanel=False)
+            formatted_note = '\n'.join(textwrap.wrap(
+                attrs['widgets_values'][0], width=40))
+            node.knob('label').setValue(formatted_note + '\n\n')
+
+        elif not node:
             node = nuke.createNode('NoOp', inpanel=False)
             node.setName(remove_signs(attrs['type']))
             error_node_style(node.fullName(), True, 'Node not installed !')
@@ -60,6 +67,9 @@ def import_workflow():
             ypos = attrs['pos']['1']
 
         node.setXYpos(int(xpos/2), int(ypos/2))
+
+    if not nodes:
+        return
 
     center_nodes([n[0] for n in create_nodes.values()])
 
