@@ -122,3 +122,6 @@ if anyone has another solution please put it in this [issue](https://github.com/
 before passing the image to latent, only if your image does not match the resolution.
 
 4 - To load all ComfyUI nodes when Nuke starts, change the '<b>update_menu_at_start</b>' variable in the [__init__.py](./__init__.py) file
+
+5 - To use Switch on ComfyUI nodes use '<b>SwitchAny</b>' as ComfyUI switch nodes don't work
+because they have 'any *' inputs and outputs, which is not possible on nuke because it doesn't have multiple outputs.
