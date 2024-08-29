@@ -28,7 +28,8 @@ def import_workflow():
     if not workflow_path:
         return
 
-    update_menu()
+    if not update_menu():
+        return
 
     data = jread(workflow_path)
     [n.setSelected(False) for n in nuke.selectedNodes()]

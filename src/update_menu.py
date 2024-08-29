@@ -224,9 +224,9 @@ def create_node(data, inpanel=True):
 
 def update_menu():
     if menu_updated:
-        return
+        return True
 
-    update()
+    return update()
 
 
 def update():
@@ -294,3 +294,5 @@ def update():
         comfyui_nodes[value['name']] = value_utf8
         comfyui_menu.addCommand(fullname, partial(
             create_node, value_utf8), '', icon_gray)
+
+    return True
