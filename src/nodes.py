@@ -58,7 +58,8 @@ def extract_data():
             if not input_key or not type(input_key) == list:
                 continue
 
-            input_node = nuke.toNode(input_key[0]) if input_key else None
+            input_node = nuke.toNode(n.parent().fullName(
+            ) + '.' + input_key[0]) if input_key else None
 
             if not input_node:
                 continue
@@ -84,7 +85,7 @@ def extract_data():
 def create_load_images_and_save(node, alpha):
     # State : verifica si las entradas del nodo se modificaron para determinar si reescribir
     state_file = '{}/comfyui_{}_{}_state.json'.format(
-        state_dir, get_project_name(), node.name())
+        state_dir, get_project_name(), node.fullName())
 
     connected_nodes = get_connected_nodes(node, continue_at_up_level=True)
     connected_nodes.append(node)

@@ -108,7 +108,7 @@ def comfyui_submit():
         return
 
     state_file = '{}/comfyui_{}_{}_state.json'.format(
-        state_dir,  get_project_name(), queue_prompt_node.name()
+        state_dir,  get_project_name(), queue_prompt_node.fullName()
     )
     if os.path.isfile(state_file):
         if data == jread(state_file) and not input_node_changed:
