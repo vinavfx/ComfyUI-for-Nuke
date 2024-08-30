@@ -48,6 +48,9 @@ def import_workflow():
                 attrs['widgets_values'][0], width=40))
             node.knob('label').setValue(formatted_note + '\n\n')
 
+        elif attrs['type'] == 'Reroute':
+            node = nuke.createNode('Dot', inpanel=False)
+
         elif not node:
             node = nuke.createNode('NoOp', inpanel=False)
             node.setName(remove_signs(attrs['type']))
@@ -87,11 +90,15 @@ def import_workflow():
                     return node
 
     for node, attrs in create_nodes.values():
-        node_data = get_node_data(node)
-        if not node_data:
-            continue
+        if attrs['type'] == 'Reroute':
+            knobs_order = []
+        else:
+            node_data = get_node_data(node)
+            if not node_data:
+                continue
 
-        knobs_order = node_data['knobs_order']
+            knobs_order = node_data['knobs_order']
+
         values = []
 
         for value in attrs.get('widgets_values', []):
