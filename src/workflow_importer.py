@@ -21,7 +21,7 @@ def center_nodes(nodes):
     for node in nodes:
         new_x = node['xpos'].value() - min_x
         new_y = node['ypos'].value() - min_y
-        node.setXYpos(int( new_x ), int( new_y ))
+        node.setXYpos(int(new_x), int(new_y))
 
 
 def import_workflow():
@@ -44,8 +44,8 @@ def import_workflow():
 
         if attrs['type'] == 'Note':
             node = nuke.createNode('StickyNote', inpanel=False)
-            formatted_note = '\n'.join(textwrap.wrap(
-                attrs['widgets_values'][0], width=40))
+            text = str(convert_to_utf8(attrs['widgets_values'][0]))
+            formatted_note = '\n'.join(textwrap.wrap(text, width=40))
             node.knob('label').setValue(formatted_note + '\n\n')
 
         elif attrs['type'] == 'Reroute':
@@ -99,22 +99,24 @@ def import_workflow():
 
             knobs_order = node_data['knobs_order']
 
+        widgets_values = attrs.get('widgets_values')
         values = []
 
-        for value in attrs.get('widgets_values', []):
-            if value in ['fixed', 'increment', 'decrement', 'randomize']:
-                if any('seed' in s for s in knobs_order):
-                    randomize_knob = node.knob('randomize')
-                    if randomize_knob:
-                        randomize_knob.setValue(not value == 'fixed')
-                    continue
-            values.append(value)
+        if type(widgets_values) == list:
+            for value in widgets_values:
+                if value in ['fixed', 'increment', 'decrement', 'randomize']:
+                    if any('seed' in s for s in knobs_order):
+                        randomize_knob = node.knob('randomize')
+                        if randomize_knob:
+                            randomize_knob.setValue(not value == 'fixed')
+                        continue
+                values.append(value)
+        else:
+            for key in knobs_order:
+                values.append(widgets_values[key[:-1]])
 
         if not len(values) == len(knobs_order):
-            values = list(filter(None, values))
-
-        if not len(values) == len(knobs_order):
-            continue
+            values = [v for v in values if v is not None]
 
         for i, value in enumerate(values):
             if i >= len(knobs_order):
