@@ -29,6 +29,17 @@ def GET(relative_url):
             'Error connecting to server {} on port {} !'.format(IP, PORT))
 
 
+def check_connection():
+    try:
+        response = urllib2.urlopen('http://{}:{}'.format(IP, PORT))
+        if response.getcode() == 200:
+            return True
+    except:
+        nuke.message(
+            'Error connecting to server {} on port {} !'.format(IP, PORT))
+        return
+
+
 def POST(relative_url, data={}):
     url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
     headers = {'Content-Type': 'application/json'}

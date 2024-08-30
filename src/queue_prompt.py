@@ -19,7 +19,7 @@ from ..python_util.util import jread, jwrite
 from ..nuke_util.nuke_util import get_project_name, set_tile_color
 from ..env import IP, PORT
 from .common import get_comfyui_dir, update_images_and_mask_inputs, state_dir
-from .connection import POST, interrupt
+from .connection import POST, interrupt, check_connection
 from .nodes import extract_data, get_connected_comfyui_nodes
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
 
@@ -82,6 +82,9 @@ def show_text_uptate(node_name, data, queue_prompt_node):
 
 
 def comfyui_submit():
+    if not check_connection():
+        return
+
     update_images_and_mask_inputs()
 
     if nuke.comfyui_running:
