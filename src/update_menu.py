@@ -158,6 +158,11 @@ def create_node(data, inpanel=True):
             randomize_knob.setValue(False)
             n.addKnob(randomize_knob)
 
+    # Nuke no genera automaticamente una nueva entrada, asi que genera una entrada 2 cuando solo hay 1 !
+    if inputs:
+        inputs.append(['input_2'] + inputs[0][1:]
+                      ) if inputs[0][0] == 'input_1' else None
+
     _inputs = []
 
     n.begin()
@@ -173,6 +178,7 @@ def create_node(data, inpanel=True):
             'outputs': [_class.lower()],
             'opt': is_optional
         })
+
 
     nuke.createNode('Output', inpanel=False)
     n.end()
