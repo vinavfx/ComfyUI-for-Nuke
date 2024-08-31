@@ -55,6 +55,8 @@ def create_node(data, inpanel=True):
         set_tile_color(n, [.08, .8, .97])
     elif 'Save' in name:
         set_tile_color(n, [.16, 1, .74])
+    elif 'Merge' in name or 'Combine' in name:
+        set_tile_color(n, [.64, .62, .77])
 
     inputs = []
 
