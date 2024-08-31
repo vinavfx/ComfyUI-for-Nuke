@@ -13,20 +13,6 @@ Group {
  addUserKnob {41 comfyui_submit l submit T QueuePrompt.comfyui_submit}
  addUserKnob {41 backup_result -STARTLINE T QueuePrompt.backup_result}
 }
- BackdropNode {
-  inputs 0
-  name COMFYUI_NODES_BD
-  tile_color 0x467d9c01
-  label "<font face=\"Bitstream Vera Sans\" size=4>COMFYUI NODES</font>\n<font face=\"Bitstream Vera Sans\" size=1><i>Here put all the nodes needed for the comfyui gizmo</i></font>"
-  note_font_size 20
-  xpos -284
-  ypos -235
-  bdwidth 656
-  bdheight 420
-  addUserKnob {20 "Setup Tools" +INVISIBLE}
-  addUserKnob {1 data l Data}
-  data "\{\"color_code\": \"c2\"\}"
- }
  Input {
   inputs 0
   name Input
