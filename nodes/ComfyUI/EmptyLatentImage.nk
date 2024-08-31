@@ -3,7 +3,6 @@ version 12.0 v8
 Group {
  inputs 0
  name EmptyLatentImage3
- onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
  knobChanged "this = nuke.thisNode()\nformat_knob = this.knob('format')\n\nformats = \[\n    \[512, 512],\n    \[512, 768],\n    \[768, 512],\n    \[768, 768],\n    \[768, 1152],\n    \[1152, 768],\n    \[1024, 1024],\n    \[1024, 1536],\n    \[1536, 1024],\n]\n\nwidth_knob = this.knob('width_')\nheight_knob = this.knob('height_')\n\nwidth_knob.setEnabled(True)\nheight_knob.setEnabled(True)\n\nif not 'custom' in format_knob.value():\n    index = int(format_knob.getValue())\n    width, height = formats\[index]\n    \n    width_knob.setValue(width)\n    height_knob.setValue(height)\n\n    width_knob.setEnabled(False)\n    height_knob.setEnabled(False)\n"
  tile_color 0xa57aaaff
  label "\[value width_ ] x \[value height_]"
@@ -19,9 +18,6 @@ Group {
  height_ 512
  addUserKnob {3 batch_size_ l "batch_size / frames"}
  batch_size_ 1
- addUserKnob {20 about l About}
- addUserKnob {26 _name l "" +STARTLINE T "<b>EmptyLatentImage</b> v1.11<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
- addUserKnob {26 ""}
 }
  Crop {
   inputs 0

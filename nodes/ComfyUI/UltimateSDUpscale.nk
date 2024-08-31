@@ -2,8 +2,7 @@ set cut_paste_input [stack 0]
 version 12.0 v8
 push $cut_paste_input
 Group {
- name UltimateSDUpscale1
- onCreate "def exe(func, *args):\n    allowed_knobs = \['Boolean_Knob', 'PyScript_Knob']\n    exclude_knobs = \['selected']\n\n    knob = nuke.thisKnob()\n    allowed_knob = knob.Class() in allowed_knobs and not knob.name() in exclude_knobs\n\n    try:\n        return eval(func)(*args)\n    except Exception as e:\n\n        if not allowed_knob:\n            return\n\n        if not 'vina' in str(e):\n            return\n\n        message = 'ask <b>Francisco Contreras</b> for the script <b>\"\{\}\"</b>, since the script for this method is not embedded in the node. Thank you.'.format(\n            func)\n        nuke.message(message)\n"
+ name UltimateSDUpscale
  label "\[value sampler_name_]"
  note_font "Bitstream Vera Sans"
  selected true
@@ -52,9 +51,6 @@ Group {
  addUserKnob {6 force_uniform_tiles_ l force_uniform_tiles +STARTLINE}
  force_uniform_tiles_ true
  addUserKnob {6 tiled_decode_ l tiled_decode -STARTLINE}
- addUserKnob {20 about l About}
- addUserKnob {26 _name l "" +STARTLINE T "<b>UltimateSDUpscale</b> v1.17<br><br><b>Francisco Contreras</b> - Senior Compositor<br><a href=\"http://vinavfx.com\"><span style=\"color:#C8C8C8;\">vinavfx.com</span></a>"}
- addUserKnob {26 ""}
 }
  Input {
   inputs 0
