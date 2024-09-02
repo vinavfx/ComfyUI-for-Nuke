@@ -118,9 +118,6 @@ of the output because that will be the batch size.
 make sure the image doesn't have values greater than 1 or use log2lin node and then revert it in nuke, 
 if anyone has another solution please put it in this [issue](https://github.com/vinavfx/nuke_comfyui/issues/11).
 
-3 - Ksampler only works with images with a multiple of 8, add the '<b>PrepareImageForLatent</b>' reformat
-before passing the image to latent, only if your image does not match the resolution.
-
 3 - Latent images only work with formats with multiple of 8, add the '<b>PrepareImageForLatent</b>' node before passing the image 
 to latent, and in the same node there is a button to create a restore node, put it on the image after inference to restore.
 
