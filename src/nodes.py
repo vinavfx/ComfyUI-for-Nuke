@@ -139,22 +139,14 @@ def create_load_images_and_save(node, alpha):
     os.mkdir(sequence_dir)
     filename = '{}/{}_#####.exr'.format(sequence_dir, dirname)
 
-    # el write se crea dentro de SaveImage
     [n.setSelected(False) for n in nuke.selectedNodes()]
-
-    # Stable Diffusion reconoce las mascaras al reves asi que se invierten
-    invert = None
-    if alpha:
-        invert = nuke.createNode('Invert', inpanel=False)
-        invert.setXYpos(node.xpos(), node.ypos())
-        invert.setInput(0, node)
 
     write = nuke.createNode('Write', inpanel=False)
     write.knob('hide_input').setValue(True)
     write.setName(node.name() + '_write')
     write.setXYpos(node.xpos(), node.ypos())
     write.setSelected(False)
-    write.setInput(0, invert if invert else node)
+    write.setInput(0, node)
     write.knob('file').setValue(filename)
     write.knob('raw').setValue(True)
     write.knob('file_type').setValue('exr')
@@ -163,12 +155,10 @@ def create_load_images_and_save(node, alpha):
     try:
         nuke.execute(write, node.firstFrame(), node.lastFrame())
     except:
-        nuke.delete(invert)
         nuke.delete(write)
         nuke.message(traceback.format_exc())
         return {}, False, True
 
-    nuke.delete(invert)
     nuke.delete(write)
 
     state_id = random.randrange(1, 9999)
