@@ -121,6 +121,9 @@ if anyone has another solution please put it in this [issue](https://github.com/
 3 - Ksampler only works with images with a multiple of 8, add the '<b>PrepareImageForLatent</b>' reformat
 before passing the image to latent, only if your image does not match the resolution.
 
+3 - Latent images only work with formats with multiple of 8, add the '<b>PrepareImageForLatent</b>' node before passing the image 
+to latent, and in the same node there is a button to create a restore node, put it on the image after inference to restore.
+
 4 - To load all ComfyUI nodes when Nuke starts, change the '<b>update_menu_at_start</b>' variable in the [__init__.py](./__init__.py) file
 
 5 - To use Switch on ComfyUI nodes use '<b>SwitchAny</b>' as ComfyUI switch nodes don't work

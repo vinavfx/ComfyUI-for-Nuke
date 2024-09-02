@@ -1,15 +1,42 @@
 set cut_paste_input [stack 0]
 version 12.0 v8
 push $cut_paste_input
-Reformat {
- type "to box"
- box_width {{"ceil(input0.width / 8) * 8"}}
- box_height {{"ceil(input0.height / 8) * 8"}}
- box_fixed true
- resize none
- center false
+Group {
  name PrepareImageForLatent
+ tile_color 0xa57aaaff
  selected true
- xpos -226
- ypos -76
+ xpos 44
+ ypos -215
+ addUserKnob {20 controls l Controls}
+ addUserKnob {22 restore_format l "restore format" T "this = nuke.thisNode()\nthis.parent().begin()\n\n\[n.setSelected(False) for n in nuke.selectedNodes()]\n\nrestore_node = nuke.createNode('Reformat', inpanel=False)\nrestore_node.setName('RestoreFormat')\nrestore_node.knob('resize').setValue('none')\nrestore_node.knob('center').setValue(False)\nrestore_node.knob('type').setValue('to box')\nrestore_node.knob('box_fixed').setValue(True)\nrestore_node.setXYpos(this.xpos() + 120, this.ypos())\n\nrestore_node.knob('box_width').setExpression('\{\}.Input.width'.format(this.fullName()))\nrestore_node.knob('box_height').setExpression('\{\}.Input.height'.format(this.fullName()))" +STARTLINE}
 }
+ Input {
+  inputs 0
+  name Input
+  xpos 0
+  ypos 38
+ }
+ Reformat {
+  type "to box"
+  box_width {{"ceil(input0.width / 8) * 8"}}
+  box_height {{"ceil(input0.height / 8) * 8"}}
+  box_fixed true
+  resize none
+  center false
+  name reformat
+  xpos 0
+  ypos 98
+ }
+ Crop {
+  box {0 0 {input.width} {input.height}}
+  crop false
+  name crop
+  xpos 0
+  ypos 130
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 214
+ }
+end_group
