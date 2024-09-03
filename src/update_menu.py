@@ -249,7 +249,7 @@ def update():
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI')
 
     for item in comfyui_menu.items():
-        if item.name() in ['Update all ComfyUI', 'Basic Nodes']:
+        if item.name() in ['Update all ComfyUI', 'Basic Nodes', 'Gizmos']:
             continue
 
         if not hasattr(item, 'clearMenu'):
