@@ -2,3 +2,4 @@ session.vim
 .undodir/
 **/*.pyc
 **/*.swp
+nodes/Gizmos
