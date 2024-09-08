@@ -31,12 +31,12 @@ git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
 
 2 - Install Websocket Client in python
 ```sh
-# Since nuke cannot install external packages, websocket must be installed 
-# in system Python and then included in nuke !
+# Websocket cannot be installed directly on Nuke, so the Python library of
+# the operating system must be imported, and for that reason that version
+# of the system's python version must be the same as that of 
+# Nuke because different versions will not be compatible !
 
-# The version of python where websocket will be installed
-# has to be the same as the python version of nuke !
-
+# Install websocket on your operating system python:
 pip install websocket-client
 ```
 
