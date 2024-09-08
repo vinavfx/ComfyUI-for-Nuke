@@ -37,7 +37,8 @@ git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
 # Nuke because different versions will not be compatible !
 
 # Install websocket on your operating system python:
-pip install websocket-client
+python<version> -m pip install websocket-client
+# Example: python3.10 -m pip install websocket-client
 ```
 
 3 - Copy this lines to <b>menu.py</b>
