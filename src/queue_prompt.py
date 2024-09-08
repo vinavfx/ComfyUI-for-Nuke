@@ -33,6 +33,7 @@ def error_node_style(node_name, enable, message=''):
 
     if enable:
         set_tile_color(node, [0, 1, 1])
+        message = ' '.join(message.split()[:30])
         formatted_message = '\n'.join(textwrap.wrap(message, width=30))
         node.knob('label').setValue('ERROR:\n' + formatted_message)
     else:
