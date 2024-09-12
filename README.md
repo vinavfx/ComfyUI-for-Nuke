@@ -6,9 +6,9 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 </div>
 
 ## Requirements
-1 . Nuke 12 or higher (Not tested on previous versions !)
+1 - Nuke 12 or higher (Not tested on previous versions !)
 
-2 . websocket-client
+2 - websocket-client
 
 3 - <a href="https://github.com/comfyanonymous/ComfyUI" target="_blank">ComfyUI</a>
 
