@@ -6,11 +6,13 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 </div>
 
 ## Requirements
-1 . Nuke 12 or higher
+1 . Nuke 12 or higher (Not tested on previous versions !)
 
 2 . websocket-client
 
-3 - ComfyUI-HQ-Image-Save (required to load images and sequences and work with EXR)
+3 - <a href="https://github.com/comfyanonymous/ComfyUI" target="_blank">ComfyUI</a>
+
+4 - ComfyUI-HQ-Image-Save (required to load images and sequences and work with EXR)
 
 
 ## Installation
