@@ -242,22 +242,23 @@ def extract_node_data(node):
     inputs = {}
 
     for knob in node.knobs().values():
-        if not knob.name()[-1:] == '_':
-            continue
+        if knob.enabled():
+            if not knob.name()[-1:] == '_':
+                continue
 
-        value = knob.value()
+            value = knob.value()
 
-        if type(knob) == nuke.Enumeration_Knob:
-            try:
-                value = float(value)
-            except:
-                pass
+            if type(knob) == nuke.Enumeration_Knob:
+                try:
+                    value = float(value)
+                except:
+                    pass
 
-        if type(value) in [float, int]:
-            value = int(value) if int(value) == value else value
+            if type(value) in [float, int]:
+                value = int(value) if int(value) == value else value
 
-        name = knob.name()[:-1]
-        inputs[name] = value
+            name = knob.name()[:-1]
+            inputs[name] = value
 
     for i in range(node.maxInputs()):
         inode = get_input(node, i)

@@ -4,6 +4,7 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 from functools import partial
+from collections import OrderedDict
 import re
 import os
 import json
@@ -11,6 +12,7 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import GET, convert_to_utf8
+from .queue_prompt import error_node_style
 from ..env import NUKE_USER
 
 path = os.path.join(NUKE_USER, 'nuke_comfyui')
@@ -22,15 +24,16 @@ def remove_signs(string):
     return re.sub(r'[^a-zA-Z0-9_]', '', string)
 
 
-def create_comfyui_node(node_type, inpanel=True):
+def create_comfyui_node(attrs, inpanel=True):
+    node_type = attrs["type"]
     node_data = comfyui_nodes.get(node_type)
     if not node_data:
         return
 
-    return create_node(node_data, inpanel)
+    return create_node(node_data, attrs, inpanel)
 
 
-def create_node(data, inpanel=True):
+def create_node(data, attrs=None, inpanel=True):
     try:
         selected_node = nuke.selectedNode()
     except:
@@ -70,6 +73,57 @@ def create_node(data, inpanel=True):
 
     knobs_order = []
 
+    if attrs:
+        '''
+        Here we convert the Primitive node placeholder into py compatible 
+        nodes (COMBO is not supported and will baked into the original node)
+        This requires 'CR Seed' 'Easy Use' custom nodes
+        '''
+        if attrs.get('type', '') == 'PrimitiveNode':
+            if attrs['outputs'][0]['type'].lower() == "int":
+                data['name'] = 'CR Seed'
+                knob = nuke.Int_Knob(attrs['outputs'][0]['widget']['name'] + '_', attrs['outputs'][0]['widget']['name'])
+                default_value = attrs['widgets_values'][0]
+                default_value = default_value if default_value < 1e9 else 1e9
+                default_value = int(default_value)
+                knob.setValue(default_value)
+                n.addKnob(knob)
+                knobs_order.append(knob.name())
+                
+                randomize_knob = nuke.Boolean_Knob('randomize')
+                randomize_knob.setTooltip(
+                    'Allows the linked QueuePrompt to automatically change the seed by randomizing the number.')
+                randomize_knob.setValue(True if attrs['widgets_values'][1] == 'fixed' else False)
+                n.addKnob(randomize_knob)
+
+            if attrs['outputs'][0]['type'].lower() == "float":
+                data['name'] = 'easy float'
+                knob = nuke.Double_Knob(attrs['outputs'][0]['widget']['name'] + '_', attrs['outputs'][0]['widget']['name'])
+                knob.clearFlag(0x0000000000000002)
+                default_value = attrs['widgets_values'][0]
+                default_value = int(default_value)
+                knob.setValue(default_value)
+                n.addKnob(knob)
+                knobs_order.append(knob.name())
+
+            if attrs['outputs'][0]['type'].lower() == "string":
+                data['name'] = 'easy string'
+                knob = nuke.Multiline_Eval_String_Knob(attrs['outputs'][0]['widget']['name'] + '_', attrs['outputs'][0]['widget']['name'])
+                default_value = attrs['widgets_values'][0]
+                default_value = str(default_value)
+                knob.setValue(default_value)
+                n.addKnob(knob)
+                knobs_order.append(knob.name())
+
+            if attrs['outputs'][0]['type'].lower() == "combo":
+                data['name'] = 'NOTSUPPORTED'
+                default_value = attrs['widgets_values'][0]
+                default_value = str(default_value)
+                knob = knob = nuke.Enumeration_Knob(attrs['outputs'][0]['widget']['name'] + '_', attrs['outputs'][0]['widget']['name'], [default_value])
+                error_node_style(n.fullName(), True, 'Not supported PrimitiveNode alternatives for COMBO!')
+                n.addKnob(knob)
+                knobs_order.append(knob.name())
+
     for key in required_order + optional_order:
         _input = required.get(key, [])
         is_optional = not _input
@@ -90,6 +144,19 @@ def create_node(data, inpanel=True):
 
         knob_name = key + '_'
 
+        def is_default_widget()->bool:
+            '''
+            this will check if the widget is converted to input so we can skip internal knob creation
+            '''
+            if attrs:
+                for i in attrs.get('inputs', []):
+                    if i['name'].lower() == key:
+                        if _class == i['type']:
+                            skip_list = attrs.get('skip_knobs', [])
+                            skip_list.append(knob_name)
+                            return False
+            return True
+
         if force_input:
             inputs.append([key, _class, is_optional])
             continue
@@ -109,7 +176,7 @@ def create_node(data, inpanel=True):
             knob.setValue(default_value)
             knob.setTooltip(tooltip)
 
-        elif _class == 'STRING' and key in ['filepath', 'file', 'directory']:
+        elif _class == 'STRING' and key in ['filepath', 'file', 'directory', 'output_directory']:
             knob = nuke.File_Knob(knob_name, key)
             knob.setTooltip(tooltip)
 
@@ -131,7 +198,7 @@ def create_node(data, inpanel=True):
             knob.setValue(default_value)
             knob.setTooltip(tooltip)
 
-        elif type(_class) == list:
+        elif type(_class) == list: # since COMBO is not supported by primitive alternatives we leave it in the node
             knob = nuke.Enumeration_Knob(
                 knob_name, key, [str(i) for i in _class])
 
@@ -142,8 +209,14 @@ def create_node(data, inpanel=True):
                 knob.setValue(default_item)
 
         else:
-            inputs.append([key, _class, is_optional])
+            if attrs == None:
+                inputs.append([key, _class, is_optional])
             continue
+        
+        if not is_default_widget():
+            '''Setting the knob to disabled state to not get parsed during extraction data in nodes.py'''
+            knob.setVisible(False)
+            knob.setEnabled(False)
 
         n.addKnob(knob)
         knobs_order.append(knob.name())
@@ -153,7 +226,7 @@ def create_node(data, inpanel=True):
             upload_knob.setValue('comfyui.upload.upload_media()')
             n.addKnob(upload_knob)
 
-        if 'seed' in key:
+        if 'seed' in key and is_default_widget():
             randomize_knob = nuke.Boolean_Knob('randomize')
             randomize_knob.setTooltip(
                 'Allows the linked QueuePrompt to automatically change the seed by randomizing the number.')
@@ -161,9 +234,14 @@ def create_node(data, inpanel=True):
             n.addKnob(randomize_knob)
 
     # Nuke no genera automaticamente una nueva entrada, asi que genera una entrada 2 cuando solo hay 1 !
+    # yuri, I don't understand these two lines below..
     if inputs:
         inputs.append(['input_2'] + inputs[0][1:]
                       ) if inputs[0][0] == 'input_1' else None
+        
+    if attrs:
+        for input in attrs.get('inputs', []):
+            inputs.append([input['name'], input['type'].lower(), True])
 
     _inputs = []
 
@@ -189,11 +267,20 @@ def create_node(data, inpanel=True):
     data_knob.setVisible(False)
 
     outputs = []
-    for output, output_name in zip(data['output'], data['output_name']):
-        if type(output) == list:
-            outputs.append(output_name)
-        else:
-            outputs.append(output.lower())
+
+    if attrs:
+        if 'outputs' in attrs:
+            for output in attrs['outputs']:
+                if type(output) == list:
+                    outputs.append(output['name'])
+                else:
+                    outputs.append(output['type'].lower())
+    else:
+        for output, output_name in zip(data['output'], data['output_name']):
+            if type(output) == list:
+                outputs.append(output_name)
+            else:
+                outputs.append(output.lower()) 
 
     data_knob.setValue(json.dumps({
         'knobs_order': knobs_order,
@@ -259,6 +346,8 @@ def update():
     load_exr_exist = False
     nodes = {}
 
+    add_js_nodes(info)
+
     def normalize_string(string):
         string = ''.join(char if ord(
             char) < 128 else '' for char in string)
@@ -304,3 +393,30 @@ def update():
             create_node, value_utf8), '', icon_gray)
 
     return True
+
+def add_js_nodes(info):
+    '''
+    PrimitiveNode is not in the nodes list due to the fact that is javaScript UI only and doesnt interact with the prompt
+    Here we add it to the nodes list so that we can parse it as all the rest of the nodes
+    TODO yuri, we need to add all the js nodes for better compatibility
+    '''
+    primitive_node = """OrderedDict(
+            [(
+        "PrimitiveNode",
+        OrderedDict(
+            [
+                ("input",OrderedDict([]),),
+                ("output", []),
+                ("output_is_list", [False]),
+                ("output_name", []),
+                ("name", "PrimitiveNode"),
+                ("display_name", "Primitive"),
+                ("description", ""),
+                ("python_module", "nodes"),
+                ("category", "utils"),
+                ("output_node", False),
+            ]
+        ),
+    )])"""
+    primitive_node_dict = eval(primitive_node)
+    info.update(primitive_node_dict)
