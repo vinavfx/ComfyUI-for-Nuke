@@ -98,7 +98,7 @@ def create_node(data, attrs=None, inpanel=True):
 
             if attrs['outputs'][0]['type'].lower() == "float":
                 data['name'] = 'easy float'
-                knob = nuke.Double_Knob(attrs['outputs'][0]['widget']['name'] + '_', attrs['outputs'][0]['widget']['name'])
+                knob = nuke.Double_Knob('value_', attrs['outputs'][0]['widget']['name'])
                 knob.clearFlag(0x0000000000000002)
                 default_value = attrs['widgets_values'][0]
                 default_value = int(default_value)
@@ -108,7 +108,7 @@ def create_node(data, attrs=None, inpanel=True):
 
             if attrs['outputs'][0]['type'].lower() == "string":
                 data['name'] = 'easy string'
-                knob = nuke.Multiline_Eval_String_Knob(attrs['outputs'][0]['widget']['name'] + '_', attrs['outputs'][0]['widget']['name'])
+                knob = nuke.Multiline_Eval_String_Knob('value_', attrs['outputs'][0]['widget']['name'])
                 default_value = attrs['widgets_values'][0]
                 default_value = str(default_value)
                 knob.setValue(default_value)
@@ -119,7 +119,7 @@ def create_node(data, attrs=None, inpanel=True):
                 data['name'] = 'NOTSUPPORTED'
                 default_value = attrs['widgets_values'][0]
                 default_value = str(default_value)
-                knob = knob = nuke.Enumeration_Knob(attrs['outputs'][0]['widget']['name'] + '_', attrs['outputs'][0]['widget']['name'], [default_value])
+                knob = knob = nuke.Enumeration_Knob('value_', attrs['outputs'][0]['widget']['name'], [default_value])
                 error_node_style(n.fullName(), True, 'Not supported PrimitiveNode alternatives for COMBO!')
                 n.addKnob(knob)
                 knobs_order.append(knob.name())
