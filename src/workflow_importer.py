@@ -40,16 +40,22 @@ def import_workflow():
     nodes = []
 
     for attrs in data['nodes']:
-        node = create_comfyui_node(attrs['type'], inpanel=False)
+        node = create_comfyui_node(attrs, inpanel=False)
 
         if attrs['type'] == 'Note':
-            node = nuke.createNode('StickyNote', inpanel=False)
+            node = nuke.createNode('BackdropNode', inpanel=False)
             text = str(convert_to_utf8(attrs['widgets_values'][0]))
             formatted_note = '\n'.join(textwrap.wrap(text, width=40))
             node.knob('label').setValue(formatted_note + '\n\n')
+            node.knob('bdwidth').setValue(attrs['size']['0'])
+            node.knob('bdheight').setValue(attrs['size']['1'])
+            node.knob('z_order').setValue(10)
 
-        elif attrs['type'] == 'Reroute':
+        elif attrs['type'] in ('Reroute', 'easy getNode', 'easy setNode'):
             node = nuke.createNode('Dot', inpanel=False)
+            if attrs['type'] in ('easy getNode', 'easy setNode'):
+                node.setName(attrs['title'])
+                node.knob('label').setValue(f"Get/Set \n {attrs['title']}")
 
         elif not node:
             node = nuke.createNode('NoOp', inpanel=False)
@@ -71,10 +77,26 @@ def import_workflow():
 
         node.setXYpos(int(xpos/2), int(ypos/2))
 
+    for attrs in data['groups']:
+        node = nuke.createNode('BackdropNode', inpanel=False)
+        text = str(convert_to_utf8(attrs['title']))
+        formatted_note = '\n'.join(textwrap.wrap(text, width=40))
+        node.knob('label').setValue(formatted_note + '\n\n')
+        node.knob('bdwidth').setValue(attrs['bounding'][2]/2)
+        node.knob('bdheight').setValue(attrs['bounding'][3]/2)
+        node.setXYpos(int(attrs['bounding'][0]/2), int(attrs['bounding'][1]/2))
+        node.knob('z_order').setValue(0) 
+        node.knob('note_font_size').setValue(100) 
+        hex_color = attrs['color']
+        node.knob('tile_color').setValue(hex2dec(hex_color))
+
+        nodes.append(node)
+        node.setSelected(False)
+
     if not nodes:
         return
 
-    center_nodes([n[0] for n in create_nodes.values()])
+    center_nodes(nodes)
 
     def find_node_link(link):
         if not link:
@@ -90,8 +112,13 @@ def import_workflow():
                     return node
 
     for node, attrs in create_nodes.values():
-        if attrs['type'] == 'Reroute':
+        if attrs['type'] in ('Reroute', 'easy getNode', 'easy setNode'):
             knobs_order = []
+            if attrs['type'] in ('easy getNode', 'easy setNode'):
+                node_name = 'S' + attrs['title'][1:]
+                node.setInput(i, nuke.toNode(node_name))
+                if attrs['type'] in ('easy getNode'):
+                    node.knob('hide_input').setValue(True)
         else:
             node_data = get_node_data(node)
             if not node_data:
@@ -155,3 +182,17 @@ def import_workflow():
         nodes_list = '\n'.join(not_installed)
         nuke.message(
             'You need to install these nodes in ComfyUI:\n\n' + nodes_list)
+
+
+def hex2dec(hex_string)->int:
+    """
+        Return the integer value of a hexadecimal string
+        Maybe this can live in nuke_util module?
+    """
+    if hex_string.startswith("#"):
+        hex_string = hex_string[1:]
+    if len(hex_string) == 3:
+        hex_string = hex_string[0] + hex_string[0] + hex_string[1] + hex_string[1] + hex_string[2] + hex_string[2]
+    if len(hex_string) == 6:
+        hex_string += "FF"
+    return int(hex_string, 16)
