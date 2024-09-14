@@ -5,7 +5,6 @@
 # -----------------------------------------------------------
 import textwrap
 import sys
-import os
 import nuke  # type: ignore
 import uuid
 import traceback
@@ -15,15 +14,15 @@ import json
 import threading
 import copy
 
-from ..python_util.util import jread, jwrite
-from ..nuke_util.nuke_util import get_project_name, set_tile_color
+from ..nuke_util.nuke_util import set_tile_color
 from ..env import IP, PORT
-from .common import get_comfyui_dir, update_images_and_mask_inputs, state_dir
+from .common import get_comfyui_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt, check_connection
 from .nodes import extract_data, get_connected_comfyui_nodes
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
+states = {}
 
 
 def error_node_style(node_name, enable, message=''):
@@ -108,14 +107,11 @@ def comfyui_submit():
         nuke.comfyui_running = False
         return
 
-    state_file = '{}/comfyui_{}_{}_state.json'.format(
-        state_dir,  get_project_name(), queue_prompt_node.fullName()
-    )
-    if os.path.isfile(state_file):
-        if data == jread(state_file) and not input_node_changed:
-            nuke.comfyui_running = False
-            create_read(queue_prompt_node)
-            return
+    global states
+    if data == states.get(queue_prompt_node.fullName(), {}) and not input_node_changed:
+        nuke.comfyui_running = False
+        create_read(queue_prompt_node)
+        return
 
     update_filename_prefix(queue_prompt_node)
     data, _ = extract_data()
@@ -219,7 +215,7 @@ def comfyui_submit():
 
             if not execution_error[0]:
                 remove_all_error_style(queue_prompt_node)
-                jwrite(state_file, state_data)
+                states[queue_prompt_node.fullName()] = state_data
 
         except:
             nuke.executeInMainThread(

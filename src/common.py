@@ -5,12 +5,8 @@
 # -----------------------------------------------------------
 import os
 import nuke  # type: ignore
-from ..env import COMFYUI_DIR, NUKE_USER
+from ..env import COMFYUI_DIR
 from .connection import GET
-
-state_dir = os.path.join(NUKE_USER, 'comfyui_state')
-if not os.path.isdir(state_dir):
-    os.mkdir(state_dir)
 
 if not getattr(nuke, 'comfyui_running', False):
     nuke.comfyui_running = False

@@ -10,11 +10,10 @@ import random
 import traceback
 import nuke  # type: ignore
 
-from ..python_util.util import jwrite, jread
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
+from .common import image_inputs, mask_inputs, get_comfyui_dir
 
-from .common import image_inputs, mask_inputs, get_comfyui_dir, state_dir
-
+states = {}
 
 def extract_data():
     queue_prompt_node = nuke.thisNode()
@@ -83,10 +82,7 @@ def extract_data():
 
 
 def create_load_images_and_save(node, alpha):
-    # State : verifica si las entradas del nodo se modificaron para determinar si reescribir
-    state_file = '{}/comfyui_{}_{}_state.json'.format(
-        state_dir, get_project_name(), node.fullName())
-
+    global states
     connected_nodes = get_connected_nodes(node, continue_at_up_level=True)
     connected_nodes.append(node)
     state = ''
@@ -99,11 +95,7 @@ def create_load_images_and_save(node, alpha):
         state += node_state
 
     current_state = {'connected_nodes': state.strip(), 'state_id': 0}
-
-    try:
-        prev_state = jread(state_file)
-    except:
-        prev_state = {}
+    prev_state = states.get(node.fullName(), {})
 
     load_image_data = {
         'inputs': {
@@ -165,7 +157,7 @@ def create_load_images_and_save(node, alpha):
     current_state['dirname'] = dirname
     current_state['state_id'] = state_id
 
-    jwrite(state_file, current_state)
+    states[node.fullName()] = current_state
 
     load_image_data['inputs']['filepath'] = sequence_dir
     load_image_data['inputs']['id'] = state_id
