@@ -6,6 +6,7 @@
 import textwrap
 import os
 import nuke  # type: ignore
+from ..nuke_util.nuke_util import set_hex_color
 from ..python_util.util import jread
 from .update_menu import create_comfyui_node, remove_signs, update_menu
 from .queue_prompt import error_node_style
@@ -35,7 +36,7 @@ def import_workflow():
     data = jread(workflow_path)
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
-    create_nodes = {}
+    created_nodes = {}
     not_installed = []
     nodes = []
 
@@ -51,13 +52,18 @@ def import_workflow():
         elif attrs['type'] == 'Reroute':
             node = nuke.createNode('Dot', inpanel=False)
 
+        elif attrs['type'] in ('easy getNode', 'easy setNode'):
+            node = nuke.createNode('Dot', inpanel=False)
+            node.setName(remove_signs(attrs['title']))
+            node.knob('label').setValue(attrs['title'])
+
         elif not node:
             node = nuke.createNode('NoOp', inpanel=False)
             node.setName(remove_signs(attrs['type']))
             error_node_style(node.fullName(), True, 'Node not installed !')
             not_installed.append(attrs['type'])
 
-        create_nodes[attrs['id']] = (node, attrs)
+        created_nodes[attrs['id']] = (node, attrs)
         nodes.append(node)
         node.setSelected(False)
 
@@ -71,16 +77,31 @@ def import_workflow():
 
         node.setXYpos(int(xpos/2), int(ypos/2))
 
+    for attrs in data['groups']:
+        bd = nuke.createNode('BackdropNode', inpanel=False)
+        bd.setName('GROUP')
+        text = convert_to_utf8(attrs['title'])
+        bd.knob('label').setValue(attrs['title'])
+        bd.knob('bdwidth').setValue(attrs['bounding'][2]/2)
+        bd.knob('bdheight').setValue(attrs['bounding'][3]/2)
+        bd.setXYpos(int(attrs['bounding'][0]/2), int(attrs['bounding'][1]/2))
+        bd.knob('z_order').setValue(0)
+        bd.knob('note_font_size').setValue(30)
+        set_hex_color(bd, attrs['color'])
+
+        nodes.append(bd)
+        bd.setSelected(False)
+
     if not nodes:
         return
 
-    center_nodes([n[0] for n in create_nodes.values()])
+    center_nodes(nodes)
 
     def find_node_link(link):
         if not link:
             return
 
-        for node, attrs in create_nodes.values():
+        for node, attrs in created_nodes.values():
             for odata in attrs.get('outputs', {}):
                 links = odata['links']
                 if not links:
@@ -89,9 +110,17 @@ def import_workflow():
                 if link in links:
                     return node
 
-    for node, attrs in create_nodes.values():
-        if attrs['type'] == 'Reroute':
+    for node, attrs in created_nodes.values():
+
+        if attrs['type'] in ('Reroute', 'easy setNode'):
             knobs_order = []
+
+        elif attrs['type'] == 'easy getNode':
+            knobs_order = []
+            node_name = 'S' + attrs['title'][1:]
+            node.setInput(0, nuke.toNode(node_name))
+            node.knob('hide_input').setValue(True)
+
         else:
             node_data = get_node_data(node)
             if not node_data:
@@ -118,6 +147,7 @@ def import_workflow():
         if not len(values) == len(knobs_order):
             values = [v for v in values if v is not None]
 
+
         for i, value in enumerate(values):
             if i >= len(knobs_order):
                 continue
@@ -134,6 +164,7 @@ def import_workflow():
                 except:
                     nuke.message('Could not set the knob "{}" value for this node "{}" !'.format(
                         knob.name(), node.name()))
+
 
         for i, idata in enumerate(attrs.get('inputs', {})):
             link = idata['link']
