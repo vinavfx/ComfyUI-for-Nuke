@@ -117,9 +117,7 @@ NUKE_USER = '<.../.nuke>' # Change only if your path is different !
 1 - When connecting any image or roto from Nuke, take into consideration the <b>'FrameRange'</b>
 of the output because that will be the batch size.
 
-2 - ComfyUI doesn't support pixel values greater than 1 and less than 0 even with EXR,
-make sure the image doesn't have values greater than 1 or use log2lin node and then revert it in nuke, 
-if anyone has another solution please put it in this [issue](https://github.com/vinavfx/nuke_comfyui/issues/11).
+2 - To make ComfyUI work with pixel values greater than 1 and less than 0, uncheck the <b>'sRGB_to_linear'</b> box in the <b>'SaveEXR'</b> node
 
 3 - Latent images only work with formats with multiple of 8, add the '<b>PrepareImageForLatent</b>' node before passing the image 
 to latent, and in the same node there is a button to create a restore node, put it on the image after inference to restore.

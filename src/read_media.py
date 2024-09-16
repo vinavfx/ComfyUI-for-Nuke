@@ -26,6 +26,19 @@ def exr_filepath_fixed(queue_prompt_node):
         filepath_knob.setText(filepath)
 
 
+def is_exr_linear(queue_prompt_node):
+    output_node = get_input(queue_prompt_node, 0)
+
+    if not output_node:
+        return True
+
+    sRGB_to_linear_knob = output_node.knob('sRGB_to_linear_')
+    if not sRGB_to_linear_knob:
+        return True
+
+    return sRGB_to_linear_knob.value()
+
+
 def update_filename_prefix(queue_prompt_node):
     output_node = get_input(queue_prompt_node, 0)
     if not output_node:

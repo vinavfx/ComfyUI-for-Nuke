@@ -32,6 +32,9 @@ def extract_data():
     nodes = get_connected_comfyui_nodes(queue_prompt_node)
     nuke.root().knob('proxy').setValue(False)
 
+    from .read_media import is_exr_linear
+    linear_to_sRGB = is_exr_linear(queue_prompt_node)
+
     comfyui_nodes = [n.name() for n, _ in nodes]
     data = {}
     input_node_changed = False
@@ -68,7 +71,7 @@ def extract_data():
 
             if not input_node.name() in comfyui_nodes:
                 load_image_data, changed_node, execution_canceled = create_load_images_and_save(
-                    input_node, key in mask_inputs)
+                    input_node, key in mask_inputs, linear_to_sRGB)
 
                 if execution_canceled:
                     return {}, None
@@ -81,7 +84,7 @@ def extract_data():
     return data, input_node_changed
 
 
-def create_load_images_and_save(node, alpha):
+def create_load_images_and_save(node, alpha, linear_to_sRGB):
     global states
     connected_nodes = get_connected_nodes(node, continue_at_up_level=True)
     connected_nodes.append(node)
@@ -100,7 +103,7 @@ def create_load_images_and_save(node, alpha):
     load_image_data = {
         'inputs': {
             'filepath': '',
-            'linear_to_sRGB': True,
+            'linear_to_sRGB': linear_to_sRGB,
             'image_load_cap': 0,
             'select_every_nth': 1,
             'skip_first_images': 0
