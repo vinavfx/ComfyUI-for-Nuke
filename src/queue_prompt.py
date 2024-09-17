@@ -4,6 +4,7 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import textwrap
+import os
 import sys
 import nuke  # type: ignore
 import uuid
@@ -15,7 +16,7 @@ import threading
 import copy
 
 from ..nuke_util.nuke_util import set_tile_color
-from ..env import IP, PORT
+from ..env import IP, PORT, COMFYUI_DIR
 from .common import get_comfyui_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt, check_connection
 from .nodes import extract_data, get_connected_comfyui_nodes
@@ -47,6 +48,15 @@ def remove_all_error_style(root_node):
             error_node_style(n.fullName(), False)
 
 
+def update_node(node_name, data, queue_prompt_node):
+
+    if 'ShowText' in node_name:
+        show_text_uptate(node_name, data, queue_prompt_node)
+
+    elif 'PreviewImage' in node_name:
+        preview_image_update(node_name, data)
+
+
 def show_text_uptate(node_name, data, queue_prompt_node):
     output = data.get('output', {})
     texts = output.get('text', [])
@@ -76,9 +86,41 @@ def show_text_uptate(node_name, data, queue_prompt_node):
     label = '( [value {}.name] )\n{}\n\n'.format(node_name, formatted_text)
     output_text_node.knob('label').setValue(label)
     xpos = show_text_node.xpos() - output_text_node.screenWidth() - 50
-    ypos = show_text_node.ypos() - (output_text_node.screenHeight() / 2) + (show_text_node.screenHeight() / 2)
+    ypos = show_text_node.ypos() - (output_text_node.screenHeight() / 2) + \
+        (show_text_node.screenHeight() / 2)
     output_text_node.knob('label')
     output_text_node.setXYpos(xpos, ypos)
+
+
+def preview_image_update(node_name, data):
+    output = data.get('output', {})
+    images = output.get('images', [])
+
+    if not images:
+        return
+
+    filename = images[0].get('filename')
+    if not filename:
+        return
+
+    preview_node = nuke.toNode(node_name)
+    if not preview_node:
+        return
+
+    preview_node.begin()
+
+    filename = os.path.join(COMFYUI_DIR, 'temp', filename)
+    read = nuke.toNode('read')
+
+    if not read:
+        read = nuke.createNode('Read', inpanel=False)
+        read.setName('read')
+
+    read.knob('file').setValue(filename)
+    nuke.toNode('Output1').setInput(0, read)
+
+    preview_node.knob('postage_stamp').setValue(True)
+    preview_node.end()
 
 
 def comfyui_submit():
@@ -141,7 +183,8 @@ def comfyui_submit():
 
         elif type_data == 'executed':
             node = data.get('node')
-            nuke.executeInMainThread(show_text_uptate, args=(node, data, queue_prompt_node))
+            nuke.executeInMainThread(
+                update_node, args=(node, data, queue_prompt_node))
 
         elif type_data == 'progress':
             progress = int(data['value'] * 100 / data['max'])
@@ -235,4 +278,3 @@ def comfyui_submit():
         nuke.comfyui_running = False
         nuke.message(error)
         queue_prompt_node.knob('comfyui_submit').setEnabled(True)
-
