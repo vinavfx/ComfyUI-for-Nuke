@@ -173,6 +173,9 @@ def import_workflow():
         for i, idata in enumerate(attrs.get('inputs', {})):
             link = idata['link']
 
+            if idata['name'] + '_' in knobs_order:
+                continue
+
             onode = find_node_link(link)
             node.setInput(i, onode)
 
