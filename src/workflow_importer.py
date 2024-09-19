@@ -39,8 +39,12 @@ def import_workflow():
     created_nodes = {}
     not_installed = []
     nodes = []
+    ignore_nodes = ['PrimitiveNode']
 
     for attrs in data['nodes']:
+        if attrs['type'] in ignore_nodes:
+            continue
+
         node = create_comfyui_node(attrs['type'], inpanel=False)
 
         if attrs['type'] == 'Note':
