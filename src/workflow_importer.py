@@ -58,8 +58,10 @@ def import_workflow():
 
         elif attrs['type'] in ('easy getNode', 'easy setNode'):
             node = nuke.createNode('Dot', inpanel=False)
-            node.setName(remove_signs(attrs['title']))
-            node.knob('label').setValue(attrs['title'])
+            prefix = 'Get' if attrs['type'] == 'easy getNode' else 'Set'
+            name = prefix + remove_signs( attrs['title'] )
+            node.setName(name)
+            node.knob('label').setValue(remove_signs(attrs['title']))
 
         elif not node:
             node = nuke.createNode('NoOp', inpanel=False)
@@ -121,7 +123,7 @@ def import_workflow():
 
         elif attrs['type'] == 'easy getNode':
             knobs_order = []
-            node_name = 'S' + attrs['title'][1:]
+            node_name = node.name().replace('Get', 'Set')
             node.setInput(0, nuke.toNode(node_name))
             node.knob('hide_input').setValue(True)
 
