@@ -69,6 +69,9 @@ def import_workflow():
             error_node_style(node.fullName(), True, 'Node not installed !')
             not_installed.append(attrs['type'])
 
+        if not node.knob('tile_color').value():
+            set_hex_color(node, attrs.get('bgcolor'))
+
         created_nodes[attrs['id']] = (node, attrs)
         nodes.append(node)
         node.setSelected(False)
@@ -93,7 +96,7 @@ def import_workflow():
         bd.setXYpos(int(attrs['bounding'][0]/2), int(attrs['bounding'][1]/2))
         bd.knob('z_order').setValue(0)
         bd.knob('note_font_size').setValue(30)
-        set_hex_color(bd, attrs.get('color', '#808080'))
+        set_hex_color(bd, attrs.get('color'))
 
         nodes.append(bd)
         bd.setSelected(False)
