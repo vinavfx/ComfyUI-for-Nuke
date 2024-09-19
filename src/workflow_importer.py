@@ -93,7 +93,7 @@ def import_workflow():
         bd.setXYpos(int(attrs['bounding'][0]/2), int(attrs['bounding'][1]/2))
         bd.knob('z_order').setValue(0)
         bd.knob('note_font_size').setValue(30)
-        set_hex_color(bd, attrs['color'])
+        set_hex_color(bd, attrs.get('color', '#808080'))
 
         nodes.append(bd)
         bd.setSelected(False)
