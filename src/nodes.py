@@ -15,7 +15,8 @@ from .common import image_inputs, mask_inputs, get_comfyui_dir
 
 states = {}
 
-def extract_data():
+
+def extract_data(frame):
     queue_prompt_node = nuke.thisNode()
     output_node = get_input(queue_prompt_node, 0)
 
@@ -29,7 +30,7 @@ def extract_data():
             'Connect only to output nodes like SaveImage or SaveEXR !')
         return {}, None
 
-    nodes = get_connected_comfyui_nodes(queue_prompt_node)
+    nodes = get_connected_comfyui_nodes(queue_prompt_node, frame=frame)
     nuke.root().knob('proxy').setValue(False)
 
     from .read_media import is_exr_linear
@@ -168,7 +169,7 @@ def create_load_images_and_save(node, alpha, linear_to_sRGB):
     return load_image_data, True, False
 
 
-def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
+def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[], frame=-1):
     if visited is None:
         visited = set()
 
@@ -198,7 +199,7 @@ def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
         if inode in visited:
             continue
 
-        node_data = extract_node_data(inode)
+        node_data = extract_node_data(inode, frame)
         if node_data:
             if node_data['class_type'] in ignore_nodes:
                 continue
@@ -209,7 +210,7 @@ def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
             sd_nodes.append((inode, node_data))
 
         sd_nodes.extend(get_connected_comfyui_nodes(
-            inode, visited, ignore_nodes))
+            inode, visited, ignore_nodes, frame))
 
     return sd_nodes
 
@@ -229,7 +230,7 @@ def get_node_data(node):
     return json.loads(data)
 
 
-def extract_node_data(node):
+def extract_node_data(node, frame=-1):
     data = get_node_data(node)
     if not data:
         return {}
@@ -240,7 +241,10 @@ def extract_node_data(node):
         if not knob.name()[-1:] == '_':
             continue
 
-        value = knob.value()
+        if hasattr(knob, 'valueAt') and frame >= 0:
+            value = knob.valueAt(frame)
+        else:
+            value = knob.value()
 
         if type(knob) == nuke.Enumeration_Knob:
             try:

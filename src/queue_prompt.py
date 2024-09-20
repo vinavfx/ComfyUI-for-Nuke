@@ -149,7 +149,7 @@ def animation_submit():
     def each_frame(frame, filename):
         progress = int((frame - first_frame) * 100 / (last_frame - first_frame))
         frames_task[0].setProgress(progress)
-        frames_task[0].setMessage('Frame: ' + str(frame + 1))
+        frames_task[0].setMessage('Frame: ' + str(frame))
         sequence.append((filename, frame))
 
     def finished_inference():
@@ -187,13 +187,12 @@ def submit(animation=None):
         nuke.comfyui_running = False
         return
 
-    if animation:
-        nuke.frame(animation[0])
+    frame = animation[0] if animation else -1
 
     queue_prompt_node = nuke.thisNode()
     exr_filepath_fixed(queue_prompt_node)
 
-    data, input_node_changed = extract_data()
+    data, input_node_changed = extract_data(frame)
 
     if not data:
         nuke.comfyui_running = False
@@ -206,7 +205,7 @@ def submit(animation=None):
         return
 
     update_filename_prefix(queue_prompt_node)
-    data, _ = extract_data()
+    data, _ = extract_data(frame)
 
     state_data = copy.deepcopy(data)
     queue_prompt_node.knob('comfyui_submit').setEnabled(False)
