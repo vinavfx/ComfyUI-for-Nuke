@@ -144,11 +144,10 @@ def animation_submit():
 
     frames_task = [nuke.ProgressTask('Sending Frames...')]
     frames_task[0].setMessage('Frame: ' + str(first_frame))
-    max_frames = last_frame - first_frame + 1
     sequence = []
 
     def each_frame(frame, filename):
-        progress = int(frame * 100 / max_frames)
+        progress = int((frame - first_frame) * 100 / (last_frame - first_frame))
         frames_task[0].setProgress(progress)
         frames_task[0].setMessage('Frame: ' + str(frame + 1))
         sequence.append((filename, frame))
@@ -168,7 +167,7 @@ def animation_submit():
         filename = nuke.getFileNameList(sequence_output)[0]
         create_read(queue_prompt_node, os.path.join(sequence_output, filename))
 
-    submit((first_frame, max_frames, each_frame, finished_inference))
+    submit((first_frame, last_frame, each_frame, finished_inference))
 
 
 def submit(animation=None):
@@ -188,11 +187,11 @@ def submit(animation=None):
         nuke.comfyui_running = False
         return
 
-    queue_prompt_node = nuke.thisNode()
-    exr_filepath_fixed(queue_prompt_node)
-
     if animation:
         nuke.frame(animation[0])
+
+    queue_prompt_node = nuke.thisNode()
+    exr_filepath_fixed(queue_prompt_node)
 
     data, input_node_changed = extract_data()
 
@@ -307,16 +306,16 @@ def submit(animation=None):
         filename = get_filename(queue_prompt_node)
 
         if animation:
-            frame, max_frames, each, end = animation
+            frame, last_frame, each, end = animation
             each(frame, get_filename(queue_prompt_node))
 
             next_frame = frame + 1
-            if next_frame > max_frames:
+            if next_frame > last_frame:
                 end()
                 return
 
             queue_prompt_node.begin()
-            submit((next_frame, max_frames, each, end))
+            submit((next_frame, last_frame, each, end))
 
             return
 
