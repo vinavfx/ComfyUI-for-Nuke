@@ -5,6 +5,7 @@
 # -----------------------------------------------------------
 import textwrap
 import os
+import shutil
 import sys
 import nuke  # type: ignore
 import uuid
@@ -20,7 +21,7 @@ from ..env import IP, PORT, COMFYUI_DIR
 from .common import get_comfyui_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt, check_connection
 from .nodes import extract_data, get_connected_comfyui_nodes
-from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
+from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, get_filename
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
 states = {}
@@ -123,7 +124,54 @@ def preview_image_update(node_name, data):
     preview_node.end()
 
 
-def comfyui_submit():
+def animation_submit():
+    queue_prompt_node = nuke.thisNode()
+
+    p = nuke.Panel('ComfyUI Submit')
+    p.addSingleLineInput(
+        'Frames', '{}-{}'.format(nuke.root().firstFrame(), nuke.root().lastFrame()))
+    p.addButton('Cancel')
+    p.addButton('Send')
+
+    if not p.show():
+        return
+
+    try:
+        first_frame, last_frame = map(int, p.value('Frames').split('-'))
+    except:
+        nuke.message('Incompatible field of "Frames"')
+        return
+
+    frames_task = [nuke.ProgressTask('Sending Frames...')]
+    frames_task[0].setMessage('Frame: ' + str(first_frame))
+    max_frames = last_frame - first_frame + 1
+    sequence = []
+
+    def each_frame(frame, filename):
+        progress = int(frame * 100 / max_frames)
+        frames_task[0].setProgress(progress)
+        frames_task[0].setMessage('Frame: ' + str(frame + 1))
+        sequence.append((filename, frame))
+
+    def finished_inference():
+        del frames_task[0]
+
+        first_filename = sequence[0][0]
+        basename = first_filename.split('_')[0]
+        sequence_output = os.path.dirname(first_filename)
+        ext = first_filename.split('.')[-1]
+
+        for filename, frame in sequence:
+            frame_str = '0000{}'.format(frame)[-4:]
+            shutil.move(filename, '{}_{}.{}'.format(basename, frame_str, ext))
+
+        filename = nuke.getFileNameList(sequence_output)[0]
+        create_read(queue_prompt_node, os.path.join(sequence_output, filename))
+
+    submit((first_frame, max_frames, each_frame, finished_inference))
+
+
+def submit(animation=None):
     if not check_connection():
         return
 
@@ -143,6 +191,9 @@ def comfyui_submit():
     queue_prompt_node = nuke.thisNode()
     exr_filepath_fixed(queue_prompt_node)
 
+    if animation:
+        nuke.frame(animation[0])
+
     data, input_node_changed = extract_data()
 
     if not data:
@@ -152,7 +203,7 @@ def comfyui_submit():
     global states
     if data == states.get(queue_prompt_node.fullName(), {}) and not input_node_changed:
         nuke.comfyui_running = False
-        create_read(queue_prompt_node)
+        create_read(queue_prompt_node, get_filename(queue_prompt_node))
         return
 
     update_filename_prefix(queue_prompt_node)
@@ -253,8 +304,24 @@ def comfyui_submit():
         nuke.comfyui_running = False
 
     def progress_finished(n):
+        filename = get_filename(queue_prompt_node)
+
+        if animation:
+            frame, max_frames, each, end = animation
+            each(frame, get_filename(queue_prompt_node))
+
+            next_frame = frame + 1
+            if next_frame > max_frames:
+                end()
+                return
+
+            queue_prompt_node.begin()
+            submit((next_frame, max_frames, each, end))
+
+            return
+
         try:
-            create_read(n)
+            create_read(n, filename)
 
             if not execution_error[0]:
                 remove_all_error_style(queue_prompt_node)

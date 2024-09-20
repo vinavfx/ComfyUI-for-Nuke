@@ -84,7 +84,7 @@ def get_gizmo_group(queue_prompt_node):
             return gizmo
 
 
-def create_read(queue_prompt_node):
+def get_filename(queue_prompt_node):
     output_node = get_input(queue_prompt_node, 0)
     if not output_node:
         return
@@ -116,6 +116,13 @@ def create_read(queue_prompt_node):
     if not filename:
         return
 
+    return os.path.join(sequence_output, filename)
+
+
+def create_read(queue_prompt_node, filename):
+    if not filename:
+        return
+
     main_node = get_gizmo_group(queue_prompt_node)
     if not main_node:
         main_node = queue_prompt_node
@@ -130,7 +137,7 @@ def create_read(queue_prompt_node):
         if not read:
             read = nuke.createNode('Read', inpanel=False)
 
-        read.knob('file').fromUserText(os.path.join(sequence_output, filename))
+        read.knob('file').fromUserText(filename)
         set_correct_colorspace(read)
 
     elif ext in ['flac', 'mp3', 'wav']:
@@ -139,8 +146,7 @@ def create_read(queue_prompt_node):
             read = nuke.nodePaste(os.path.join(
                 NUKE_USER, 'nuke_comfyui', 'nodes', 'ComfyUI', 'AudioPlay.nk'))
 
-        read.knob('audio').setValue(
-            os.path.join(sequence_output, filename))
+        read.knob('audio').setValue(filename)
     else:
         return
 
