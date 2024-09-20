@@ -142,18 +142,17 @@ def animation_submit():
         nuke.message('Incompatible field of "Frames"')
         return
 
-    frames_task = [nuke.ProgressTask('Sending Frames...')]
-    frames_task[0].setMessage('Frame: ' + str(first_frame))
+    animation_task = [nuke.ProgressTask('Sending Frames...')]
     sequence = []
 
     def each_frame(frame, filename):
         progress = int((frame - first_frame) * 100 / (last_frame - first_frame))
-        frames_task[0].setProgress(progress)
-        frames_task[0].setMessage('Frame: ' + str(frame))
+        animation_task[0].setProgress(progress)
+        animation_task[0].setMessage('Frame: ' + str(frame))
         sequence.append((filename, frame))
 
     def finished_inference():
-        del frames_task[0]
+        del animation_task[0]
 
         first_filename = sequence[0][0]
         basename = first_filename.split('_')[0]
@@ -167,7 +166,7 @@ def animation_submit():
         filename = nuke.getFileNameList(sequence_output)[0]
         create_read(queue_prompt_node, os.path.join(sequence_output, filename))
 
-    submit((first_frame, last_frame, each_frame, finished_inference))
+    submit([first_frame, last_frame, each_frame, finished_inference, animation_task])
 
 
 def submit(animation=None):
@@ -283,6 +282,12 @@ def submit(animation=None):
             if task[0].isCancelled():
                 cancelled = True
                 break
+
+            if animation:
+                if animation[4][0].isCancelled():
+                    cancelled = True
+                    break
+
             sleep(1)
 
         interrupt()
@@ -305,7 +310,10 @@ def submit(animation=None):
         filename = get_filename(queue_prompt_node)
 
         if animation:
-            frame, last_frame, each, end = animation
+            frame, last_frame, each, end, animation_task = animation
+            if animation_task[0].isCancelled():
+                return
+
             each(frame, get_filename(queue_prompt_node))
 
             next_frame = frame + 1
@@ -314,7 +322,7 @@ def submit(animation=None):
                 return
 
             queue_prompt_node.begin()
-            submit((next_frame, last_frame, each, end))
+            submit((next_frame, last_frame, each, end, animation_task))
 
             return
 
