@@ -242,7 +242,7 @@ def extract_node_data(node, frame=-1):
             continue
 
         if hasattr(knob, 'valueAt') and frame >= 0:
-            value = knob.valueAt(frame)
+            value = knob.valueAt(frame) if knob.isAnimated() else knob.value()
         else:
             value = knob.value()
 
