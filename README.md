@@ -126,3 +126,5 @@ to latent, and in the same node there is a button to create a restore node, put 
 
 5 - To use Switch on ComfyUI nodes use '<b>SwitchAny</b>' as ComfyUI switch nodes don't work
 because they have 'any *' inputs and outputs, which is not possible on nuke because it doesn't have multiple outputs.
+
+6 - If you want to have the ComfyUI server on another machine, you must share the folder where ComfyUI is installed and put the path in [env.py](./env.py)
