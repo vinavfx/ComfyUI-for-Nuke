@@ -11,7 +11,7 @@ Group {
  addUserKnob {20 controls l Controls}
  addUserKnob {22 comfyui_submit l Submit t "Send a request to ComfyUI Server" T "if nuke.thisNode().knob('force_animation').value():\n    comfyui.queue_prompt.animation_submit()\nelse:\n    comfyui.queue_prompt.submit()" +STARTLINE}
  addUserKnob {22 backup_result l "Backup Result" t "Create a new Read Node from the last result" -STARTLINE T comfyui.read_media.save_image_backup()}
- addUserKnob {6 force_animation l "Force Animation" t "This allows it to recognize knob animations, sending multiple requests to ComfyUI, all 'Batch Size' have to be 1, since 1 frame will be sent for each request !" +STARTLINE}
+ addUserKnob {6 force_animation l "Force Animation" t "This allows you to recognize knob animations and send multiple requests to ComfyUI. Any node that alters the 'batch size' will cause a frame mismatch, The 'batch size' should always be 1, as 1 frame will be sent for each request !" +STARTLINE}
 }
 Input {
   inputs 0
