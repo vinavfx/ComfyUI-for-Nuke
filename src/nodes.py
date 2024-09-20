@@ -72,7 +72,7 @@ def extract_data(frame):
 
             if not input_node.name() in comfyui_nodes:
                 load_image_data, changed_node, execution_canceled = create_load_images_and_save(
-                    input_node, key in mask_inputs, linear_to_sRGB)
+                    input_node, key in mask_inputs, linear_to_sRGB, frame)
 
                 if execution_canceled:
                     return {}, None
@@ -85,7 +85,9 @@ def extract_data(frame):
     return data, input_node_changed
 
 
-def create_load_images_and_save(node, alpha, linear_to_sRGB):
+def create_load_images_and_save(node, alpha, linear_to_sRGB, frame=-1):
+    animation = frame >= 0
+
     global states
     connected_nodes = get_connected_nodes(node, continue_at_up_level=True)
     connected_nodes.append(node)
@@ -114,7 +116,7 @@ def create_load_images_and_save(node, alpha, linear_to_sRGB):
 
     input_dir = '{}/input'.format(get_comfyui_dir())
 
-    if current_state.get('connected_nodes') == prev_state.get('connected_nodes'):
+    if current_state.get('connected_nodes') == prev_state.get('connected_nodes') and not animation:
         dirname = prev_state.get('dirname', 'none')
         sequence_dir = os.path.join(input_dir, dirname)
 
@@ -149,7 +151,10 @@ def create_load_images_and_save(node, alpha, linear_to_sRGB):
     write.knob('channels').setValue('rgba' if alpha else 'rgb')
 
     try:
-        nuke.execute(write, node.firstFrame(), node.lastFrame())
+        if animation:
+            nuke.execute(write, frame, frame)
+        else:
+            nuke.execute(write, node.firstFrame(), node.lastFrame())
     except:
         nuke.delete(write)
         nuke.message(traceback.format_exc())
