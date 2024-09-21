@@ -13,7 +13,7 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 
 
 ## Installation
-1. Copy to nuke folder
+### 1. Copy to nuke folder
     ```sh
     # Linux:
     cd ~/.nuke
@@ -26,10 +26,10 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
     ```
 Or manually copy the entire git downloaded folder and its submodules to the nuke user folder
 
-## 2. Install `websocket-client` Python Library
+### 2. Install `websocket-client` Python Library
 `websocket-client` is a third-party library needed for the scripts to work correctly. [Here is a direct link to it's pypi installation](https://pypi.org/project/websocket-client/). There are two main ways to install this:
 
-### Option A: Direct Installation (System-Wide)
+#### Option A: Direct Installation (System-Wide)
 This method installs the `websocket-client` library directly to your operating system’s Python environment.
 
 1. Open a terminal (or command prompt on Windows) and run:
@@ -47,7 +47,7 @@ This method installs the `websocket-client` library directly to your operating s
     comfyui.setup()
     ```
 
-### Option B: Custom Module Imports using `NUKE_PATH`
+#### Option B: Custom Module Imports using `NUKE_PATH`
 If you want to use the module without adding it directly to the operating system python installation, you can set up `NUKE_PATH` to include your custom scripts and modules with a script to load those paths at Nuke startup:
 
 1. **Create a Custom Directory**: Create a directory for your custom scripts, e.g., `C:\my_nuke_scripts` or `~/my_nuke_scripts`.
@@ -79,12 +79,12 @@ If you want to use the module without adding it directly to the operating system
          print(f"path added: {path}")
    ```
 
-## 3. Clone ComfyUI to any directory
+### 3. Clone ComfyUI to any directory
 ```sh
 git clone https://github.com/comfyanonymous/ComfyUI
 ```
 
-## 4. Install ComfyUI-HQ-Image-Save (required to work with EXR)
+### 4. Install ComfyUI-HQ-Image-Save (required to work with EXR)
 ```sh
 cd <ComfyUI Directory>/custom_nodes
 git clone https://github.com/spacepxl/ComfyUI-HQ-Image-Save.git
@@ -92,7 +92,7 @@ cd ./ComfyUI-HQ-Image-Save
 pip install -r requirements.txt
 ```
 
-## 5. Some nodes need additional repositories to work (Optional)
+### 5. Some nodes need additional repositories to work (Optional)
 ```sh
 cd <ComfyUI Directory>/custom_nodes
 
@@ -112,7 +112,7 @@ git clone https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git
 git clone https://github.com/kijai/ComfyUI-LivePortraitKJ.git
 ```
 
-## 6. Download some models
+### 6. Download some models
 ```sh
 cd <ComfyUI Directory>/models/checkpoints
 wget https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors
