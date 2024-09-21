@@ -14,16 +14,16 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 
 ## Installation
 ### 1. Copy to nuke folder
-    ```sh
-    # Linux:
-    cd ~/.nuke
-    git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
+   ```sh
+   # Linux:
+   cd ~/.nuke
+   git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
 
-    # Windows
-    # Download git: https://git-scm.com/download/win
-    cd "C:\Users\<username>\.nuke"
-    git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
-    ```
+   # Windows
+   # Download git: https://git-scm.com/download/win
+   cd "C:\Users\<username>\.nuke"
+   git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
+   ```
 Or manually copy the entire git downloaded folder and its submodules to the nuke user folder
 
 ### 2. Install `websocket-client` Python Library
@@ -36,16 +36,6 @@ This method installs the `websocket-client` library directly to your operating s
    ```bash
    pip install websocket-client
    ```
-
-2. Then Copy these lines into <b>menu.py</b>
-    ```python
-    # Include path where websocket-client was installed
-    # Windows: 'C:/Users/<USER>/AppData/Local/Programs/Python/Python37/Lib/site-packages'
-    nuke.pluginAddPath('/home/<USER>/.local/lib/python3.7/site-packages') # Linux
-
-    import nuke_comfyui as comfyui
-    comfyui.setup()
-    ```
 
 #### Option B: Custom Module Imports using `NUKE_PATH`
 If you want to use the module without adding it directly to the operating system python installation, you can set up `NUKE_PATH` to include your custom scripts and modules with a script to load those paths at Nuke startup:
@@ -78,13 +68,39 @@ If you want to use the module without adding it directly to the operating system
          sys.path.append(path)
          print(f"path added: {path}")
    ```
+### 3. Copy these lines into <b>menu.py</b>
 
-### 3. Clone ComfyUI to any directory
+If you installed the package directly into your Operating System python installation, you will need the path to the site-packages folder for that installation.
+
+This is typically in the following locations:
+
+```sh
+# Linux/Mac:
+'/home/<USER>/.local/lib/python3.7/site-packages'
+
+# Windows
+'C:/Users/<USER>/AppData/Local/Programs/Python/Python37/Lib/site-packages'
+```
+
+You can then add or update your Nuke `menu.py` file to include the location of your site-packages installation:
+
+```python
+nuke.pluginAddPath('<path_to_site-packages>')
+```
+
+If you are adding the library at runtime, or if you installed it to the Operating System Python installation, you will need to add or update your `menu.py` file to actually include and install the nuke_comfyui script:
+
+```python
+import nuke_comfyui as comfyui
+comfyui.setup()
+```
+
+### 4. Clone ComfyUI to any directory
 ```sh
 git clone https://github.com/comfyanonymous/ComfyUI
 ```
 
-### 4. Install ComfyUI-HQ-Image-Save (required to work with EXR)
+### 5. Install ComfyUI-HQ-Image-Save (required to work with EXR)
 ```sh
 cd <ComfyUI Directory>/custom_nodes
 git clone https://github.com/spacepxl/ComfyUI-HQ-Image-Save.git
@@ -92,7 +108,7 @@ cd ./ComfyUI-HQ-Image-Save
 pip install -r requirements.txt
 ```
 
-### 5. Some nodes need additional repositories to work (Optional)
+### 6. Some nodes need additional repositories to work (Optional)
 ```sh
 cd <ComfyUI Directory>/custom_nodes
 
