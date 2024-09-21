@@ -128,3 +128,6 @@ to latent, and in the same node there is a button to create a restore node, put 
 because they have 'any *' inputs and outputs, which is not possible on nuke because it doesn't have multiple outputs.
 
 6 - If you want to have the ComfyUI server on another machine, you must share the folder where ComfyUI is installed and put the path in [env.py](./env.py)
+
+7 - Use the QueuePrompt '<b>Force Animation</b>' method only if you have some keyframes animated,
+as this way is slower because it sends requests frame by frame and not in batches.
