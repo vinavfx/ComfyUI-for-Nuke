@@ -1,5 +1,9 @@
 session.vim
 .undodir/
-**/*.pyc
+*.py[cod]
 **/*.swp
 nodes/Gizmos
+__pycache__
+_*/
+*.code-workspace
+.vscode
