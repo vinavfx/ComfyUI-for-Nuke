@@ -6,59 +6,85 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 </div>
 
 ## Requirements
-1 - Nuke 12 or higher (Not tested on previous versions !)
-
-2 - websocket-client
-
-3 - <a href="https://github.com/comfyanonymous/ComfyUI" target="_blank">ComfyUI</a>
-
-4 - ComfyUI-HQ-Image-Save (required to load images and sequences and work with EXR)
+  * Nuke 12 or higher (Not tested on previous versions !)
+  * `websocket-client` Python library
+  * <a href="https://github.com/comfyanonymous/ComfyUI" target="_blank">ComfyUI</a>
+  * ComfyUI-HQ-Image-Save (required to load images and sequences and work with EXR)
 
 
 ## Installation
-1 - Copy to nuke folder
-```sh
-# Linux:
-cd ~/.nuke
-git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
+1. Copy to nuke folder
+    ```sh
+    # Linux:
+    cd ~/.nuke
+    git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
 
-# Windows
-# Download git: https://git-scm.com/download/win
-cd "C:\Users\<username>\.nuke"
-git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
+    # Windows
+    # Download git: https://git-scm.com/download/win
+    cd "C:\Users\<username>\.nuke"
+    git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
+    ```
+Or manually copy the entire git downloaded folder and its submodules to the nuke user folder
 
-# Or manually copy the entire git downloaded folder and its
-# submodules to the nuke user folder
-```
+## 2. Install `websocket-client` Python Library
+`websocket-client` is a third-party library needed for the scripts to work correctly. [Here is a direct link to it's pypi installation](https://pypi.org/project/websocket-client/). There are two main ways to install this:
 
-2 - Install Websocket Client in python
-```sh
-# Websocket cannot be installed directly on Nuke, so the Python library of
-# the operating system must be imported, and for that reason that version
-# of the system's python version must be the same as that of 
-# Nuke because different versions will not be compatible !
+### Option A: Direct Installation (System-Wide)
+This method installs the `websocket-client` library directly to your operating system’s Python environment.
 
-# Install websocket on your operating system python:
-pip install websocket-client
-# Example: python3.10 -m pip install websocket-client
-```
+1. Open a terminal (or command prompt on Windows) and run:
+   ```bash
+   pip install websocket-client
+   ```
 
-3 - Copy this lines to <b>menu.py</b>
-```python
-# Include path where websocket-client was installed
-# Windows: 'C:/Users/<USER>/AppData/Local/Programs/Python/Python37/Lib/site-packages'
-nuke.pluginAddPath('/home/<USER>/.local/lib/python3.7/site-packages') # Linux
+2. Then Copy these lines into <b>menu.py</b>
+    ```python
+    # Include path where websocket-client was installed
+    # Windows: 'C:/Users/<USER>/AppData/Local/Programs/Python/Python37/Lib/site-packages'
+    nuke.pluginAddPath('/home/<USER>/.local/lib/python3.7/site-packages') # Linux
 
-import nuke_comfyui as comfyui
-comfyui.setup()
-```
+    import nuke_comfyui as comfyui
+    comfyui.setup()
+    ```
 
-4 - Clone ComfyUI to any directory
+### Option B: Custom Module Imports using `NUKE_PATH`
+If you want to use the module without adding it directly to the operating system python installation, you can set up `NUKE_PATH` to include your custom scripts and modules with a script to load those paths at Nuke startup:
+
+1. **Create a Custom Directory**: Create a directory for your custom scripts, e.g., `C:\my_nuke_scripts` or `~/my_nuke_scripts`.
+2. **Set the `NUKE_PATH` Environment Variable**:
+    ```sh
+    # Linux/Mac:
+    export NUKE_PATH="/absolute/path/to/my_nuke_scripts"
+
+    # Windows
+    set NUKE_PATH="C:\absolute\path\to\my_nuke_scripts"
+    ```
+3. **In the `my_nuke_scripts` directory**: Create, or update, the `init.py` file with the following content:
+   ```python
+   import os
+   import sys
+
+   # Get the directory of this script
+   nuke_path_dir = os.path.dirname(__file__)
+
+   # Define your custom paths relative to this directory
+   custom_paths = [
+      os.path.join(nuke_path_dir, "_lib"),
+   ]
+
+   # Add each path to sys.path if it exists
+   for path in custom_paths:
+      if os.path.exists(path) and path not in sys.path:
+         sys.path.append(path)
+         print(f"path added: {path}")
+   ```
+
+## 3. Clone ComfyUI to any directory
 ```sh
 git clone https://github.com/comfyanonymous/ComfyUI
 ```
 
-5 - Install ComfyUI-HQ-Image-Save (required to work with EXR)
+## 4. Install ComfyUI-HQ-Image-Save (required to work with EXR)
 ```sh
 cd <ComfyUI Directory>/custom_nodes
 git clone https://github.com/spacepxl/ComfyUI-HQ-Image-Save.git
@@ -66,7 +92,7 @@ cd ./ComfyUI-HQ-Image-Save
 pip install -r requirements.txt
 ```
 
-6 - Some nodes need additional repositories to work (Optional)
+## 5. Some nodes need additional repositories to work (Optional)
 ```sh
 cd <ComfyUI Directory>/custom_nodes
 
@@ -86,7 +112,7 @@ git clone https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git
 git clone https://github.com/kijai/ComfyUI-LivePortraitKJ.git
 ```
 
-7 - Download some models 
+## 6. Download some models
 ```sh
 cd <ComfyUI Directory>/models/checkpoints
 wget https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors
@@ -119,7 +145,7 @@ of the output because that will be the batch size.
 
 2 - To make ComfyUI work with pixel values greater than 1 and less than 0, uncheck the <b>'sRGB_to_linear'</b> box in the <b>'SaveEXR'</b> node
 
-3 - Latent images only work with formats with multiple of 8, add the '<b>PrepareImageForLatent</b>' node before passing the image 
+3 - Latent images only work with formats with multiple of 8, add the '<b>PrepareImageForLatent</b>' node before passing the image
 to latent, and in the same node there is a button to create a restore node, put it on the image after inference to restore.
 
 4 - To load all ComfyUI nodes when Nuke starts, change the '<b>update_menu_at_start</b>' variable in the [__init__.py](./__init__.py) file
