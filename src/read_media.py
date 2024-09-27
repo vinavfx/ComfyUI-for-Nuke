@@ -22,7 +22,11 @@ def exr_filepath_fixed(queue_prompt_node):
             continue
 
         filepath = filepath_knob.value()
-        filepath = filepath.replace(get_padding(filepath), '%04d')
+        padding = get_padding(filepath)
+        if not padding:
+            continue
+
+        filepath = filepath.replace(padding, '%04d')
         filepath_knob.setText(filepath)
 
 
