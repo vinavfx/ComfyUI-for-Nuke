@@ -149,7 +149,7 @@ python main.py
 2 - Modify environment variables in [env.py](./env.py)
 
 ```python
-COMFYUI_DIR = '<ComfyUI>'
+COMFYUI_DIR = '<ComfyUI>' # Put the directory where ComfyUI is installed !
 IP = '127.0.0.1'
 PORT = 8188
 NUKE_USER = '<.../.nuke>' # Change only if your path is different !
