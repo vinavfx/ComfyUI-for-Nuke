@@ -6,7 +6,7 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 </div>
 
 ## Requirements
-  * Nuke 12 or higher (Not tested on previous versions !)
+  * Nuke 11 or higher (Not tested on previous versions !)
   * `websocket-client` Python library
   * <a href="https://github.com/comfyanonymous/ComfyUI" target="_blank">ComfyUI</a>
   * ComfyUI-HQ-Image-Save (required to load images and sequences and work with EXR)
@@ -149,10 +149,10 @@ python main.py
 2 - Modify environment variables in [env.py](./env.py)
 
 ```python
-COMFYUI_DIR = '<ComfyUI>' # Put the directory where ComfyUI is installed !
+COMFYUI_DIR = '<path_to_ComfyUI>' # Put the directory where ComfyUI is installed !
 IP = '127.0.0.1'
 PORT = 8188
-NUKE_USER = '<.../.nuke>' # Change only if your path is different !
+NUKE_USER = '<path_to_.nuke>' # Change only if your path is different !
 ```
 
 ## Tips
