@@ -59,7 +59,7 @@ def update_filename_prefix(queue_prompt_node):
         prefix = prefix.replace(old_rand + '/', '')
 
     rand = random.randint(10000000000, 99999999990)
-    new_prefix = os.path.join(str(rand), prefix)
+    new_prefix = '{}/{}'.format(rand, prefix)
     filename_prefix_knob.setValue(new_prefix)
 
 
