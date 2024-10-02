@@ -110,7 +110,7 @@ def preview_image_update(node_name, data):
 
     preview_node.begin()
 
-    filename = os.path.join(COMFYUI_DIR, 'temp', filename)
+    filename = '{}/temp/{}'.format(COMFYUI_DIR, filename)
     read = nuke.toNode('read')
 
     if not read:
