@@ -222,11 +222,11 @@ def submit(animation=None):
 
     def on_message(_, message):
         # Check if message is binary data. This e.g. happens when a live preview is send from ComfyUI.
-        if isinstance(message, bytes):
+        try:
+            message = json.loads(message)
+        except:
             # TODO: maybe show the preview image in Nuke?
             return
-
-        message = json.loads(message)
 
         data = message.get('data', None)
         type_data = message.get('type', None)
