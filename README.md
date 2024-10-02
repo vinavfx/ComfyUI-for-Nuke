@@ -5,10 +5,8 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
   <img src="images/screenshot.png"/>
 </div>
 
-___
 ##### SUPPORT THE MAINTENANCE OF THIS PROJECT:
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/paypalme/ComfyUIforNuke)
-___
 
 ## Requirements
   * Nuke 11 or higher (Not tested on previous versions !)
