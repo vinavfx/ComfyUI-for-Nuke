@@ -45,7 +45,9 @@ Open a terminal (or command prompt on Windows) and run:
 
 ### 3. Copy these lines into <b>menu.py</b>
 
-You can then add or update your Nuke `menu.py` file to include the location of your site-packages installation:
+You can then add or update your Nuke `menu.py` file to include the location of your site-packages installation,
+It is not necessary to add the site-package if websocket was installed with the root or administrator user,
+since in that case it would be within the Nuke installation !
 
 ```python
 # Linux/Mac:
