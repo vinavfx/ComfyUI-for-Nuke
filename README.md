@@ -14,7 +14,6 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
   * <a href="https://github.com/comfyanonymous/ComfyUI" target="_blank">ComfyUI</a>
   * ComfyUI-HQ-Image-Save (required to load images and sequences and work with EXR)
 
-
 ## Installation
 ### 1. Copy to nuke folder
    ```sh
@@ -30,77 +29,44 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 Or manually copy the entire git downloaded folder and its submodules to the nuke user folder
 
 ### 2. Install `websocket-client` Python Library
-`websocket-client` is a third-party library needed for the scripts to work correctly. [Here is a direct link to it's pypi installation](https://pypi.org/project/websocket-client/). There are two main ways to install this:
+`websocket-client` is a third-party library needed for the scripts to work correctly. [Here is a direct link to it's pypi installation](https://pypi.org/project/websocket-client/). 
 
-#### Option A: Direct Installation (System-Wide)
-This method installs the `websocket-client` library directly to your operating system’s Python environment.
+This method installs the `websocket-client` library directly to your Nuke's Python environment.
+This example will be done with Nuke version 15.1v3, depending on your version change the number.
 
-1. Open a terminal (or command prompt on Windows) and run:
+Open a terminal (or command prompt on Windows) and run:
    ```bash
-   pip install websocket-client
-   ```
-
-#### Option B: Custom Module Imports using `NUKE_PATH`
-If you want to use the module without adding it directly to the operating system python installation, you can set up `NUKE_PATH` to include your custom scripts and modules with a script to load those paths at Nuke startup:
-
-1. **Create a Custom Directory**: Create a directory for your custom scripts, e.g., `C:\my_nuke_scripts` or `~/my_nuke_scripts`.
-2. **Set the `NUKE_PATH` Environment Variable**:
-    ```sh
     # Linux/Mac:
-    export NUKE_PATH="/absolute/path/to/my_nuke_scripts"
+   /usr/local/Nuke15.1v3/python3 -m pip install websocket-client
 
-    # Windows
-    set NUKE_PATH="C:\absolute\path\to\my_nuke_scripts"
-    ```
-3. **In the `my_nuke_scripts` directory**: Create, or update, the `init.py` file with the following content:
-   ```python
-   import os
-   import sys
-
-   # Get the directory of this script
-   nuke_path_dir = os.path.dirname(__file__)
-
-   # Define your custom paths relative to this directory
-   custom_paths = [
-      os.path.join(nuke_path_dir, "_lib"),
-   ]
-
-   # Add each path to sys.path if it exists
-   for path in custom_paths:
-      if os.path.exists(path) and path not in sys.path:
-         sys.path.append(path)
-         print(f"path added: {path}")
+    # Windows (As administrator)
+    "C:\Program Files\Nuke15.1v3\python.exe" -m pip install websocket-client
    ```
+
 ### 3. Copy these lines into <b>menu.py</b>
-
-If you installed the package directly into your Operating System python installation, you will need the path to the site-packages folder for that installation.
-
-This is typically in the following locations:
-
-```sh
-# Linux/Mac:
-'/home/<USER>/.local/lib/python3.7/site-packages'
-
-# Windows
-'C:/Users/<USER>/AppData/Local/Programs/Python/Python37/Lib/site-packages'
-```
 
 You can then add or update your Nuke `menu.py` file to include the location of your site-packages installation:
 
 ```python
-nuke.pluginAddPath('<path_to_site-packages>')
-```
+# Linux/Mac:
+nuke.pluginAddPath('{}/.local/lib/python{}.{}/site-packages'.format(
+    os.path.expanduser('~'), sys.version_info.major, sys.version_info.minor))
 
-If you are adding the library at runtime, or if you installed it to the Operating System Python installation, you will need to add or update your `menu.py` file to actually include and install the nuke_comfyui script:
+# Windows (Add only in Nuke older than 12.2)
+nuke.pluginAddPath('C:/Python27/Lib/site-packages')
+```
 
 ```python
 import nuke_comfyui as comfyui
 comfyui.setup()
 ```
 
-### 4. Clone ComfyUI to any directory
+### 4. Install ComfyUI-Manager
 ```sh
-git clone https://github.com/comfyanonymous/ComfyUI
+cd <ComfyUI Directory>/custom_nodes
+git clone https://github.com/ltdrdata/ComfyUI-Manager.git
+cd ./ComfyUI-Manager
+pip install -r requirements.txt
 ```
 
 ### 5. Install ComfyUI-HQ-Image-Save (required to work with EXR)
@@ -109,36 +75,6 @@ cd <ComfyUI Directory>/custom_nodes
 git clone https://github.com/spacepxl/ComfyUI-HQ-Image-Save.git
 cd ./ComfyUI-HQ-Image-Save
 pip install -r requirements.txt
-```
-
-### 6. Some nodes need additional repositories to work (Optional)
-```sh
-cd <ComfyUI Directory>/custom_nodes
-
-# Upscale
-git clone https://github.com/ssitu/ComfyUI_UltimateSDUpscale
-
-# AnimateDiff
-git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git
-
-# IPAdapter
-git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus
-
-# Advanced ControlNet
-git clone https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git
-
-# LivePortrait
-git clone https://github.com/kijai/ComfyUI-LivePortraitKJ.git
-```
-
-### 6. Download some models
-```sh
-cd <ComfyUI Directory>/models/checkpoints
-wget https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors
-
-# to download more models on these pages !
-# https://civitai.com
-# https://huggingface.co
 ```
 
 ## Setup
