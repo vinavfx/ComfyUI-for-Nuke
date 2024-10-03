@@ -5,9 +5,6 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
   <img src="images/screenshot.png"/>
 </div>
 
-##### SUPPORT THE MAINTENANCE OF THIS PROJECT:
-[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/paypalme/ComfyUIforNuke)
-
 ## Requirements
   * Nuke 11 or higher (Not tested on previous versions !)
   * `websocket-client` Python library
@@ -114,3 +111,6 @@ because they have 'any *' inputs and outputs, which is not possible on nuke beca
 
 7 - Use the QueuePrompt '<b>Force Animation</b>' method only if you have some keyframes animated,
 as this way is slower because it sends requests frame by frame and not in batches.
+
+## SUPPORT THE MAINTENANCE OF THIS PROJECT
+[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/paypalme/ComfyUIforNuke)
