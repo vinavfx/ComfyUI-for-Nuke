@@ -5,8 +5,8 @@ Group {
  name ComfyUIGizmo
  tile_color 0xa2b275ff
  selected true
- xpos 855
- ypos -44
+ xpos -1244
+ ypos 313
  addUserKnob {20 controls l Controls}
  addUserKnob {26 comfyui_gizmo l ComfyUIGizmo +INVISIBLE T "This knob only allows the read and backup to be outside the gizmo !"}
  addUserKnob {41 comfyui_submit l Submit T QueuePrompt.comfyui_submit}
@@ -21,13 +21,14 @@ Group {
  Group {
   name SaveEXR
   tile_color 0xbcb50001
+  selected false
   xpos 0
-  ypos 328
+  ypos 330
   addUserKnob {20 Controls}
   addUserKnob {1 filename_prefix_ l filename_prefix}
   filename_prefix_ image
-  addUserKnob {6 sRGB_to_linear_ l sRGB_to_linear +STARTLINE}
-  sRGB_to_linear_ true
+  addUserKnob {4 tonemap_ l tonemap M {linear sRGB Reinhard}}
+  tonemap_ sRGB
   addUserKnob {3 version_ l version}
   version_ 1
   addUserKnob {3 start_frame_ l start_frame}
@@ -35,19 +36,15 @@ Group {
   addUserKnob {3 frame_pad_ l frame_pad}
   frame_pad_ 4
   addUserKnob {4 save_workflow_ l save_workflow M {ui api "ui + api" none}}
-  addUserKnob {22 data -STARTLINE +HIDDEN T "\{\n    'knobs_order': \[\n        'filename_prefix_', \n        'sRGB_to_linear_', \n        'version_', \n        'start_frame_', \n        'frame_pad_', \n        'save_workflow_'\n    ], \n    'inputs': \[\n        \{\n            'opt': false, \n            'outputs': \[\n                'image'\n            ], \n            'name': 'images'\n        \}\n    ], \n    'class_type': 'SaveEXR', \n    'outputs': \[], \n    'output_node': true\n\}"}
+  addUserKnob {22 data -STARTLINE +HIDDEN T "\{\n    'knobs_order': \[\n        'filename_prefix_', \n        'tonemap_', \n        'version_', \n        'start_frame_', \n        'frame_pad_', \n        'save_workflow_'\n    ], \n    'inputs': \[\n        \{\n            'opt': false, \n            'outputs': \[\n                'image'\n            ], \n            'name': 'images'\n        \}\n    ], \n    'class_type': 'SaveEXR', \n    'outputs': \[], \n    'output_node': true\n\}"}
  }
   Input {
    inputs 0
    name images
-   xpos 400
-   ypos -9
   }
   Output {
    name Output1
    selected true
-   xpos 400
-   ypos 15
   }
  end_group
  Group {
@@ -55,7 +52,7 @@ Group {
   tile_color 0x609e38ff
   note_font "Bitstream Vera Sans"
   xpos 0
-  ypos 369
+  ypos 370
   addUserKnob {20 controls l Controls}
   addUserKnob {22 comfyui_submit l Submit t "Send a request to ComfyUI Server" T "if nuke.thisNode().knob('force_animation').value():\n    comfyui.queue_prompt.animation_submit()\nelse:\n    comfyui.queue_prompt.submit()" +STARTLINE}
   addUserKnob {22 backup_result l "Backup Result" t "Create a new Read Node from the last result" -STARTLINE T comfyui.read_media.save_image_backup()}
@@ -79,4 +76,3 @@ Group {
   ypos 424
  }
 end_group
-
