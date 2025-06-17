@@ -166,10 +166,10 @@ def animation_submit():
         filename = nuke.getFileNameList(sequence_output)[0]
         create_read(queue_prompt_node, os.path.join(sequence_output, filename))
 
-    submit([first_frame, last_frame, each_frame, finished_inference, animation_task])
+    submit(animation=[first_frame, last_frame, each_frame, finished_inference, animation_task])
 
 
-def submit(animation=None):
+def submit(queue_prompt_node=None, animation=None):
     if not check_connection():
         return
 
@@ -188,10 +188,10 @@ def submit(animation=None):
 
     frame = animation[0] if animation else -1
 
-    queue_prompt_node = nuke.thisNode()
+    queue_prompt_node = queue_prompt_node if queue_prompt_node else nuke.thisNode()
     exr_filepath_fixed(queue_prompt_node)
 
-    data, input_node_changed = extract_data(frame)
+    data, input_node_changed = extract_data(frame, queue_prompt_node)
 
     if not data:
         nuke.comfyui_running = False
@@ -204,7 +204,7 @@ def submit(animation=None):
         return
 
     update_filename_prefix(queue_prompt_node)
-    data, _ = extract_data(frame)
+    data, _ = extract_data(frame, queue_prompt_node)
 
     state_data = copy.deepcopy(data)
     queue_prompt_node.knob('comfyui_submit').setEnabled(False)
@@ -327,7 +327,7 @@ def submit(animation=None):
                 return
 
             queue_prompt_node.begin()
-            submit((next_frame, last_frame, each, end, animation_task))
+            submit(animation=(next_frame, last_frame, each, end, animation_task))
 
             return
 

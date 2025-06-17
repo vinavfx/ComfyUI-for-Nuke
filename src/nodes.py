@@ -16,8 +16,7 @@ from .common import image_inputs, mask_inputs, get_comfyui_dir
 states = {}
 
 
-def extract_data(frame):
-    queue_prompt_node = nuke.thisNode()
+def extract_data(frame, queue_prompt_node):
     output_node = get_input(queue_prompt_node, 0)
 
     if not output_node:
