@@ -200,10 +200,10 @@ def submit(queue_prompt_node=None, animation=None, success_callback=None):
     global states
     if data == states.get(queue_prompt_node.fullName(), {}) and not input_node_changed and not animation:
         nuke.comfyui_running = False
-        create_read(queue_prompt_node, get_filename(queue_prompt_node))
+        read = create_read(queue_prompt_node, get_filename(queue_prompt_node))
 
         if success_callback:
-            success_callback()
+            success_callback(read)
         return
 
     update_filename_prefix(queue_prompt_node)
@@ -335,10 +335,10 @@ def submit(queue_prompt_node=None, animation=None, success_callback=None):
             return
 
         try:
-            create_read(n, filename)
+            read = create_read(n, filename)
 
             if success_callback:
-                success_callback()
+                success_callback(read)
 
             if not execution_error[0]:
                 remove_all_error_style(queue_prompt_node)

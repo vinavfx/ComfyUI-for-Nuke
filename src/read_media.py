@@ -159,6 +159,8 @@ def create_read(queue_prompt_node, filename):
     read.knob('tile_color').setValue(
         main_node.knob('tile_color').value())
 
+    return read
+
 
 def save_image_backup():
     queue_prompt_node = nuke.thisNode()
