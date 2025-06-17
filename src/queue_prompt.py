@@ -169,7 +169,7 @@ def animation_submit():
     submit(animation=[first_frame, last_frame, each_frame, finished_inference, animation_task])
 
 
-def submit(queue_prompt_node=None, animation=None):
+def submit(queue_prompt_node=None, animation=None, success_callback=None):
     if not check_connection():
         return
 
@@ -333,6 +333,9 @@ def submit(queue_prompt_node=None, animation=None):
 
         try:
             create_read(n, filename)
+
+            if success_callback:
+                success_callback()
 
             if not execution_error[0]:
                 remove_all_error_style(queue_prompt_node)
