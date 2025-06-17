@@ -274,11 +274,13 @@ def extract_node_data(node, frame=-1):
             continue
 
         input_name = data['inputs'][i]['name']
+        output_index = 0
 
-        if input_name in image_inputs:
-            output_index = 0
-        elif input_name in mask_inputs:
-            output_index = 1
+        if not get_node_data(inode):
+            if input_name in image_inputs:
+                output_index = 0
+            elif input_name in mask_inputs:
+                output_index = 1
         else:
             output_index = get_output_index(node, data, i)
             if output_index == -2:
