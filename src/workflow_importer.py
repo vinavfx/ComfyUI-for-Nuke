@@ -9,7 +9,7 @@ import nuke  # type: ignore
 from ..nuke_util.nuke_util import set_hex_color
 from ..python_util.util import jread
 from .update_menu import create_comfyui_node, remove_signs, update_menu
-from .queue_prompt import error_node_style
+from .run import error_node_style
 from .nodes import get_node_data
 from .connection import convert_to_utf8
 from ..env import NUKE_USER
@@ -183,13 +183,13 @@ def import_workflow():
             node.setInput(i, onode)
 
         if 'Save' in attrs['type']:
-            queue_prompt_nk = os.path.join(
-                NUKE_USER, 'nuke_comfyui/nodes/ComfyUI/QueuePrompt.nk')
-            queue_prompt = nuke.nodePaste(queue_prompt_nk)
-            queue_prompt.setInput(0, node)
-            queue_prompt.setSelected(False)
-            queue_prompt.setXYpos(node.xpos(), node.ypos() + 25)
-            nodes.append(queue_prompt)
+            run_nk = os.path.join(
+                NUKE_USER, 'nuke_comfyui/nodes/ComfyUI/Run.nk')
+            run_node = nuke.nodePaste(run_nk)
+            run_node.setInput(0, node)
+            run_node.setSelected(False)
+            run_node.setXYpos(node.xpos(), node.ypos() + 25)
+            nodes.append(run_node)
 
     [n.setSelected(True) for n in nodes]
 

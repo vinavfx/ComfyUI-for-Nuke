@@ -49,21 +49,21 @@ def remove_all_error_style(root_node):
             error_node_style(n.fullName(), False)
 
 
-def update_node(node_name, data, queue_prompt_node):
+def update_node(node_name, data, run_node):
 
     if 'ShowText' in node_name:
-        show_text_uptate(node_name, data, queue_prompt_node)
+        show_text_uptate(node_name, data, run_node)
 
     elif 'PreviewImage' in node_name:
         preview_image_update(node_name, data)
 
 
-def show_text_uptate(node_name, data, queue_prompt_node):
+def show_text_uptate(node_name, data, run_node):
     output = data.get('output', {})
     texts = output.get('text', [])
     text = texts[0] if texts else ''
 
-    queue_prompt_node.parent().begin()
+    run_node.parent().begin()
     show_text_node = nuke.toNode(node_name)
 
     if not show_text_node:
@@ -125,7 +125,7 @@ def preview_image_update(node_name, data):
 
 
 def animation_submit():
-    queue_prompt_node = nuke.thisNode()
+    run_node = nuke.thisNode()
 
     p = nuke.Panel('ComfyUI Submit')
     p.addSingleLineInput(
@@ -164,12 +164,12 @@ def animation_submit():
             shutil.move(filename, '{}_{}.{}'.format(basename, frame_str, ext))
 
         filename = nuke.getFileNameList(sequence_output)[0]
-        create_read(queue_prompt_node, os.path.join(sequence_output, filename))
+        create_read(run_node, os.path.join(sequence_output, filename))
 
     submit(animation=[first_frame, last_frame, each_frame, finished_inference, animation_task])
 
 
-def submit(queue_prompt_node=None, animation=None, success_callback=None):
+def submit(run_node=None, animation=None, success_callback=None):
     if not check_connection():
         return
 
@@ -188,29 +188,29 @@ def submit(queue_prompt_node=None, animation=None, success_callback=None):
 
     frame = animation[0] if animation else -1
 
-    queue_prompt_node = queue_prompt_node if queue_prompt_node else nuke.thisNode()
-    exr_filepath_fixed(queue_prompt_node)
+    run_node = run_node if run_node else nuke.thisNode()
+    exr_filepath_fixed(run_node)
 
-    data, input_node_changed = extract_data(frame, queue_prompt_node)
+    data, input_node_changed = extract_data(frame, run_node)
 
     if not data:
         nuke.comfyui_running = False
         return
 
     global states
-    if data == states.get(queue_prompt_node.fullName(), {}) and not input_node_changed and not animation:
+    if data == states.get(run_node.fullName(), {}) and not input_node_changed and not animation:
         nuke.comfyui_running = False
-        read = create_read(queue_prompt_node, get_filename(queue_prompt_node))
+        read = create_read(run_node, get_filename(run_node))
 
         if success_callback:
             success_callback(read)
         return
 
-    update_filename_prefix(queue_prompt_node)
-    data, _ = extract_data(frame, queue_prompt_node)
+    update_filename_prefix(run_node)
+    data, _ = extract_data(frame, run_node)
 
     state_data = copy.deepcopy(data)
-    queue_prompt_node.knob('comfyui_submit').setEnabled(False)
+    run_node.knob('comfyui_submit').setEnabled(False)
 
     body = {
         'client_id': client_id,
@@ -240,7 +240,7 @@ def submit(queue_prompt_node=None, animation=None, success_callback=None):
         elif type_data == 'executed':
             node = data.get('node')
             nuke.executeInMainThread(
-                update_node, args=(node, data, queue_prompt_node))
+                update_node, args=(node, data, run_node))
 
         elif type_data == 'progress':
             progress = int(data['value'] * 100 / data['max'])
@@ -306,30 +306,30 @@ def submit(queue_prompt_node=None, animation=None, success_callback=None):
         ws.close()
 
         if cancelled:
-            queue_prompt_node.knob('comfyui_submit').setEnabled(True)
+            run_node.knob('comfyui_submit').setEnabled(True)
             nuke.comfyui_running = False
             return
 
-        nuke.executeInMainThread(progress_finished, args=(queue_prompt_node))
-        queue_prompt_node.knob('comfyui_submit').setEnabled(True)
+        nuke.executeInMainThread(progress_finished, args=(run_node))
+        run_node.knob('comfyui_submit').setEnabled(True)
         nuke.comfyui_running = False
 
     def progress_finished(n):
-        filename = get_filename(queue_prompt_node)
+        filename = get_filename(run_node)
 
         if animation:
             frame, last_frame, each, end, animation_task = animation
             if animation_task[0].isCancelled():
                 return
 
-            each(frame, get_filename(queue_prompt_node))
+            each(frame, get_filename(run_node))
 
             next_frame = frame + 1
             if next_frame > last_frame:
                 end()
                 return
 
-            queue_prompt_node.begin()
+            run_node.begin()
             submit(animation=(next_frame, last_frame, each, end, animation_task))
 
             return
@@ -341,8 +341,8 @@ def submit(queue_prompt_node=None, animation=None, success_callback=None):
                 success_callback(read)
 
             if not execution_error[0]:
-                remove_all_error_style(queue_prompt_node)
-                states[queue_prompt_node.fullName()] = state_data
+                remove_all_error_style(run_node)
+                states[run_node.fullName()] = state_data
 
         except:
             nuke.executeInMainThread(
@@ -361,4 +361,4 @@ def submit(queue_prompt_node=None, animation=None, success_callback=None):
             del task[0]
         nuke.comfyui_running = False
         nuke.message(error)
-        queue_prompt_node.knob('comfyui_submit').setEnabled(True)
+        run_node.knob('comfyui_submit').setEnabled(True)

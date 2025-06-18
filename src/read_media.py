@@ -14,8 +14,8 @@ from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes
 
 
-def exr_filepath_fixed(queue_prompt_node):
-    nodes = get_connected_comfyui_nodes(queue_prompt_node)
+def exr_filepath_fixed(run_node):
+    nodes = get_connected_comfyui_nodes(run_node)
     for n, _ in nodes:
         filepath_knob = n.knob('filepath_')
         if not filepath_knob:
@@ -30,8 +30,8 @@ def exr_filepath_fixed(queue_prompt_node):
         filepath_knob.setText(filepath)
 
 
-def get_tonemap(queue_prompt_node):
-    output_node = get_input(queue_prompt_node, 0)
+def get_tonemap(run_node):
+    output_node = get_input(run_node, 0)
 
     if not output_node:
         return 'sRGB'
@@ -43,8 +43,8 @@ def get_tonemap(queue_prompt_node):
     return tonemap_knob.value()
 
 
-def update_filename_prefix(queue_prompt_node):
-    output_node = get_input(queue_prompt_node, 0)
+def update_filename_prefix(run_node):
+    output_node = get_input(run_node, 0)
     if not output_node:
         return
 
@@ -76,8 +76,8 @@ def set_correct_colorspace(read):
             'sRGB' if ocio == 'Nuke' else 'Output - sRGB')
 
 
-def get_gizmo_group(queue_prompt_node):
-    gizmo = queue_prompt_node
+def get_gizmo_group(run_node):
+    gizmo = run_node
 
     while gizmo:
         gizmo = gizmo.parent()
@@ -88,8 +88,8 @@ def get_gizmo_group(queue_prompt_node):
             return gizmo
 
 
-def get_filename(queue_prompt_node):
-    output_node = get_input(queue_prompt_node, 0)
+def get_filename(run_node):
+    output_node = get_input(run_node, 0)
     if not output_node:
         return
 
@@ -123,13 +123,13 @@ def get_filename(queue_prompt_node):
     return os.path.join(sequence_output, filename)
 
 
-def create_read(queue_prompt_node, filename):
+def create_read(run_node, filename):
     if not filename:
         return
 
-    main_node = get_gizmo_group(queue_prompt_node)
+    main_node = get_gizmo_group(run_node)
     if not main_node:
-        main_node = queue_prompt_node
+        main_node = run_node
 
     main_node.parent().begin()
 
@@ -163,11 +163,11 @@ def create_read(queue_prompt_node, filename):
 
 
 def save_image_backup():
-    queue_prompt_node = nuke.thisNode()
+    run_node = nuke.thisNode()
 
-    main_node = get_gizmo_group(queue_prompt_node)
+    main_node = get_gizmo_group(run_node)
     if not main_node:
-        main_node = queue_prompt_node
+        main_node = run_node
 
     main_node.parent().begin()
 

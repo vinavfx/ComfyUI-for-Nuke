@@ -16,11 +16,11 @@ from .common import image_inputs, mask_inputs, get_comfyui_dir
 states = {}
 
 
-def extract_data(frame, queue_prompt_node):
-    output_node = get_input(queue_prompt_node, 0)
+def extract_data(frame, run_node):
+    output_node = get_input(run_node, 0)
 
     if not output_node:
-        nuke.message('QueuePrompt is not connected!')
+        nuke.message('Run is not connected!')
         return {}, None
 
     output_node_data = get_node_data(output_node)
@@ -29,11 +29,11 @@ def extract_data(frame, queue_prompt_node):
             'Connect only to output nodes like SaveImage or SaveEXR !')
         return {}, None
 
-    nodes = get_connected_comfyui_nodes(queue_prompt_node, frame=frame)
+    nodes = get_connected_comfyui_nodes(run_node, frame=frame)
     nuke.root().knob('proxy').setValue(False)
 
     from .read_media import get_tonemap
-    tonemap = get_tonemap(queue_prompt_node)
+    tonemap = get_tonemap(run_node)
 
     comfyui_nodes = [n.name() for n, _ in nodes]
     data = {}
