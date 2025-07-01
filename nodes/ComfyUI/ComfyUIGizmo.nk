@@ -5,8 +5,8 @@ Group {
  name ComfyUIGizmo
  tile_color 0xa2b275ff
  selected true
- xpos -1244
- ypos 313
+ xpos -249
+ ypos -35
  addUserKnob {20 controls l Controls}
  addUserKnob {26 comfyui_gizmo l ComfyUIGizmo +INVISIBLE T "This knob only allows the read and backup to be outside the gizmo !"}
  addUserKnob {41 comfyui_submit l Run T Run.comfyui_submit}
@@ -19,24 +19,14 @@ Group {
   ypos -396
  }
  Group {
-  name SaveEXR
+  name SaveImage
   tile_color 0xbcb50001
-  selected false
   xpos 0
-  ypos 330
+  ypos 329
   addUserKnob {20 Controls}
-  addUserKnob {1 filename_prefix_ l filename_prefix}
+  addUserKnob {1 filename_prefix_ l filename_prefix t "The prefix for the file to save. This may include formatting information such as %date:yyyy-MM-dd% or %Empty Latent Image.width% to include values from nodes."}
   filename_prefix_ image
-  addUserKnob {4 tonemap_ l tonemap M {linear sRGB Reinhard}}
-  tonemap_ sRGB
-  addUserKnob {3 version_ l version}
-  version_ 1
-  addUserKnob {3 start_frame_ l start_frame}
-  start_frame_ 1001
-  addUserKnob {3 frame_pad_ l frame_pad}
-  frame_pad_ 4
-  addUserKnob {4 save_workflow_ l save_workflow M {ui api "ui + api" none}}
-  addUserKnob {22 data -STARTLINE +HIDDEN T "\{\n    'knobs_order': \[\n        'filename_prefix_', \n        'tonemap_', \n        'version_', \n        'start_frame_', \n        'frame_pad_', \n        'save_workflow_'\n    ], \n    'inputs': \[\n        \{\n            'opt': false, \n            'outputs': \[\n                'image'\n            ], \n            'name': 'images'\n        \}\n    ], \n    'class_type': 'SaveEXR', \n    'outputs': \[], \n    'output_node': true\n\}"}
+  addUserKnob {22 data -STARTLINE +HIDDEN T "\{\n    'knobs_order': \[\n        'filename_prefix_'\n    ], \n    'inputs': \[\n        \{\n            'opt': false, \n            'outputs': \[\n                'image'\n            ], \n            'name': 'images'\n        \}\n    ], \n    'class_type': 'SaveImage', \n    'outputs': \[], \n    'output_node': true\n\}"}
  }
   Input {
    inputs 0
