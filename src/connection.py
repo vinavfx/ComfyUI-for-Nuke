@@ -52,12 +52,15 @@ def POST(relative_url, data={}):
 
     except urllib2.HTTPError as e:
         try:
-            error_str = str(e.read()).strip()
-            if not error_str:
-                nuke.message(traceback.format_exc())
-                return 'ERROR: HTTPError'
+            error_bytes = e.read()
+            error_str = error_bytes.decode('utf-8', errors='ignore').strip()
 
-            error = json.loads(error_str)
+            try:
+                error = json.loads(error_str)
+            except json.JSONDecodeError:
+                nuke.message('Error parsing JSON from server')
+                return 'ERROR: JSON parsing'
+
             errors = 'ERROR: {}\n\n'.format(error['error']['message'].upper())
             node_errors = error['node_errors'] if error['node_errors'] else {}
 
