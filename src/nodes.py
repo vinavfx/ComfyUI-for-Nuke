@@ -96,7 +96,7 @@ def create_load_images_and_save(node, alpha, tonemap, frame=-1):
         n.setSelected(False)
         node_state = ''
         for k in n.knobs().values():
-            node_state += str(k.value()) if k.hasExpression() else k.toScript()
+            node_state += str(k.valueAt(0)) if k.hasExpression() else k.toScript()
 
         node_state = node_state.replace(
             str(n.xpos()), '').replace(str(n.ypos()), '')
