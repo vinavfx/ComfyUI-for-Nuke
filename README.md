@@ -9,7 +9,8 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
   * Nuke 11 or higher (Not tested on previous versions !)
   * `websocket-client` Python library
   * <a href="https://github.com/comfyanonymous/ComfyUI" target="_blank">ComfyUI</a>
-  * ComfyUI-HQ-Image-Save (required to load images and sequences and work with EXR)
+  * ComfyUI-VideoHelperSuite (required to load images and sequences)
+  * ComfyUI-HQ-Image-Save (if you want to work in exr)
 
 ## Installation
 ### 1. Copy to nuke folder
@@ -60,31 +61,8 @@ import comfyui2nuke as comfyui
 comfyui.setup()
 ```
 
-### 4. Install ComfyUI-Manager
-```sh
-cd <ComfyUI Directory>/custom_nodes
-git clone https://github.com/ltdrdata/ComfyUI-Manager.git
-cd ./ComfyUI-Manager
-pip install -r requirements.txt
-```
-
-### 5. Install ComfyUI-HQ-Image-Save (required to work with EXR)
-```sh
-cd <ComfyUI Directory>/custom_nodes
-git clone https://github.com/spacepxl/ComfyUI-HQ-Image-Save.git
-cd ./ComfyUI-HQ-Image-Save
-pip install -r requirements.txt
-```
-
 ## Setup
-1 - Run ComfyUI Server
-```sh
-cd <ComfyUI Directory>
-python main.py
-```
-<img src='images/run_server.png' width=100%>
-
-2 - Modify environment variables in [settings.py](./settings.py)
+1 - Modify environment variables in [settings.py](./settings.py)
 
 ```python
 COMFYUI_DIR = '<path_to_ComfyUI>' # Put the directory where ComfyUI is installed !
@@ -92,6 +70,7 @@ IP = '127.0.0.1'
 PORT = 8188
 NUKE_USER = '<path_to_.nuke>' # Change only if your path is different !
 ```
+2 - Run ComfyUI Server
 
 ## Tips
 1 - When connecting any image or roto from Nuke, take into consideration the <b>'FrameRange'</b>
@@ -104,10 +83,9 @@ to latent, and in the same node there is a button to create a restore node, put 
 
 4 - To load all ComfyUI nodes when Nuke starts, change the '<b>UPDATE_MENU_AT_START</b>' variable in the [settings.py](./settings.py) file
 
-5 - To use Switch on ComfyUI nodes use '<b>SwitchAny</b>' as ComfyUI switch nodes don't work
-because they have 'any *' inputs and outputs, which is not possible on nuke because it doesn't have multiple outputs.
+5 - To use Switch in ComfyUI nodes statically, use '<b>SwitchAny</b>' otherwise use the ComfyUI switches
 
-6 - If you want to have the ComfyUI server on another machine, you must share the folder where ComfyUI is installed and put the path in [env.py](./env.py)
+6 - If you want to have the ComfyUI server on another machine, you must share the folder where ComfyUI is installed and put the path in [setting.py](./settings.py)
 
 7 - Use the Run '<b>Force Animation</b>' method only if you have some keyframes animated,
 as this way is slower because it sends requests frame by frame and not in batches.
