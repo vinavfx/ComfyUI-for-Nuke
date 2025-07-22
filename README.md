@@ -16,12 +16,12 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
    ```sh
    # Linux:
    cd ~/.nuke
-   git clone --recursive https://github.com/vinavfx/comfyui2nuke
+   git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke comfyui2nuke
 
    # Windows
    # Download git: https://git-scm.com/download/win
    cd "C:\Users\<username>\.nuke"
-   git clone --recursive https://github.com/vinavfx/comfyui2nuke
+   git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke comfyui2nuke
    ```
 Or manually copy the entire git downloaded folder and its submodules to the nuke user folder
 
