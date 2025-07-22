@@ -8,7 +8,10 @@ import os
 import shutil
 import random
 import traceback
+from collections import Counter
 import nuke  # type: ignore
+from ..settings import USE_EXR_TO_LOAD_IMAGES
+from ..testing.testing import status_diff
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
 from .common import image_inputs, mask_inputs, get_comfyui_dir
@@ -71,7 +74,7 @@ def extract_data(frame, run_node):
 
             if not input_node.name() in comfyui_nodes:
                 load_image_data, changed_node, execution_canceled = create_load_images_and_save(
-                    input_node, key in mask_inputs, tonemap, frame)
+                    input_node, tonemap, frame)
 
                 if execution_canceled:
                     return {}, None
@@ -84,7 +87,7 @@ def extract_data(frame, run_node):
     return data, input_node_changed
 
 
-def create_load_images_and_save(node, alpha, tonemap, frame=-1):
+def create_load_images_and_save(node, tonemap, frame=-1):
     animation = frame >= 0
 
     global states
@@ -95,26 +98,58 @@ def create_load_images_and_save(node, alpha, tonemap, frame=-1):
     for n in connected_nodes:
         n.setSelected(False)
         node_state = ''
+
+        # knobs that may vary
+        knobs_ignore = ['old_message', 'old_expression_markers']
+
         for k in n.knobs().values():
-            node_state += str(k.valueAt(0)) if k.hasExpression() else k.toScript()
+            if not k.visible() or not k.enabled():
+                continue
+
+            if k.name() in knobs_ignore:
+                continue
+
+            if k.hasExpression() or k.isAnimated():
+                try:
+                    value = k.valueAt(0)
+                except:
+                    value = k.toScript()
+            else:
+                value = k.toScript()
+
+            node_state += '{} '.format(value)
 
         node_state = node_state.replace(
             str(n.xpos()), '').replace(str(n.ypos()), '')
+
         state += node_state
 
     current_state = {'connected_nodes': state.strip(), 'state_id': 0}
     prev_state = states.get(node.fullName(), {})
 
-    load_image_data = {
-        'inputs': {
-            'filepath': '',
-            'tonemap': tonemap,
-            'image_load_cap': 0,
-            'select_every_nth': 1,
-            'skip_first_images': 0
-        },
-        'class_type': 'LoadEXR'
-    }
+    if USE_EXR_TO_LOAD_IMAGES:
+        filepath_key = 'filepath'
+        load_image_data = {
+            'inputs': {
+                'filepath': '',
+                'tonemap': tonemap,
+                'image_load_cap': 0,
+                'select_every_nth': 1,
+                'skip_first_images': 0
+            },
+            'class_type': 'LoadEXR'
+        }
+    else:
+        filepath_key = 'directory'
+        load_image_data  = {
+            'inputs': {
+                'directory': '',
+                'skip_first_images': 0,
+                'select_every_nth': 1,
+                'image_load_cap': 0
+            },
+            'class_type': 'VHS_LoadImages'
+        }
 
     input_dir = '{}/input'.format(get_comfyui_dir())
 
@@ -125,9 +160,13 @@ def create_load_images_and_save(node, alpha, tonemap, frame=-1):
         if os.path.isdir(sequence_dir):
             files = os.listdir(sequence_dir)
             if files:
-                load_image_data['inputs']['filepath'] = sequence_dir
+                load_image_data['inputs'][filepath_key] = sequence_dir
                 load_image_data['inputs']['id'] = prev_state.get('state_id', 0)
                 return load_image_data, False, False
+
+    # For debugging
+    #  status_diff(prev_state.get('connected_nodes'),
+                #  current_state.get('connected_nodes'))
 
     dirname = '{}_{}'.format(get_project_name(), node.fullName())
     sequence_dir = os.path.join(input_dir, dirname)
@@ -137,20 +176,32 @@ def create_load_images_and_save(node, alpha, tonemap, frame=-1):
         shutil.rmtree(sequence_dir)
 
     os.mkdir(sequence_dir)
-    filename = '{}/{}_#####.exr'.format(sequence_dir, dirname)
+    ext = 'exr' if USE_EXR_TO_LOAD_IMAGES else 'png'
+    filename = '{}/{}_#####.{}'.format(sequence_dir, dirname, ext)
 
     [n.setSelected(False) for n in nuke.selectedNodes()]
+
+    onode = node
+    invert = None
+    if not USE_EXR_TO_LOAD_IMAGES:
+        # VHS_LoadImages inverts the alpha
+        invert = nuke.createNode('Invert', inpanel=False)
+        invert.knob('channels').setValue('alpha')
+        invert.setInput(0, node)
+        invert.setXYpos(node.xpos(), node.ypos())
+        onode = invert
 
     write = nuke.createNode('Write', inpanel=False)
     write.knob('hide_input').setValue(True)
     write.setName(node.name() + '_write')
     write.setXYpos(node.xpos(), node.ypos())
     write.setSelected(False)
-    write.setInput(0, node)
+    write.setInput(0, onode)
     write.knob('file').setValue(filename)
-    write.knob('raw').setValue(True)
-    write.knob('file_type').setValue('exr')
-    write.knob('channels').setValue('rgba' if alpha else 'rgb')
+    write.knob('raw').setValue(USE_EXR_TO_LOAD_IMAGES)
+    write.knob('colorspace').setValue('linear' if USE_EXR_TO_LOAD_IMAGES else 'sRGB')
+    write.knob('file_type').setValue(ext)
+    write.knob('channels').setValue('rgba')
 
     try:
         if animation:
@@ -159,10 +210,12 @@ def create_load_images_and_save(node, alpha, tonemap, frame=-1):
             nuke.execute(write, node.firstFrame(), node.lastFrame())
     except:
         nuke.delete(write)
+        nuke.delete(invert)
         nuke.message(traceback.format_exc())
         return {}, False, True
 
     nuke.delete(write)
+    nuke.delete(invert)
 
     state_id = random.randrange(1, 9999)
     current_state['dirname'] = dirname
@@ -170,7 +223,7 @@ def create_load_images_and_save(node, alpha, tonemap, frame=-1):
 
     states[node.fullName()] = current_state
 
-    load_image_data['inputs']['filepath'] = sequence_dir
+    load_image_data['inputs'][filepath_key] = sequence_dir
     load_image_data['inputs']['id'] = state_id
 
     return load_image_data, True, False
@@ -302,12 +355,15 @@ def get_output_index(node, node_data, input_index):
         return -2
 
     inode_outputs = inode_data['outputs']
-
     allowed_outputs = node_data['inputs'][input_index]['outputs']
+
+    force_output = node_data['inputs'][input_index].get('force_output')
+    if not force_output == None:
+        return force_output
 
     for allowed_output in allowed_outputs:
         for i, o in enumerate(inode_outputs):
-            if allowed_output == o:
+            if allowed_output in [o, '*'] or '*' == o:
                 return i
 
     return -1
@@ -347,12 +403,38 @@ def check_node(node):
                 return
 
         inode_outputs = inode_data['outputs']
-        allowed_outputs = node_data['inputs'][i]['outputs']
+        _input = node_data['inputs'][i]
+        allowed_outputs = _input['outputs']
 
-        if not any(o in allowed_outputs for o in inode_outputs):
-            nuke.message(
-                node.name() + ' : "{}" connection not supported !'.format(input_name))
-            return
+        if '*' not in allowed_outputs and '*' not in inode_outputs:
+            if not any(o in allowed_outputs for o in inode_outputs):
+                nuke.message(
+                    node.name() + ' : "{}" connection not supported !'.format(input_name))
+                return
+
+        if requires_force_output(inode_outputs, allowed_outputs[0]):
+            if _input.get('force_output') == None:
+                if nuke.ask('{}:\nConnected to node with duplicate outputs, Connect now?'.format(node.name())):
+                    from .scripts.force_output_connection import force_output
+                    force_output(node)
+                return
+
+    return True
+
+
+def requires_force_output(outputs, input_class):
+    contador = Counter(outputs)
+    repeated = [item for item, count in contador.items() if count > 1]
+
+    if input_class == '*' and len(outputs) > 1:
+        pass
+    else:
+        if not repeated:
+            return False
+
+        if not '*' in repeated:
+            if not input_class in repeated:
+                return False
 
     return True
 

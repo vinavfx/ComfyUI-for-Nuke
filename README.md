@@ -16,12 +16,12 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
    ```sh
    # Linux:
    cd ~/.nuke
-   git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
+   git clone --recursive https://github.com/vinavfx/comfyui2nuke
 
    # Windows
    # Download git: https://git-scm.com/download/win
    cd "C:\Users\<username>\.nuke"
-   git clone --recursive https://github.com/vinavfx/ComfyUI-for-Nuke nuke_comfyui
+   git clone --recursive https://github.com/vinavfx/comfyui2nuke
    ```
 Or manually copy the entire git downloaded folder and its submodules to the nuke user folder
 
@@ -56,7 +56,7 @@ nuke.pluginAddPath('C:/Python27/Lib/site-packages')
 ```
 
 ```python
-import nuke_comfyui as comfyui
+import comfyui2nuke as comfyui
 comfyui.setup()
 ```
 
@@ -84,7 +84,7 @@ python main.py
 ```
 <img src='images/run_server.png' width=100%>
 
-2 - Modify environment variables in [env.py](./env.py)
+2 - Modify environment variables in [settings.py](./settings.py)
 
 ```python
 COMFYUI_DIR = '<path_to_ComfyUI>' # Put the directory where ComfyUI is installed !
@@ -102,7 +102,7 @@ of the output because that will be the batch size.
 3 - Latent images only work with formats with multiple of 8, add the '<b>PrepareImageForLatent</b>' node before passing the image
 to latent, and in the same node there is a button to create a restore node, put it on the image after inference to restore.
 
-4 - To load all ComfyUI nodes when Nuke starts, change the '<b>update_menu_at_start</b>' variable in the [__init__.py](./__init__.py) file
+4 - To load all ComfyUI nodes when Nuke starts, change the '<b>UPDATE_MENU_AT_START</b>' variable in the [settings.py](./settings.py) file
 
 5 - To use Switch on ComfyUI nodes use '<b>SwitchAny</b>' as ComfyUI switch nodes don't work
 because they have 'any *' inputs and outputs, which is not possible on nuke because it doesn't have multiple outputs.

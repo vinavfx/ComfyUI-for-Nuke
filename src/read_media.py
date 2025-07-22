@@ -9,7 +9,7 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_input
 from ..nuke_util.media_util import get_padding
-from ..env import COMFYUI_DIR, NUKE_USER
+from ..settings import COMFYUI_DIR, NUKE_USER
 from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes
 
@@ -31,12 +31,12 @@ def exr_filepath_fixed(run_node):
 
 
 def get_tonemap(run_node):
-    output_node = get_input(run_node, 0)
+    save_node = get_input(run_node, 0)
 
-    if not output_node:
+    if not save_node:
         return 'sRGB'
 
-    tonemap_knob = output_node.knob('tonemap_')
+    tonemap_knob = save_node.knob('tonemap_')
     if not tonemap_knob:
         return 'sRGB'
 
@@ -123,9 +123,86 @@ def get_filename(run_node):
     return os.path.join(sequence_output, filename)
 
 
-def create_read(run_node, filename):
+def extract_log(data):
+    seed = steps = denoise = guidance = causvid = strength = -1
+    scheduler = sampler_name = lora = ''
+
+    for name, node in data.items():
+        class_type = node['class_type']
+        inputs = node['inputs']
+
+        if seed == -1:
+            seed = inputs.get('seed', -1)
+
+        if seed == -1:
+            seed = inputs.get('noise_seed', -1)
+
+        if not sampler_name:
+            sampler_name = inputs.get('sampler_name', '')
+
+        if steps == -1:
+            steps = inputs.get('steps', -1)
+
+        if denoise == -1:
+            denoise = inputs.get('denoise', -1)
+
+        if not scheduler:
+            scheduler = inputs.get('scheduler', '')
+
+        if guidance == -1:
+            guidance = inputs.get('guidance', -1)
+
+        if causvid == -1:
+            lora_name = inputs.get('lora_name', '')
+            if 'CausVid' in lora_name:
+                causvid = inputs.get('strength_model', 0)
+
+        if class_type == 'WanVaceToVideo':
+            strength = inputs.get('strength')
+
+        if name == 'extra_lora':
+            lora_name = inputs.get('lora_name').split('/')[-1].split('.')[0]
+            lora_strength = inputs.get('strength_model', 0)
+            lora = '{}:{}'.format(lora_name, lora_strength)
+
+    log = []
+
+    if not seed == -1:
+        log.append(('seed', seed))
+
+    if not steps == -1:
+        log.append(('steps', steps))
+
+    #  if sampler_name:
+        #  log.append(('sampler_name', sampler_name))
+
+    #  if scheduler:
+        #  log.append(('scheduler', scheduler))
+
+    if not denoise == -1:
+        log.append(('denoise', denoise))
+
+    if not guidance == -1:
+        log.append(('guidance', guidance))
+
+    if not strength == -1:
+        log.append(('strength', strength))
+
+    if not causvid == -1:
+        log.append(('causvid', causvid))
+
+    if lora:
+        log.append(('lora', lora))
+
+    return log
+
+def create_read(run_node, filename, data={}):
     if not filename:
         return
+
+    log = []
+    if data:
+        log = extract_log(data)
 
     main_node = get_gizmo_group(run_node)
     if not main_node:
@@ -148,7 +225,7 @@ def create_read(run_node, filename):
         read = nuke.toNode(name)
         if not read:
             read = nuke.nodePaste(os.path.join(
-                NUKE_USER, 'nuke_comfyui', 'nodes', 'ComfyUI', 'AudioPlay.nk'))
+                NUKE_USER, 'comfyui2nuke', 'nodes', 'ComfyUI', 'AudioPlay.nk'))
 
         read.knob('audio').setValue(filename)
     else:
@@ -159,11 +236,20 @@ def create_read(run_node, filename):
     read.knob('tile_color').setValue(
         main_node.knob('tile_color').value())
 
+    if log:
+        label = '<center><font color="white" size=3><b>METADATA</b></>'
+        for key, value in log:
+            label += '\n<font color="green" size=1>{}:</font><font color="black" size=1> {}</>'.format(
+                key, value)
+
+        read.knob('label').setValue(label)
+
     return read
 
 
-def save_image_backup():
-    run_node = nuke.thisNode()
+def save_image_backup(run_node=None):
+    if not run_node:
+        run_node = nuke.thisNode()
 
     main_node = get_gizmo_group(run_node)
     if not main_node:
@@ -186,6 +272,9 @@ def save_image_backup():
         new_read = nuke.createNode('Read', inpanel=False)
         new_read.setName(name)
         new_read.knob('file').fromUserText(filename)
+        new_read.knob('label').setValue(read.knob('label').value())
+        new_read.knob('frame_mode').setValue(read.knob('frame_mode').value())
+        new_read.knob('frame').setValue(read.knob('frame').value())
         set_correct_colorspace(new_read)
 
     xpos = read.xpos() + 50

@@ -5,7 +5,7 @@
 # -----------------------------------------------------------
 import os
 import nuke  # type: ignore
-from ..env import COMFYUI_DIR
+from ..settings import COMFYUI_DIR
 from .connection import GET
 
 if not getattr(nuke, 'comfyui_running', False):
@@ -34,11 +34,13 @@ def update_images_and_mask_inputs():
         optional = input_data.get('optional', {})
 
         for name, value in list(required.items()) + list(optional.items()):
-            if value[0] == 'IMAGE':
+            class_type = value[0]
+
+            if class_type in ['*', 'IMAGE']:
                 if not name in image_inputs:
                     image_inputs.append(name)
 
-            elif value[0] == 'MASK':
+            if class_type in ['*', 'MASK']:
                 if not name in mask_inputs:
                     mask_inputs.append(name)
 

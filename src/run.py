@@ -17,9 +17,9 @@ import threading
 import copy
 
 from ..nuke_util.nuke_util import set_tile_color
-from ..env import IP, PORT, COMFYUI_DIR
+from ..settings import IP, PORT, COMFYUI_DIR
 from .common import get_comfyui_dir, update_images_and_mask_inputs
-from .connection import POST, interrupt, check_connection
+from .connection import POST, interrupt, check_connection, queue_running
 from .nodes import extract_data, get_connected_comfyui_nodes
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, get_filename
 
@@ -179,6 +179,9 @@ def submit(run_node=None, animation=None, success_callback=None):
         nuke.message('Inference in execution !')
         return
 
+    if queue_running():
+        return
+
     nuke.comfyui_running = True
 
     comfyui_dir = get_comfyui_dir()
@@ -200,7 +203,7 @@ def submit(run_node=None, animation=None, success_callback=None):
     global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed and not animation:
         nuke.comfyui_running = False
-        read = create_read(run_node, get_filename(run_node))
+        read = create_read(run_node, get_filename(run_node), data)
 
         if success_callback:
             success_callback(read)
@@ -335,7 +338,7 @@ def submit(run_node=None, animation=None, success_callback=None):
             return
 
         try:
-            read = create_read(n, filename)
+            read = create_read(n, filename, data)
 
             if success_callback:
                 success_callback(read)

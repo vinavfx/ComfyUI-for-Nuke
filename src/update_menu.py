@@ -11,15 +11,22 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import GET, convert_to_utf8
-from ..env import NUKE_USER
+from ..settings import NUKE_USER
 
-path = os.path.join(NUKE_USER, 'nuke_comfyui')
+path = os.path.join(NUKE_USER, 'comfyui2nuke')
 comfyui_nodes = {}
 menu_updated = False
 
 
 def remove_signs(string):
     return re.sub(r'[^a-zA-Z0-9_]', '', string)
+
+
+def get_nodes():
+    if not comfyui_nodes:
+        update()
+
+    return comfyui_nodes
 
 
 def create_comfyui_node(node_type, inpanel=True):
@@ -69,6 +76,7 @@ def create_node(data, inpanel=True):
     optional_order = input_order.get('optional', [])
 
     knobs_order = []
+    knobs_class = {}
 
     for key in required_order + optional_order:
         _input = required.get(key, [])
@@ -148,6 +156,9 @@ def create_node(data, inpanel=True):
         n.addKnob(knob)
         knobs_order.append(knob.name())
 
+        if _class in ['INT', 'STRING', 'BOOLEAN', 'FLOAT']:
+            knobs_class[knob.name()] = str(_class).lower()
+
         if name in ['LoadAudio', 'LoadImage']:
             upload_knob = nuke.PyScript_Knob('upload', '+')
             upload_knob.setValue('comfyui.upload.upload_media()')
@@ -197,7 +208,9 @@ def create_node(data, inpanel=True):
 
     data_knob.setValue(json.dumps({
         'knobs_order': knobs_order,
+        'knobs_class': knobs_class,
         'class_type': data['name'],
+        'output_name': data.get('output_name', False),
         'output_node': data.get('output_node', False),
         'inputs': _inputs,
         'outputs': outputs,
@@ -249,7 +262,7 @@ def update():
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI')
 
     for item in comfyui_menu.items():
-        if item.name() in ['Update all ComfyUI', 'Basic Nodes', 'Gizmos']:
+        if item.name() in ['Update all ComfyUI', 'Basic Nodes', 'Gizmos', 'Scripts']:
             continue
 
         if not hasattr(item, 'clearMenu'):

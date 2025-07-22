@@ -8,11 +8,10 @@ import nuke  # type: ignore
 from .src import *
 from .testing import *
 from functools import partial
-from .env import NUKE_USER
+from .settings import NUKE_USER, UPDATE_MENU_AT_START
 
 
-update_menu_at_start = False
-path = os.path.join(NUKE_USER, 'nuke_comfyui')
+path = os.path.join(NUKE_USER, 'comfyui2nuke')
 
 
 def setup():
@@ -26,6 +25,7 @@ def setup():
     basic_icon = '{}/icons/basic.png'.format(path)
     workflow_icon = '{}/icons/workflow.png'.format(path)
     gizmos_icon = '{}/icons/gizmos.png'.format(path)
+    scripts_icon = '{}/icons/scripts.png'.format(path)
 
     comfyui_menu.addCommand(
         'Update all ComfyUI', update_menu.update, '', refresh_icon)
@@ -34,6 +34,7 @@ def setup():
         'Import Workflow', workflow_importer.import_workflow, '', workflow_icon)
 
     comfyui_menu.addMenu('Basic Nodes', basic_icon)
+    comfyui_menu.addMenu('Scripts', scripts_icon)
     comfyui_menu.addMenu('Gizmos', gizmos_icon)
 
     def create_node(nk):
@@ -57,5 +58,11 @@ def setup():
             comfyui_menu.addCommand(name, partial(
                 create_node, path_nk), '', icon_gray)
 
-    if update_menu_at_start:
+    comfyui_menu.addCommand(
+        'Scripts/knob2input', scripts.knob2input.knob_to_input, icon=icon_gray)
+
+    comfyui_menu.addCommand(
+        'Scripts/forceOutput', scripts.force_output_connection.force_output, icon=icon_gray)
+
+    if UPDATE_MENU_AT_START:
         update_menu.update()

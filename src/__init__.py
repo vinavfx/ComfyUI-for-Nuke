@@ -6,5 +6,6 @@ from . import (
     update_menu,
     read_media,
     upload,
-    workflow_importer
+    workflow_importer,
+    scripts
 )

@@ -14,7 +14,7 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
-from ..env import IP, PORT
+from ..settings import IP, PORT
 
 
 def GET(relative_url):
@@ -38,6 +38,23 @@ def check_connection():
         nuke.message(
             'Error connecting to server {} on port {} !'.format(IP, PORT))
         return
+
+
+def queue_running():
+    queue = GET('queue')
+    if not queue:
+        return False
+
+    running = queue['queue_running']
+    pending = queue['queue_pending']
+
+    if running or pending:
+        if nuke.ask('Processes running, wait or interrupt to send new processes\n\nRunning: {}\nPending: {}\n\n interrupt?'.format(len(running), len(pending))):
+            interrupt()
+
+        return True
+
+    return False
 
 
 def POST(relative_url, data={}):

@@ -4,6 +4,9 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import nuke  # type: ignore
+import re
+from ..python_util.util import fwrite
+import os
 
 
 def create_all_comfyui_nodes():
@@ -27,3 +30,23 @@ def create_all_comfyui_nodes():
             continue
 
         item.invoke()
+
+
+def status_diff(a, b):
+    if not a or not b:
+        return
+
+    tokens_a = re.findall(r'\S+', a)
+    tokens_b = re.findall(r'\S+', b)
+
+    diffs = [(x, y) for x, y in zip(tokens_a, tokens_b) if x != y]
+    diff = ''
+
+    for x, y in diffs:
+        diff += '{} -> {}\n'.format(x, y)
+
+    info = 'diff:\n{}\n\nPREVIOUS:\n{}\n\nCURRENT:\n{}'.format(diff, a, b)
+    file = '/tmp/comfyu2nuke_diff.txt'
+    fwrite(file, info)
+    if nuke.ask('diff -> {}, open?'.format(file)):
+        os.system('pluma {}'.format(file))
