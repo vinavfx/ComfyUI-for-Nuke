@@ -279,8 +279,8 @@ def save_image_backup(run_node=None):
 
     xpos = read.xpos() + 50
 
-    for n in nuke.allNodes():
-        if not main_node.name() + 'Backup_' in n.name():
+    for n in nuke.allNodes('Read'):
+        if not n.name().split('Backup')[0] == main_node.name():
             continue
 
         xpos += 100
