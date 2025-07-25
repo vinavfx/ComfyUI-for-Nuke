@@ -1,10 +1,11 @@
+import os
 from .nuke_util.nuke_util import get_nuke_path
 
 # ENVIRONMENT VARIABLES
-COMFYUI_DIR = '<path_to_ComfyUI>'
-IP = '127.0.0.1'
-PORT = 8188
-NUKE_USER = get_nuke_path()  # /home/<USER>/.nuke
+COMFYUI_DIR = os.getenv('NUKE_COMFYUI_DIR')
+IP = os.getenv('NUKE_COMFYUI_IP', '127.0.0.1')
+PORT = int(os.getenv('NUKE_COMFYUI_PORT', '8188'))
+NUKE_USER = os.getenv('NUKE_COMFYUI_NUKE_USER', get_nuke_path())
 
 # SETTINGS
 UPDATE_MENU_AT_START = False
