@@ -125,7 +125,7 @@ def get_filename(run_node):
 
 def extract_log(data):
     seed = steps = denoise = guidance = causvid = strength = -1
-    scheduler = sampler_name = lora = ''
+    scheduler = sampler_name = lora = lora2 = lora3 = ''
 
     for name, node in data.items():
         class_type = node['class_type']
@@ -160,10 +160,20 @@ def extract_log(data):
         if class_type == 'WanVaceToVideo':
             strength = inputs.get('strength')
 
-        if name == 'extra_lora':
+        if name == 'extra_lora1':
             lora_name = inputs.get('lora_name').split('/')[-1].split('.')[0]
             lora_strength = inputs.get('strength_model', 0)
             lora = '{}:{}'.format(lora_name, lora_strength)
+
+        if name == 'extra_lora2':
+            lora_name = inputs.get('lora_name').split('/')[-1].split('.')[0]
+            lora_strength = inputs.get('strength_model', 0)
+            lora2 = '{}:{}'.format(lora_name, lora_strength)
+
+        if name == 'extra_lora3':
+            lora_name = inputs.get('lora_name').split('/')[-1].split('.')[0]
+            lora_strength = inputs.get('strength_model', 0)
+            lora3 = '{}:{}'.format(lora_name, lora_strength)
 
     log = []
 
@@ -173,11 +183,11 @@ def extract_log(data):
     if not steps == -1:
         log.append(('steps', steps))
 
-    #  if sampler_name:
-        #  log.append(('sampler_name', sampler_name))
+    if sampler_name:
+        log.append(('sampler_name', sampler_name))
 
-    #  if scheduler:
-        #  log.append(('scheduler', scheduler))
+    if scheduler:
+        log.append(('scheduler', scheduler))
 
     if not denoise == -1:
         log.append(('denoise', denoise))
@@ -193,6 +203,12 @@ def extract_log(data):
 
     if lora:
         log.append(('lora', lora))
+
+    if lora2:
+        log.append(('lora2', lora2))
+
+    if lora3:
+        log.append(('lora3', lora3))
 
     return log
 
