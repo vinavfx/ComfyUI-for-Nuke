@@ -23,7 +23,7 @@ def force_output(node=None):
     items = []
 
     for i in range(node.inputs()):
-        inode = get_input(node, i)
+        inode = get_input(node, i, active_switch=True)
         if not inode:
             continue
 
