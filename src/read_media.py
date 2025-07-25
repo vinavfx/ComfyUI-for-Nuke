@@ -125,7 +125,7 @@ def get_filename(run_node):
 
 def extract_log(data):
     seed = steps = denoise = guidance = causvid = strength = -1
-    scheduler = sampler_name = lora = lora2 = lora3 = ''
+    scheduler = sampler_name = lora = lora2 = lora3 = cnet = ''
 
     for name, node in data.items():
         class_type = node['class_type']
@@ -160,20 +160,22 @@ def extract_log(data):
         if class_type == 'WanVaceToVideo':
             strength = inputs.get('strength')
 
-        if name == 'extra_lora1':
-            lora_name = inputs.get('lora_name').split('/')[-1].split('.')[0]
+        if name in ('extra_lora1', 'extra_lora2', 'extra_lora3'):
+            lora_name = inputs.get('lora_name', '').split('/')[-1].split('.')[0]
             lora_strength = inputs.get('strength_model', 0)
-            lora = '{}:{}'.format(lora_name, lora_strength)
+            formatted = '{}:{}'.format(lora_name, lora_strength)
 
-        if name == 'extra_lora2':
-            lora_name = inputs.get('lora_name').split('/')[-1].split('.')[0]
-            lora_strength = inputs.get('strength_model', 0)
-            lora2 = '{}:{}'.format(lora_name, lora_strength)
+            if name == 'extra_lora1':
+                lora = formatted
+            elif name == 'extra_lora2':
+                lora2 = formatted
+            elif name == 'extra_lora3':
+                lora3 = formatted
 
-        if name == 'extra_lora3':
-            lora_name = inputs.get('lora_name').split('/')[-1].split('.')[0]
-            lora_strength = inputs.get('strength_model', 0)
-            lora3 = '{}:{}'.format(lora_name, lora_strength)
+        if class_type == 'ControlNetApplyAdvanced':
+            cnet_strength = inputs.get('strength', 0)
+            cnet_end = inputs.get('end_percent', 0)
+            cnet = '{} : {}'.format(cnet_strength, cnet_end)
 
     log = []
 
@@ -200,6 +202,9 @@ def extract_log(data):
 
     if not causvid == -1:
         log.append(('causvid', causvid))
+
+    if cnet:
+        log.append(('CNet', cnet))
 
     if lora:
         log.append(('lora', lora))
