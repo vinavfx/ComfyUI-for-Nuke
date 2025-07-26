@@ -63,7 +63,12 @@ def extract_data(frame, run_node):
             if not input_key or not type(input_key) == list:
                 continue
 
-            input_fullname = 'root.{}.{}'.format(n.parent().fullName(), input_key[0])
+            input_fullname = '{}.{}'.format(
+                n.parent().fullName(), input_key[0])
+
+            if not input_fullname.startswith('root.'):
+                input_fullname = 'root.' + input_fullname
+
             input_node = nuke.toNode(input_fullname) if input_key else None
 
             if not input_node:
