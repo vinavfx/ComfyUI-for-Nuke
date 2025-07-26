@@ -258,9 +258,9 @@ def create_read(run_node, filename, data={}):
         main_node.knob('tile_color').value())
 
     if log:
-        label = '<center><font color="white" size=3><b>METADATA</b></>'
+        label = '<center>'
         for key, value in log:
-            label += '\n<font color="green" size=1>{}:</font><font color="black" size=1> {}</>'.format(
+            label += '<font color="green" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
                 key, value)
 
         read.knob('label').setValue(label)
