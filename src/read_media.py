@@ -9,7 +9,7 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_input
 from ..nuke_util.media_util import get_padding
-from ..settings import COMFYUI_DIR, NUKE_USER
+from ..settings import COMFYUI_DIR, NUKE_USER, DISPLAY_META_IN_READ_NODE
 from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes
 
@@ -123,7 +123,7 @@ def get_filename(run_node):
     return os.path.join(sequence_output, filename)
 
 
-def extract_log(data):
+def extract_meta(data):
     seed = steps = denoise = guidance = causvid = strength = -1
     scheduler = sampler_name = lora = lora2 = lora3 = cnet = ''
 
@@ -177,53 +177,53 @@ def extract_log(data):
             cnet_end = inputs.get('end_percent', 0)
             cnet = '{} : {}'.format(cnet_strength, cnet_end)
 
-    log = []
+    meta = []
 
     if not seed == -1:
-        log.append(('seed', seed))
+        meta.append(('seed', seed))
 
     if not steps == -1:
-        log.append(('steps', steps))
+        meta.append(('steps', steps))
 
     if sampler_name:
-        log.append(('sampler_name', sampler_name))
+        meta.append(('sampler_name', sampler_name))
 
     if scheduler:
-        log.append(('scheduler', scheduler))
+        meta.append(('scheduler', scheduler))
 
     if not denoise == -1:
-        log.append(('denoise', denoise))
+        meta.append(('denoise', denoise))
 
     if not guidance == -1:
-        log.append(('guidance', guidance))
+        meta.append(('guidance', guidance))
 
     if not strength == -1:
-        log.append(('strength', strength))
+        meta.append(('strength', strength))
 
     if not causvid == -1:
-        log.append(('causvid', causvid))
+        meta.append(('causvid', causvid))
 
     if cnet:
-        log.append(('CNet', cnet))
+        meta.append(('CNet', cnet))
 
     if lora:
-        log.append(('lora', lora))
+        meta.append(('lora', lora))
 
     if lora2:
-        log.append(('lora2', lora2))
+        meta.append(('lora2', lora2))
 
     if lora3:
-        log.append(('lora3', lora3))
+        meta.append(('lora3', lora3))
 
-    return log
+    return meta
 
 def create_read(run_node, filename, data={}):
     if not filename:
         return
 
-    log = []
+    meta = []
     if data:
-        log = extract_log(data)
+        meta = extract_meta(data)
 
     main_node = get_gizmo_group(run_node)
     if not main_node:
@@ -257,9 +257,9 @@ def create_read(run_node, filename, data={}):
     read.knob('tile_color').setValue(
         main_node.knob('tile_color').value())
 
-    if log:
+    if meta and DISPLAY_META_IN_READ_NODE:
         label = '<center>'
-        for key, value in log:
+        for key, value in meta:
             label += '<font color="green" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
                 key, value)
 
