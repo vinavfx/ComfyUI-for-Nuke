@@ -5,8 +5,7 @@
 # -----------------------------------------------------------
 import nuke  # type: ignore
 from ...nuke_util.nuke_util import get_input, selected_node
-from ..nodes import get_node_data, requires_force_output
-import json
+from ..nodes import get_node_data, requires_force_output, save_node_data
 
 
 
@@ -59,7 +58,7 @@ def force_output(node=None):
         p.addEnumerationPulldown(label, outputs_items)
         items.append((label, output_name, i))
 
-    node.knob('data').setValue(json.dumps(data, indent=4))
+    save_node_data(node, data)
 
     if not items:
         nuke.message('All outputs are different, there is no need to force it')
@@ -89,4 +88,4 @@ def force_output(node=None):
     else:
         node.knob('label').setValue('')
 
-    node.knob('data').setValue(json.dumps(data, indent=4))
+    save_node_data(node, data)

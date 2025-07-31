@@ -5,8 +5,7 @@
 # -----------------------------------------------------------
 import nuke  # type: ignore
 from ...nuke_util.nuke_util import selected_node
-from ..nodes import get_node_data
-import json
+from ..nodes import get_node_data, save_node_data
 
 
 def knob_to_input():
@@ -73,4 +72,4 @@ def knob_to_input():
             _knob.setVisible(True)
             node.knob('label').setValue('')
 
-    node.knob('data').setValue(json.dumps(data, indent=4))
+    save_node_data(node, data)

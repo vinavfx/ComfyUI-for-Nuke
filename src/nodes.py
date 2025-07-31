@@ -295,6 +295,10 @@ def get_node_data(node):
     return json.loads(data)
 
 
+def save_node_data(node, data):
+    node.knob('data').setValue(json.dumps(data, indent=4))
+
+
 def extract_node_data(node, frame=-1):
     data = get_node_data(node)
     if not data:
