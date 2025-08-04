@@ -14,57 +14,97 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
-from ..settings import IP, PORT
+from ..env import IP, PORT
 
 
 def GET(relative_url):
     url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
+    
+    # Добавляем правильные заголовки и таймаут
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache'
+    }
 
     try:
-        response = urllib2.urlopen(url)
+        request = urllib2.Request(url, headers=headers)
+        
+        # ВАЖНО: Отключаем прокси для localhost
+        no_proxy_handler = urllib2.ProxyHandler({})
+        opener = urllib2.build_opener(no_proxy_handler)
+        
+        # Увеличиваем таймаут
+        response = opener.open(request, timeout=30)
         data = response.read().decode()
+        
+        # Проверяем, что получили валидный JSON
+        if not data.strip():
+            raise Exception("Empty response from server")
+            
         return json.loads(data, object_pairs_hook=OrderedDict)
-    except:
-        nuke.message(
-            'Error connecting to server {} on port {} !'.format(IP, PORT))
+        
+    except Exception as e:
+        # Более детальная информация об ошибке
+        error_msg = 'Error connecting to server {} on port {} !\nDetails: {}'.format(IP, PORT, str(e))
+        print(error_msg)  # Выводим в консоль для отладки
+        nuke.message(error_msg)
+        return None
 
 
 def check_connection():
+    url = 'http://{}:{}'.format(IP, PORT)
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': '*/*',
+        'Connection': 'keep-alive'
+    }
+    
     try:
-        response = urllib2.urlopen('http://{}:{}'.format(IP, PORT))
+        request = urllib2.Request(url, headers=headers)
+        
+        # ВАЖНО: Отключаем прокси для localhost
+        no_proxy_handler = urllib2.ProxyHandler({})
+        opener = urllib2.build_opener(no_proxy_handler)
+        
+        response = opener.open(request, timeout=10)
+        
         if response.getcode() == 200:
+            print("Connection successful to {}:{}".format(IP, PORT))
             return True
-    except:
-        nuke.message(
-            'Error connecting to server {} on port {} !'.format(IP, PORT))
-        return
-
-
-def queue_running():
-    queue = GET('queue')
-    if not queue:
+        else:
+            print("Server responded with code: {}".format(response.getcode()))
+            return False
+            
+    except Exception as e:
+        error_msg = 'Error connecting to server {} on port {} !\nDetails: {}'.format(IP, PORT, str(e))
+        print(error_msg)
+        nuke.message(error_msg)
         return False
-
-    running = queue['queue_running']
-    pending = queue['queue_pending']
-
-    if running or pending:
-        if nuke.ask('Processes running, wait or interrupt to send new processes\n\nRunning: {}\nPending: {}\n\n interrupt?'.format(len(running), len(pending))):
-            interrupt()
-
-        return True
-
-    return False
 
 
 def POST(relative_url, data={}):
     url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
-    headers = {'Content-Type': 'application/json'}
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Connection': 'keep-alive'
+    }
+    
     bytes_data = json.dumps(data).encode('utf-8')
     request = urllib2.Request(url, bytes_data, headers)
 
     try:
-        urllib2.urlopen(request)
+        # ВАЖНО: Отключаем прокси для localhost
+        no_proxy_handler = urllib2.ProxyHandler({})
+        opener = urllib2.build_opener(no_proxy_handler)
+        
+        response = opener.open(request, timeout=30)
         return ''
 
     except urllib2.HTTPError as e:
@@ -96,7 +136,9 @@ def POST(relative_url, data={}):
             nuke.message(traceback.format_exc())
 
     except Exception as e:
-        return 'Error: {}'.format(e)
+        error_msg = 'Error in POST request: {}'.format(str(e))
+        print(error_msg)
+        return error_msg
 
 
 def convert_to_utf8(data):
