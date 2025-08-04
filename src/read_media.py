@@ -161,7 +161,7 @@ def extract_meta(data):
             strength = inputs.get('strength')
 
         if name in ('extra_lora1', 'extra_lora2', 'extra_lora3'):
-            lora_name = inputs.get('lora_name', '').split('/')[-1].split('.')[0]
+            lora_name = inputs.get('lora_name', '').split('/')[-1].rsplit('.', 1)[0]
             lora_strength = inputs.get('strength_model', 0)
             formatted = '{}:{}'.format(lora_name, lora_strength)
 
