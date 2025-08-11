@@ -228,11 +228,12 @@ def create_read(run_node, filename, data={}):
 
     main_node.parent().begin()
 
+    fullname = '{}Read'.format(main_node.fullName())
     name = '{}Read'.format(main_node.name())
     ext = filename.split('.')[-1].split(' ')[0].lower()
 
     if ext in ['jpg', 'exr', 'tiff', 'png']:
-        read = nuke.toNode(name)
+        read = nuke.toNode(fullname)
         if not read:
             read = nuke.createNode('Read', inpanel=False)
 
