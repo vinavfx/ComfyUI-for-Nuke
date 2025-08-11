@@ -132,9 +132,6 @@ def extract_meta(data):
         inputs = node['inputs']
 
         if seed == -1:
-            seed = inputs.get('seed', -1)
-
-        if seed == -1:
             seed = inputs.get('noise_seed', -1)
 
         if not sampler_name:
