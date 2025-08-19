@@ -124,15 +124,18 @@ def get_filename(run_node):
 
 
 def extract_meta(data):
-    seed = steps = denoise = guidance = causvid = strength = -1
+    noise_seed = seed = steps = denoise = guidance = causvid = strength = -1
     scheduler = sampler_name = lora = lora2 = lora3 = cnet = ''
 
     for name, node in data.items():
         class_type = node['class_type']
         inputs = node['inputs']
 
+        if noise_seed == -1:
+            noise_seed = inputs.get('noise_seed', -1)
+
         if seed == -1:
-            seed = inputs.get('noise_seed', -1)
+            seed = inputs.get('seed', -1)
 
         if not sampler_name:
             sampler_name = inputs.get('sampler_name', '')
@@ -178,6 +181,9 @@ def extract_meta(data):
 
     if not seed == -1:
         meta.append(('seed', seed))
+
+    if not noise_seed == -1:
+        meta.append(('noise_seed', noise_seed))
 
     if not steps == -1:
         meta.append(('steps', steps))
