@@ -273,6 +273,9 @@ def update():
     nodes = {}
 
     def normalize_string(string):
+        if not string:
+            return ''
+
         string = ''.join(char if ord(
             char) < 128 else '' for char in string)
         return string.replace(' /', '/').replace('/ ', '/').strip()
