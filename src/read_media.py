@@ -220,6 +220,20 @@ def extract_meta(data):
 
     return meta
 
+
+def glb2obj(filename):
+    import trimesh # type: ignore
+
+    mesh = trimesh.load(filename)
+    obj = filename[:-3] + 'obj'
+    mesh.export(obj)
+
+    read = nuke.createNode('ReadGeo', inpanel=False)
+    read.knob('file').setValue(obj)
+
+    return read
+
+
 def create_read(run_node, filename, data={}):
     if not filename:
         return
@@ -253,6 +267,10 @@ def create_read(run_node, filename, data={}):
                 NUKE_USER, 'comfyui2nuke', 'nodes', 'ComfyUI', 'AudioPlay.nk'))
 
         read.knob('audio').setValue(filename)
+
+    elif ext in ['glb']:
+        read = glb2obj(filename)
+
     else:
         return
 
