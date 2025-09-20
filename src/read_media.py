@@ -230,6 +230,7 @@ def glb2obj(filename):
 
     read = nuke.createNode('ReadGeo', inpanel=False)
     read.knob('file').setValue(obj)
+    read.setInput(0, None)
 
     return read
 
