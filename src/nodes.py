@@ -310,7 +310,7 @@ def extract_node_data(node):
             continue
 
         if hasattr(knob, 'valueAt'):
-            value = knob.valueAt(1) if knob.isAnimated() else knob.value()
+            value = knob.valueAt(1) if knob.isAnimated() and not knob.hasExpression() else knob.value()
         else:
             value = knob.value()
 
