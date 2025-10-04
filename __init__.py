@@ -8,24 +8,21 @@ import nuke  # type: ignore
 from .src import *
 from .testing import *
 from functools import partial
-from .settings import NUKE_USER, UPDATE_MENU_AT_START
-
-
-path = os.path.join(NUKE_USER, 'comfyui2nuke')
+from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
 
 def setup():
-    icon = '{}/icons/comfyui_icon.png'.format(path)
+    icon = '{}/icons/comfyui_icon.png'.format(COMFYUI2NUKE)
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI', icon=icon)
 
-    icon_gray = '{}/icons/comfyui_icon_gray.png'.format(path)
-    nodes_dir = os.path.join(path, 'nodes')
+    icon_gray = '{}/icons/comfyui_icon_gray.png'.format(COMFYUI2NUKE)
+    nodes_dir = os.path.join(COMFYUI2NUKE, 'nodes')
 
-    refresh_icon = '{}/icons/refresh.png'.format(path)
-    basic_icon = '{}/icons/basic.png'.format(path)
-    workflow_icon = '{}/icons/workflow.png'.format(path)
-    gizmos_icon = '{}/icons/gizmos.png'.format(path)
-    scripts_icon = '{}/icons/scripts.png'.format(path)
+    refresh_icon = '{}/icons/refresh.png'.format(COMFYUI2NUKE)
+    basic_icon = '{}/icons/basic.png'.format(COMFYUI2NUKE)
+    workflow_icon = '{}/icons/workflow.png'.format(COMFYUI2NUKE)
+    gizmos_icon = '{}/icons/gizmos.png'.format(COMFYUI2NUKE)
+    scripts_icon = '{}/icons/scripts.png'.format(COMFYUI2NUKE)
 
     comfyui_menu.addCommand(
         'Update all ComfyUI', update_menu.update, '', refresh_icon)
