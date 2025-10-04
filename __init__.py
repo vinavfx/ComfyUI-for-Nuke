@@ -61,5 +61,8 @@ def setup():
     comfyui_menu.addCommand(
         'Scripts/forceOutput', scripts.force_output_connection.force_output, icon=icon_gray)
 
+    comfyui_menu.addCommand(
+        'Scripts/exportWorkflow', scripts.export_workflow.export_workflow, icon=icon_gray)
+
     if UPDATE_MENU_AT_START:
         update_menu.update()
