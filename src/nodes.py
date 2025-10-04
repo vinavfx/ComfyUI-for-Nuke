@@ -19,7 +19,7 @@ from .common import image_inputs, mask_inputs, get_comfyui_dir
 states = {}
 
 
-def extract_data(frame, run_node):
+def extract_data(run_node):
     output_node = get_input(run_node, 0)
 
     if not output_node:
@@ -32,7 +32,7 @@ def extract_data(frame, run_node):
             'Connect only to output nodes like SaveImage or SaveEXR !')
         return {}, None
 
-    nodes = get_connected_comfyui_nodes(run_node, frame=frame)
+    nodes = get_connected_comfyui_nodes(run_node)
     nuke.root().knob('proxy').setValue(False)
 
     from .read_media import get_tonemap
@@ -79,7 +79,7 @@ def extract_data(frame, run_node):
 
             if not input_node.name() in comfyui_nodes:
                 load_image_data, changed_node, execution_canceled = create_load_images_and_save(
-                    input_node, tonemap, frame)
+                    input_node, tonemap)
 
                 if execution_canceled:
                     return {}, None
@@ -92,9 +92,7 @@ def extract_data(frame, run_node):
     return data, input_node_changed
 
 
-def create_load_images_and_save(node, tonemap, frame=-1):
-    animation = frame >= 0
-
+def create_load_images_and_save(node, tonemap):
     global states
     connected_nodes = get_connected_nodes(node, continue_at_up_level=True)
     connected_nodes.append(node)
@@ -158,7 +156,7 @@ def create_load_images_and_save(node, tonemap, frame=-1):
 
     input_dir = '{}/input'.format(get_comfyui_dir())
 
-    if current_state.get('connected_nodes') == prev_state.get('connected_nodes') and not animation:
+    if current_state.get('connected_nodes') == prev_state.get('connected_nodes'):
         dirname = prev_state.get('dirname', 'none')
         sequence_dir = os.path.join(input_dir, dirname)
 
@@ -209,10 +207,7 @@ def create_load_images_and_save(node, tonemap, frame=-1):
     write.knob('channels').setValue('rgba')
 
     try:
-        if animation:
-            nuke.execute(write, frame, frame)
-        else:
-            nuke.execute(write, node.firstFrame(), node.lastFrame())
+        nuke.execute(write, node.firstFrame(), node.lastFrame())
     except:
         nuke.delete(write)
         nuke.delete(invert)
@@ -234,7 +229,7 @@ def create_load_images_and_save(node, tonemap, frame=-1):
     return load_image_data, True, False
 
 
-def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[], frame=-1):
+def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
     if visited is None:
         visited = set()
 
@@ -264,7 +259,7 @@ def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[], frame=
         if inode in visited:
             continue
 
-        node_data = extract_node_data(inode, frame)
+        node_data = extract_node_data(inode)
         if node_data:
             if node_data['class_type'] in ignore_nodes:
                 continue
@@ -275,7 +270,7 @@ def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[], frame=
             sd_nodes.append((inode, node_data))
 
         sd_nodes.extend(get_connected_comfyui_nodes(
-            inode, visited, ignore_nodes, frame))
+            inode, visited, ignore_nodes))
 
     return sd_nodes
 
@@ -299,7 +294,7 @@ def save_node_data(node, data):
     node.knob('data').setValue(json.dumps(data, indent=4))
 
 
-def extract_node_data(node, frame=-1):
+def extract_node_data(node):
     data = get_node_data(node)
     if not data:
         return {}
@@ -310,8 +305,8 @@ def extract_node_data(node, frame=-1):
         if not knob.name()[-1:] == '_':
             continue
 
-        if hasattr(knob, 'valueAt') and frame >= 0:
-            value = knob.valueAt(frame) if knob.isAnimated() else knob.value()
+        if hasattr(knob, 'valueAt'):
+            value = knob.valueAt(1) if knob.isAnimated() else knob.value()
         else:
             value = knob.value()
 
