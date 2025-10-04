@@ -130,9 +130,12 @@ def create_load_images_and_save(node, tonemap):
     current_state = {'connected_nodes': state.strip(), 'state_id': 0}
     prev_state = states.get(node.fullName(), {})
 
+    frame_range = [node.firstFrame(), node.lastFrame()]
+
     if USE_EXR_TO_LOAD_IMAGES:
         filepath_key = 'filepath'
         load_image_data = {
+            'frame_range': frame_range,
             'inputs': {
                 'filepath': '',
                 'tonemap': tonemap,
@@ -145,6 +148,7 @@ def create_load_images_and_save(node, tonemap):
     else:
         filepath_key = 'directory'
         load_image_data  = {
+            'frame_range': frame_range,
             'inputs': {
                 'directory': '',
                 'skip_first_images': 0,

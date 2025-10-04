@@ -235,6 +235,15 @@ def glb2obj(filename):
     return read
 
 
+def get_frame_range(data):
+    #  Of all the read nodes, it gets the longest range.
+    ranges = [n.get('frame_range')
+              for n in data.values() if n.get('frame_range')]
+    if not ranges:
+        return [1, 1]
+    return max(ranges, key=lambda r: r[1] - r[0])
+
+
 def create_read(run_node, filename, data={}):
     if not filename:
         return
@@ -277,6 +286,8 @@ def create_read(run_node, filename, data={}):
 
     read.setName(name)
     read.setXYpos(main_node.xpos(), main_node.ypos() + 35)
+    read.knob('frame_mode').setValue('start at')
+    read.knob('frame').setValue(str(get_frame_range(data)[0]))
     read.knob('tile_color').setValue(
         main_node.knob('tile_color').value())
 
