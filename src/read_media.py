@@ -268,6 +268,9 @@ def create_read(run_node, filename, data={}):
             read = nuke.createNode('Read', inpanel=False)
 
         read.knob('file').fromUserText(filename)
+        read.knob('frame_mode').setValue('start at')
+        read.knob('frame').setValue(str(get_frame_range(data)[0]))
+
         set_correct_colorspace(read)
 
     elif ext in ['flac', 'mp3', 'wav']:
@@ -286,8 +289,6 @@ def create_read(run_node, filename, data={}):
 
     read.setName(name)
     read.setXYpos(main_node.xpos(), main_node.ypos() + 35)
-    read.knob('frame_mode').setValue('start at')
-    read.knob('frame').setValue(str(get_frame_range(data)[0]))
     read.knob('tile_color').setValue(
         main_node.knob('tile_color').value())
 
