@@ -4,8 +4,6 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import textwrap
-import os
-import shutil
 import sys
 import nuke  # type: ignore
 import uuid
@@ -124,52 +122,7 @@ def preview_image_update(node_name, data):
     preview_node.end()
 
 
-def animation_submit():
-    run_node = nuke.thisNode()
-
-    p = nuke.Panel('ComfyUI Submit')
-    p.addSingleLineInput(
-        'Frames', '{}-{}'.format(nuke.root().firstFrame(), nuke.root().lastFrame()))
-    p.addButton('Cancel')
-    p.addButton('Send')
-
-    if not p.show():
-        return
-
-    try:
-        first_frame, last_frame = map(int, p.value('Frames').split('-'))
-    except:
-        nuke.message('Incompatible field of "Frames"')
-        return
-
-    animation_task = [nuke.ProgressTask('Sending Frames...')]
-    sequence = []
-
-    def each_frame(frame, filename):
-        progress = int((frame - first_frame) * 100 / (last_frame - first_frame))
-        animation_task[0].setProgress(progress)
-        animation_task[0].setMessage('Frame: ' + str(frame))
-        sequence.append((filename, frame))
-
-    def finished_inference():
-        del animation_task[0]
-
-        first_filename = sequence[0][0]
-        basename = first_filename.split('_')[0]
-        sequence_output = os.path.dirname(first_filename)
-        ext = first_filename.split('.')[-1]
-
-        for filename, frame in sequence:
-            frame_str = '0000{}'.format(frame)[-4:]
-            shutil.move(filename, '{}_{}.{}'.format(basename, frame_str, ext))
-
-        filename = nuke.getFileNameList(sequence_output)[0]
-        create_read(run_node, os.path.join(sequence_output, filename))
-
-    submit(animation=[first_frame, last_frame, each_frame, finished_inference, animation_task])
-
-
-def submit(run_node=None, animation=None, success_callback=None):
+def submit(run_node=None, success_callback=None):
     if not check_connection():
         return
 
@@ -189,19 +142,17 @@ def submit(run_node=None, animation=None, success_callback=None):
         nuke.comfyui_running = False
         return
 
-    frame = animation[0] if animation else -1
-
     run_node = run_node if run_node else nuke.thisNode()
     exr_filepath_fixed(run_node)
 
-    data, input_node_changed = extract_data(frame, run_node)
+    data, input_node_changed = extract_data(run_node)
 
     if not data:
         nuke.comfyui_running = False
         return
 
     global states
-    if data == states.get(run_node.fullName(), {}) and not input_node_changed and not animation:
+    if data == states.get(run_node.fullName(), {}) and not input_node_changed:
         nuke.comfyui_running = False
         read = create_read(run_node, get_filename(run_node), data)
 
@@ -210,7 +161,7 @@ def submit(run_node=None, animation=None, success_callback=None):
         return
 
     update_filename_prefix(run_node)
-    data, _ = extract_data(frame, run_node)
+    data, _ = extract_data(run_node)
 
     state_data = copy.deepcopy(data)
     run_node.knob('comfyui_submit').setEnabled(False)
@@ -294,11 +245,6 @@ def submit(run_node=None, animation=None, success_callback=None):
                 cancelled = True
                 break
 
-            if animation:
-                if animation[4][0].isCancelled():
-                    cancelled = True
-                    break
-
             sleep(.1)
 
         interrupt()
@@ -319,23 +265,6 @@ def submit(run_node=None, animation=None, success_callback=None):
 
     def progress_finished(n):
         filename = get_filename(run_node)
-
-        if animation:
-            frame, last_frame, each, end, animation_task = animation
-            if animation_task[0].isCancelled():
-                return
-
-            each(frame, get_filename(run_node))
-
-            next_frame = frame + 1
-            if next_frame > last_frame:
-                end()
-                return
-
-            run_node.begin()
-            submit(animation=(next_frame, last_frame, each, end, animation_task))
-
-            return
 
         try:
             read = create_read(n, filename, data)

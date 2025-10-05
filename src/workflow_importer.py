@@ -12,7 +12,7 @@ from .update_menu import create_comfyui_node, remove_signs, update_menu
 from .run import error_node_style
 from .nodes import get_node_data
 from .connection import convert_to_utf8
-from ..settings import NUKE_USER
+from ..settings import COMFYUI2NUKE
 
 
 def center_nodes(nodes):
@@ -183,8 +183,7 @@ def import_workflow():
             node.setInput(i, onode)
 
         if 'Save' in attrs['type']:
-            run_nk = os.path.join(
-                NUKE_USER, 'comfyui2nuke/nodes/ComfyUI/Run.nk')
+            run_nk = os.path.join(COMFYUI2NUKE, 'nodes/ComfyUI/Run.nk')
             run_node = nuke.nodePaste(run_nk)
             run_node.setInput(0, node)
             run_node.setSelected(False)

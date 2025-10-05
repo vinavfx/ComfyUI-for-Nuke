@@ -27,7 +27,7 @@ API to be able to use ComfyUI nodes within nuke, only using the ComfyUI server
 Or manually copy the entire git downloaded folder and its submodules to the nuke user folder
 
 ### 2. Install `websocket-client` Python Library
-`websocket-client` is a third-party library needed for the scripts to work correctly. [Here is a direct link to it's pypi installation](https://pypi.org/project/websocket-client/). 
+`websocket-client` is a third-party library needed for the scripts to work correctly. [Here is a direct link to it's pypi installation](https://pypi.org/project/websocket-client/).
 
 This method installs the `websocket-client` library directly to your Nuke's Python environment.
 This example will be done with Nuke version 15.1v3, depending on your version change the number.
@@ -68,13 +68,11 @@ comfyui.setup()
 COMFYUI_DIR = '<path_to_ComfyUI>' # Put the directory where ComfyUI is installed !
 IP = '127.0.0.1'
 PORT = 8188
-NUKE_USER = '<path_to_.nuke>' # Change only if your path is different !
 ```
 Alternatively, you can set these environment variables instead of modifying [settings.py](./settings.py)
 - `NUKE_COMFYUI_DIR` - Path where ComfyUI directory is mounted/mapped
 - `NUKE_COMFYUI_IP` - IP address of the remote ComfyUI server
 - `NUKE_COMFYUI_PORT` - Port number (default: 8188)
-- `NUKE_COMFYUI_NUKE_USER` - Nuke user directory path (usually auto-detected)
 
 2 - Run ComfyUI Server
 
@@ -92,8 +90,3 @@ to latent, and in the same node there is a button to create a restore node, put 
 5 - To use Switch in ComfyUI nodes statically, use '<b>SwitchAny</b>' otherwise use the ComfyUI switches
 
 6 - If you want to have the ComfyUI server on another machine, you must share the folder where ComfyUI is installed and put the path in [setting.py](./settings.py)
-
-7 - Use the Run '<b>Force Animation</b>' method only if you have some keyframes animated,
-as this way is slower because it sends requests frame by frame and not in batches.
-
-[SUPPORT THE MAINTENANCE OF THIS PROJECT](https://www.paypal.com/paypalme/ComfyUIforNuke)

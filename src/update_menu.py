@@ -5,15 +5,13 @@
 # -----------------------------------------------------------
 from functools import partial
 import re
-import os
 import json
 import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import GET, convert_to_utf8
-from ..settings import NUKE_USER
+from ..settings import COMFYUI2NUKE
 
-path = os.path.join(NUKE_USER, 'comfyui2nuke')
 comfyui_nodes = {}
 menu_updated = False
 
@@ -300,7 +298,7 @@ def update():
     if not load_exr_exist:
         nuke.message('ComfyUI-HQ-Image-Save module is required !')
 
-    icon_gray = '{}/icons/comfyui_icon_gray.png'.format(path)
+    icon_gray = '{}/icons/comfyui_icon_gray.png'.format(COMFYUI2NUKE)
 
     for fullname, value in sorted(nodes.items()):
         input_data = value.get('input', {})

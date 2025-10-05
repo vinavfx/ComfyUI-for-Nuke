@@ -9,7 +9,7 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_input
 from ..nuke_util.media_util import get_padding
-from ..settings import COMFYUI_DIR, NUKE_USER, DISPLAY_META_IN_READ_NODE
+from ..settings import COMFYUI_DIR, COMFYUI2NUKE, DISPLAY_META_IN_READ_NODE
 from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes
 
@@ -235,6 +235,15 @@ def glb2obj(filename):
     return read
 
 
+def get_frame_range(data):
+    #  Of all the read nodes, it gets the longest range.
+    ranges = [n.get('frame_range')
+              for n in data.values() if n.get('frame_range')]
+    if not ranges:
+        return [1, 1]
+    return max(ranges, key=lambda r: r[1] - r[0])
+
+
 def create_read(run_node, filename, data={}):
     if not filename:
         return
@@ -259,13 +268,16 @@ def create_read(run_node, filename, data={}):
             read = nuke.createNode('Read', inpanel=False)
 
         read.knob('file').fromUserText(filename)
+        read.knob('frame_mode').setValue('start at')
+        read.knob('frame').setValue(str(get_frame_range(data)[0]))
+
         set_correct_colorspace(read)
 
     elif ext in ['flac', 'mp3', 'wav']:
         read = nuke.toNode(name)
         if not read:
             read = nuke.nodePaste(os.path.join(
-                NUKE_USER, 'comfyui2nuke', 'nodes', 'ComfyUI', 'AudioPlay.nk'))
+                COMFYUI2NUKE, 'nodes', 'ComfyUI', 'AudioPlay.nk'))
 
         read.knob('audio').setValue(filename)
 
