@@ -284,6 +284,7 @@ def update():
         if name == 'LoadEXR':
             load_exr_exist = True
 
+        value['display_name'] = value['display_name'] if value['display_name'] else value['name']
         display_name = normalize_string(value['display_name'])
         category = normalize_string(value['category'])
 
