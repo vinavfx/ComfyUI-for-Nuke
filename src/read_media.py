@@ -4,12 +4,13 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import os
+import shutil
 import random
 import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_input
 from ..nuke_util.media_util import get_padding
-from ..settings import COMFYUI_DIR, COMFYUI2NUKE, DISPLAY_META_IN_READ_NODE
+from ..settings import COMFYUI_DIR, COMFYUI2NUKE, DISPLAY_META_IN_READ_NODE, IMAGE_OUTPUT_WITHIN_PROJECT
 from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes
 
@@ -244,9 +245,24 @@ def get_frame_range(data):
     return max(ranges, key=lambda r: r[1] - r[0])
 
 
+def move_filename(filename):
+    if not IMAGE_OUTPUT_WITHIN_PROJECT:
+        return filename
+
+    OUTPUT_DIR = os.path.join(os.path.dirname(nuke.scriptName()), 'inferences')
+    if not os.path.isdir(OUTPUT_DIR):
+        os.mkdir(OUTPUT_DIR)
+
+    shutil.move(os.path.dirname(filename), OUTPUT_DIR)
+
+    return os.path.join(OUTPUT_DIR, os.path.basename(os.path.dirname(filename)), os.path.basename(filename))
+
+
 def create_read(run_node, filename, data={}):
     if not filename:
         return
+
+    filename = move_filename(filename)
 
     meta = []
     if data:
