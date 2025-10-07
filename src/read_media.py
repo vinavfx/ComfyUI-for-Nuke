@@ -65,7 +65,6 @@ def update_filename_prefix(run_node):
 
 
 def set_correct_colorspace(read):
-    ocio = nuke.Root().knob('colorManagement').value()
     filename = read.knob('file').value()
     ext = filename.split('.')[-1]
 
@@ -73,8 +72,6 @@ def set_correct_colorspace(read):
         read.knob('raw').setValue(True)
     else:
         read.knob('raw').setValue(False)
-        read.knob('colorspace').setValue(
-            'sRGB' if ocio == 'Nuke' else 'Output - sRGB')
 
 
 def get_gizmo_group(run_node):

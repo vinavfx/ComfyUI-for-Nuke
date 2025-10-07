@@ -206,7 +206,6 @@ def create_load_images_and_save(node, tonemap):
     write.setInput(0, onode)
     write.knob('file').setValue(filename)
     write.knob('raw').setValue(USE_EXR_TO_LOAD_IMAGES)
-    write.knob('colorspace').setValue('linear' if USE_EXR_TO_LOAD_IMAGES else 'sRGB')
     write.knob('file_type').setValue(ext)
     write.knob('channels').setValue('rgba')
 
