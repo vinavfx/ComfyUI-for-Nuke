@@ -1,17 +1,15 @@
 set cut_paste_input [stack 0]
 version 12.0 v8
-push 0
 push $cut_paste_input
 Group {
- inputs 2
  name MultiRun
  tile_color 0x609e38ff
  note_font "Bitstream Vera Sans"
  selected true
- xpos -333
- ypos 183
+ xpos 64
+ ypos -90
  addUserKnob {20 controls l Controls}
- addUserKnob {22 multi_submit l Run T "get_output_nodes = comfyui.nuke_util.nuke_util.get_output_nodes\nget_input = comfyui.nuke_util.nuke_util.get_input\n\ndef multi_queue(queue):\n    if not queue:\n        return\n\n    node = queue.pop(0)\n    aux = node\n\n    if node.knob('comfyui_gizmo'):\n        node = nuke.toNode(node.name() + '.Run')\n\n    def on_success(read):\n        if read:\n            for i, n in  get_output_nodes(aux):\n                n.setInput(i, read)\n\n        multi_queue(queue)\n\n    comfyui.run.submit(node, success_callback=on_success)\n    \n    \nqueues = \[]\nthis = nuke.thisNode()\nfor i in range(this.inputs()):\n    inode = get_input(this, i)\n\n    if not inode:\n        continue\n\n    if inode.Class() == 'Read':\n        qp_name = inode.name().replace('Read', '')\n        qp = nuke.toNode(qp_name)\n        if qp:\n            queues.append(qp)\n            continue\n\n    if not inode.knob('comfyui_submit'):\n        continue\n    \n\n    queues.append(inode)\n\nmulti_queue(queues)" +STARTLINE}
+ addUserKnob {22 multi_submit l Run T comfyui.multi_run.execute_runs() +STARTLINE}
 }
  Output {
   inputs 0
@@ -22,14 +20,12 @@ Group {
  Input {
   inputs 0
   name Input1
-  selected true
   xpos -150
   ypos 15
  }
  Input {
   inputs 0
   name Input2
-  selected true
   xpos -40
   ypos 15
   number 1
@@ -37,7 +33,6 @@ Group {
  Input {
   inputs 0
   name Input3
-  selected true
   xpos 70
   ypos 15
   number 2
@@ -45,7 +40,6 @@ Group {
  Input {
   inputs 0
   name Input4
-  selected true
   xpos 180
   ypos 15
   number 3
@@ -53,7 +47,6 @@ Group {
  Input {
   inputs 0
   name Input5
-  selected true
   xpos 290
   ypos 15
   number 4
@@ -61,7 +54,6 @@ Group {
  Input {
   inputs 0
   name Input6
-  selected true
   xpos 400
   ypos 15
   number 5
@@ -69,7 +61,6 @@ Group {
  Input {
   inputs 0
   name Input7
-  selected true
   xpos 510
   ypos 15
   number 6
@@ -77,7 +68,6 @@ Group {
  Input {
   inputs 0
   name Input8
-  selected true
   xpos 620
   ypos 15
   number 7
@@ -85,7 +75,6 @@ Group {
  Input {
   inputs 0
   name Input9
-  selected true
   xpos 730
   ypos 15
   number 8
@@ -93,7 +82,6 @@ Group {
  Input {
   inputs 0
   name Input10
-  selected true
   xpos 840
   ypos 15
   number 9
