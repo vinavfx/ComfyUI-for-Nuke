@@ -4,9 +4,12 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import sys
+import os
 import json
 import traceback
 from collections import OrderedDict
+import requests
+
 
 if sys.version_info.major == 2:
     import urllib2 as urllib2  # type: ignore
@@ -55,6 +58,58 @@ def queue_running():
         return True
 
     return False
+
+
+def upload_images(folder):
+    url = 'http://{}:{}/upload/image'.format(IP, PORT)
+    results = []
+
+    for f in os.listdir(folder):
+        image_path = os.path.join(folder, f)
+
+        with open(image_path, 'rb') as f:
+            files = {'image': f}
+            data = {
+                'subfolder': os.path.basename(folder),
+                'overwrite': 'true'
+            }
+            resp = requests.post(url, files=files, data=data)
+            results.append((resp.status_code, resp.text))
+
+    return results
+
+
+def download_images(filename, dst_folder):
+    fn, frange = filename.rsplit(' ', 1)
+    basename = os.path.basename(fn)
+
+    clean_name = basename.rsplit('_#####', 1)[0]
+    ext = fn.split('.')[-1]
+
+    subfolder = os.path.basename(os.path.dirname(fn))
+    first_frame, last_frame = [int(x) for x in frange.split('-')]
+
+    output = os.path.join(dst_folder, subfolder)
+    if not os.path.exists(output):
+        os.makedirs(output)
+
+    for i in range(first_frame, last_frame + 1):
+        image = '{}_{}_.{}'.format(clean_name, str(i).zfill(5), ext)
+
+        url = 'http://{}:{}/api/view?filename={}&subfolder={}'.format(
+            IP, PORT, image, subfolder)
+
+        r = requests.get(url, stream=True)
+        if r.status_code != 200:
+            nuke.message('Error in image download!\n{}'.format(r.status_code))
+
+        dst_path = os.path.join(output, image)
+
+        with open(dst_path, 'wb') as f:
+            for chunk in r.iter_content(8192):
+                f.write(chunk)
+
+    return '{}/{}_#####_.{} {}'.format(output, clean_name, ext, frange)
 
 
 def POST(relative_url, data={}):

@@ -5,6 +5,8 @@
 # -----------------------------------------------------------
 import os
 import nuke  # type: ignore
+from datetime import datetime
+import hashlib
 from ..settings import COMFYUI_DIR
 from .connection import GET
 
@@ -45,16 +47,17 @@ def update_images_and_mask_inputs():
                     mask_inputs.append(name)
 
 
-def get_available_name(prefix, directory):
-    prefix += '_'
-    taken_names = set(os.listdir(directory))
+def get_date_code():
+    now = datetime.now()
+    ms = str(int(now.microsecond / 1000)).zfill(3)
+    return now.strftime("%Y%m%d%H%M%S") + ms
 
-    for i in range(10000):
-        potential_name = '{}{:04d}'.format(prefix, i)
-        if potential_name not in taken_names:
-            return potential_name
 
-    return prefix
+def get_name_code(name, length=15):
+    h = hashlib.md5(name.encode('utf-8')).hexdigest()
+    num = int(h, 16)
+    code = str(num % (10**length)).zfill(length)
+    return code
 
 
 def get_comfyui_dir():

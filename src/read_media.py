@@ -5,14 +5,15 @@
 # -----------------------------------------------------------
 import os
 import shutil
-import random
 import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_input
 from ..nuke_util.media_util import get_padding
-from ..settings import COMFYUI_DIR, COMFYUI2NUKE, DISPLAY_META_IN_READ_NODE, IMAGE_OUTPUT_WITHIN_PROJECT
+from ..settings import COMFYUI_DIR, COMFYUI2NUKE, DISPLAY_META_IN_READ_NODE, IMAGE_OUTPUT_WITHIN_PROJECT, COMFYUI_LOCAL, TEMPORAL_DIR
 from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes
+from .common import get_date_code
+from .connection import download_images
 
 
 def exr_filepath_fixed(run_node):
@@ -59,8 +60,7 @@ def update_filename_prefix(run_node):
     if old_rand.isdigit():
         prefix = prefix.replace(old_rand + '/', '')
 
-    rand = random.randint(10000000000, 99999999990)
-    new_prefix = '{}/{}'.format(rand, prefix)
+    new_prefix = '{}/{}'.format(get_date_code(), prefix)
     filename_prefix_knob.setValue(new_prefix)
 
 
@@ -243,6 +243,12 @@ def get_frame_range(data):
 
 
 def move_filename(filename):
+    if not COMFYUI_LOCAL:
+        tmp_output_folder = os.path.join(TEMPORAL_DIR, 'output')
+        if not os.path.isdir(tmp_output_folder):
+            os.makedirs(tmp_output_folder)
+        filename = download_images(filename, tmp_output_folder)
+
     if not IMAGE_OUTPUT_WITHIN_PROJECT:
         return filename
 

@@ -10,11 +10,12 @@ import random
 import traceback
 from collections import Counter
 import nuke  # type: ignore
-from ..settings import USE_EXR_TO_LOAD_IMAGES
+from ..settings import USE_EXR_TO_LOAD_IMAGES, COMFYUI_LOCAL, TEMPORAL_DIR
 from ..testing.testing import status_diff
+from .connection import upload_images
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
-from .common import image_inputs, mask_inputs, get_comfyui_dir
+from .common import image_inputs, mask_inputs, get_comfyui_dir, get_name_code
 
 states = {}
 
@@ -158,11 +159,8 @@ def create_load_images_and_save(node, tonemap):
             'class_type': 'VHS_LoadImages'
         }
 
-    input_dir = '{}/input'.format(get_comfyui_dir())
-
     if current_state.get('connected_nodes') == prev_state.get('connected_nodes'):
-        dirname = prev_state.get('dirname', 'none')
-        sequence_dir = os.path.join(input_dir, dirname)
+        sequence_dir = prev_state.get('sequence_dir', 'none')
 
         if os.path.isdir(sequence_dir):
             files = os.listdir(sequence_dir)
@@ -175,14 +173,17 @@ def create_load_images_and_save(node, tonemap):
     #  status_diff(prev_state.get('connected_nodes'),
                 #  current_state.get('connected_nodes'))
 
-    dirname = '{}_{}'.format(get_project_name(), node.fullName())
-    sequence_dir = os.path.join(input_dir, dirname)
-    sequence_dir = sequence_dir.replace('\\', '/')
+    dirname = get_name_code(get_project_name() + node.fullName())
+    comfyui_input_dir = os.path.join(
+        get_comfyui_dir(), 'input', dirname).replace('\\', '/')
+
+    tmp_input_dir = os.path.join(TEMPORAL_DIR, 'input', dirname)
+    sequence_dir = comfyui_input_dir if COMFYUI_LOCAL else tmp_input_dir
 
     if os.path.isdir(sequence_dir):
         shutil.rmtree(sequence_dir)
 
-    os.mkdir(sequence_dir)
+    os.makedirs(sequence_dir)
     ext = 'exr' if USE_EXR_TO_LOAD_IMAGES else 'png'
     filename = '{}/{}_#####.{}'.format(sequence_dir, dirname, ext)
 
@@ -211,6 +212,8 @@ def create_load_images_and_save(node, tonemap):
 
     try:
         nuke.execute(write, node.firstFrame(), node.lastFrame())
+        if not COMFYUI_LOCAL:
+            upload_images(sequence_dir)
     except:
         nuke.delete(write)
         nuke.delete(invert)
@@ -221,12 +224,12 @@ def create_load_images_and_save(node, tonemap):
     nuke.delete(invert)
 
     state_id = random.randrange(1, 9999)
-    current_state['dirname'] = dirname
+    current_state['sequence_dir'] = sequence_dir
     current_state['state_id'] = state_id
 
     states[node.fullName()] = current_state
 
-    load_image_data['inputs'][filepath_key] = sequence_dir
+    load_image_data['inputs'][filepath_key] = comfyui_input_dir
     load_image_data['inputs']['id'] = state_id
 
     return load_image_data, True, False
