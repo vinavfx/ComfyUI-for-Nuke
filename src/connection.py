@@ -19,15 +19,13 @@ else:
 import nuke  # type: ignore
 from ..settings import IP, PORT
 
-protocol = 'https' if PORT == 443 else 'http'
+protocol = 'http'
 
 def GET(relative_url):
     url = '{}://{}:{}/{}'.format(protocol, IP, PORT, relative_url)
-    request = urllib2.Request(url)
-    request.add_header('User-Agent', 'Mozilla/5.0')
 
     try:
-        response = urllib2.urlopen(request)
+        response = urllib2.urlopen(url)
         data = response.read().decode()
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
@@ -38,10 +36,7 @@ def GET(relative_url):
 def check_connection():
     try:
         url ='{}://{}:{}'.format(protocol, IP, PORT)
-        request = urllib2.Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0')
-
-        response = urllib2.urlopen(request)
+        response = urllib2.urlopen(url)
         if response.getcode() == 200:
             return True
     except:
@@ -68,11 +63,15 @@ def queue_running():
 
 
 def upload_images(folder):
+    task = nuke.ProgressTask('Uploading to ComfyUI')
+
     url = '{}://{}:{}/upload/image'.format(protocol, IP, PORT)
     results = []
+    files = os.listdir(folder)
+    total = len(files)
 
-    for f in os.listdir(folder):
-        image_path = os.path.join(folder, f)
+    for i, file in enumerate(files):
+        image_path = os.path.join(folder, file)
 
         with open(image_path, 'rb') as f:
             files = {'image': f}
@@ -83,10 +82,15 @@ def upload_images(folder):
             resp = requests.post(url, files=files, data=data)
             results.append((resp.status_code, resp.text))
 
+        task.setMessage('Uploading: ' + file)
+        task.setProgress(int((i / float(total)) * 100))
+
+    task.setProgress(100)
+
     return results
 
 
-def download_images(filename, dst_folder):
+def download_images(filename, dst_folder, frange):
     filename_prefix, sequence_output = filename
 
     ext = 'png'
@@ -97,6 +101,8 @@ def download_images(filename, dst_folder):
         os.makedirs(output)
 
     last_frame = 0
+    task = nuke.ProgressTask('Downloading from ComfyUI')
+    total = frange[1] - frange[0] + 1
 
     for i in range(1, 10000):
         image = '{}_{}_.{}'.format(filename_prefix, str(i).zfill(5), ext)
@@ -116,15 +122,17 @@ def download_images(filename, dst_folder):
             for chunk in r.iter_content(8192):
                 f.write(chunk)
 
+        task.setMessage('Downloading: ' + image)
+        task.setProgress(int((i / float(total)) * 100))
+
+    task.setProgress(100)
+
     return '{}/{}_#####_.{} 1-{}'.format(output, filename_prefix, ext, last_frame)
 
 
 def POST(relative_url, data={}):
     url = '{}://{}:{}/{}'.format(protocol, IP, PORT, relative_url)
-    headers = {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0'
-    }
+    headers = {'Content-Type': 'application/json'}
     bytes_data = json.dumps(data).encode('utf-8')
     request = urllib2.Request(url, bytes_data, headers)
 
