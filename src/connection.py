@@ -19,12 +19,15 @@ else:
 import nuke  # type: ignore
 from ..settings import IP, PORT
 
+protocol = 'https' if PORT == 443 else 'http'
 
 def GET(relative_url):
-    url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
+    url = '{}://{}:{}/{}'.format(protocol, IP, PORT, relative_url)
+    request = urllib2.Request(url)
+    request.add_header('User-Agent', 'Mozilla/5.0')
 
     try:
-        response = urllib2.urlopen(url)
+        response = urllib2.urlopen(request)
         data = response.read().decode()
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
@@ -34,10 +37,15 @@ def GET(relative_url):
 
 def check_connection():
     try:
-        response = urllib2.urlopen('http://{}:{}'.format(IP, PORT))
+        url ='{}://{}:{}'.format(protocol, IP, PORT)
+        request = urllib2.Request(url)
+        request.add_header('User-Agent', 'Mozilla/5.0')
+
+        response = urllib2.urlopen(request)
         if response.getcode() == 200:
             return True
     except:
+        print('error')
         nuke.message(
             'Error connecting to server {} on port {} !'.format(IP, PORT))
         return
@@ -61,7 +69,7 @@ def queue_running():
 
 
 def upload_images(folder):
-    url = 'http://{}:{}/upload/image'.format(IP, PORT)
+    url = '{}://{}:{}/upload/image'.format(protocol, IP, PORT)
     results = []
 
     for f in os.listdir(folder):
@@ -80,11 +88,14 @@ def upload_images(folder):
 
 
 def download_images(filename, dst_folder):
-    fn, frange = filename.rsplit(' ', 1)
-    basename = os.path.basename(fn)
+    try:
+        fn, frange = filename.rsplit(' ', 1)
+    except:
+        fn = filename
+        frange = '1-1'
 
-    clean_name = basename.rsplit('_#####', 1)[0]
-    ext = fn.split('.')[-1]
+    clean_name = os.path.basename(fn).rsplit('_', 2)[0]
+    ext = os.path.splitext(fn)[-1]
 
     subfolder = os.path.basename(os.path.dirname(fn))
     first_frame, last_frame = [int(x) for x in frange.split('-')]
@@ -94,10 +105,10 @@ def download_images(filename, dst_folder):
         os.makedirs(output)
 
     for i in range(first_frame, last_frame + 1):
-        image = '{}_{}_.{}'.format(clean_name, str(i).zfill(5), ext)
+        image = '{}_{}_{}'.format(clean_name, str(i).zfill(5), ext)
 
-        url = 'http://{}:{}/api/view?filename={}&subfolder={}'.format(
-            IP, PORT, image, subfolder)
+        url = '{}://{}:{}/api/view?filename={}&subfolder={}'.format(
+            protocol, IP, PORT, image, subfolder)
 
         r = requests.get(url, stream=True)
         if r.status_code != 200:
@@ -109,12 +120,15 @@ def download_images(filename, dst_folder):
             for chunk in r.iter_content(8192):
                 f.write(chunk)
 
-    return '{}/{}_#####_.{} {}'.format(output, clean_name, ext, frange)
+    return '{}/{}_#####_{} {}'.format(output, clean_name, ext, frange)
 
 
 def POST(relative_url, data={}):
-    url = 'http://{}:{}/{}'.format(IP, PORT, relative_url)
-    headers = {'Content-Type': 'application/json'}
+    url = '{}://{}:{}/{}'.format(protocol, IP, PORT, relative_url)
+    headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0'
+    }
     bytes_data = json.dumps(data).encode('utf-8')
     request = urllib2.Request(url, bytes_data, headers)
 

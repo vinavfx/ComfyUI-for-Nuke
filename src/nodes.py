@@ -161,11 +161,12 @@ def create_load_images_and_save(node, tonemap):
 
     if current_state.get('connected_nodes') == prev_state.get('connected_nodes'):
         sequence_dir = prev_state.get('sequence_dir', 'none')
+        comfyui_input_dir = prev_state.get('comfyui_input_dir', 'none')
 
         if os.path.isdir(sequence_dir):
             files = os.listdir(sequence_dir)
             if files:
-                load_image_data['inputs'][filepath_key] = sequence_dir
+                load_image_data['inputs'][filepath_key] = comfyui_input_dir
                 load_image_data['inputs']['id'] = prev_state.get('state_id', 0)
                 return load_image_data, False, False
 
@@ -173,7 +174,9 @@ def create_load_images_and_save(node, tonemap):
     #  status_diff(prev_state.get('connected_nodes'),
                 #  current_state.get('connected_nodes'))
 
-    dirname = get_name_code(get_project_name() + node.fullName())
+    dirname = get_name_code('{}{}{}{}'.format(
+        get_project_name(), node.fullName(), frame_range[0], frame_range[1]))
+
     comfyui_input_dir = os.path.join(
         get_comfyui_dir(), 'input', dirname).replace('\\', '/')
 
@@ -225,6 +228,7 @@ def create_load_images_and_save(node, tonemap):
 
     state_id = random.randrange(1, 9999)
     current_state['sequence_dir'] = sequence_dir
+    current_state['comfyui_input_dir'] = comfyui_input_dir
     current_state['state_id'] = state_id
 
     states[node.fullName()] = current_state

@@ -7,7 +7,7 @@ import os
 import nuke  # type: ignore
 from datetime import datetime
 import hashlib
-from ..settings import COMFYUI_DIR
+from ..settings import COMFYUI_DIR, COMFYUI_LOCAL
 from .connection import GET
 
 if not getattr(nuke, 'comfyui_running', False):
@@ -61,6 +61,9 @@ def get_name_code(name, length=15):
 
 
 def get_comfyui_dir():
+    if not COMFYUI_LOCAL:
+        return COMFYUI_DIR
+
     if os.path.isdir(os.path.join(COMFYUI_DIR, 'comfy')):
         return COMFYUI_DIR
 
