@@ -45,7 +45,6 @@ def check_connection():
         if response.getcode() == 200:
             return True
     except:
-        print('error')
         nuke.message(
             'Error connecting to server {} on port {} !'.format(IP, PORT))
         return
@@ -88,31 +87,28 @@ def upload_images(folder):
 
 
 def download_images(filename, dst_folder):
-    try:
-        fn, frange = filename.rsplit(' ', 1)
-    except:
-        fn = filename
-        frange = '1-1'
+    filename_prefix, sequence_output = filename
 
-    clean_name = os.path.basename(fn).rsplit('_', 2)[0]
-    ext = os.path.splitext(fn)[-1]
-
-    subfolder = os.path.basename(os.path.dirname(fn))
-    first_frame, last_frame = [int(x) for x in frange.split('-')]
+    ext = 'png'
+    subfolder = os.path.basename(sequence_output)
 
     output = os.path.join(dst_folder, subfolder)
     if not os.path.exists(output):
         os.makedirs(output)
 
-    for i in range(first_frame, last_frame + 1):
-        image = '{}_{}_{}'.format(clean_name, str(i).zfill(5), ext)
+    last_frame = 0
+
+    for i in range(1, 10000):
+        image = '{}_{}_.{}'.format(filename_prefix, str(i).zfill(5), ext)
 
         url = '{}://{}:{}/api/view?filename={}&subfolder={}'.format(
             protocol, IP, PORT, image, subfolder)
 
         r = requests.get(url, stream=True)
+
         if r.status_code != 200:
-            nuke.message('Error in image download!\n{}'.format(r.status_code))
+            last_frame = i - 1
+            break
 
         dst_path = os.path.join(output, image)
 
@@ -120,7 +116,7 @@ def download_images(filename, dst_folder):
             for chunk in r.iter_content(8192):
                 f.write(chunk)
 
-    return '{}/{}_#####_{} {}'.format(output, clean_name, ext, frange)
+    return '{}/{}_#####_.{} 1-{}'.format(output, filename_prefix, ext, last_frame)
 
 
 def POST(relative_url, data={}):

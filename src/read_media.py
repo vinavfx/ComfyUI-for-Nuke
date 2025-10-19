@@ -86,13 +86,12 @@ def get_gizmo_group(run_node):
             return gizmo
 
 
-def get_filename(run_node):
+def get_filename_prefix(run_node):
     output_node = get_input(run_node, 0)
     if not output_node:
-        return
+        return None, None
 
     filename_prefix_knob = output_node.knob('filename_prefix_')
-    filepath_knob = output_node.knob('filepath_')
 
     if filename_prefix_knob:
         filename = filename_prefix_knob.value()
@@ -101,12 +100,15 @@ def get_filename(run_node):
         sequence_output = os.path.join(
             COMFYUI_DIR, 'output', os.path.dirname(filename))
 
-    elif filepath_knob:
-        filename = filepath_knob.value()
-        filename_prefix = get_name_no_padding(filename)
-        sequence_output = os.path.dirname(filename)
+        return filename_prefix, sequence_output
 
     else:
+        return None, None
+
+
+def get_filename(run_node):
+    filename_prefix, sequence_output = get_filename_prefix(run_node)
+    if not sequence_output:
         return
 
     filenames = nuke.getFileNameList(sequence_output)
@@ -243,12 +245,6 @@ def get_frame_range(data):
 
 
 def move_filename(filename):
-    if not COMFYUI_LOCAL:
-        tmp_output_folder = os.path.join(TEMPORAL_DIR, 'output')
-        if not os.path.isdir(tmp_output_folder):
-            os.makedirs(tmp_output_folder)
-        filename = download_images(filename, tmp_output_folder)
-
     if not IMAGE_OUTPUT_WITHIN_PROJECT:
         return filename
 
@@ -261,7 +257,19 @@ def move_filename(filename):
     return os.path.join(OUTPUT_DIR, os.path.basename(os.path.dirname(filename)), os.path.basename(filename))
 
 
-def create_read(run_node, filename, data={}):
+def create_read(run_node, data={}):
+    if COMFYUI_LOCAL:
+        filename = get_filename(run_node)
+    else:
+        tmp_output_folder = os.path.join(TEMPORAL_DIR, 'output')
+
+        if not os.path.isdir(tmp_output_folder):
+            os.makedirs(tmp_output_folder)
+
+        filename = download_images(
+            get_filename_prefix(run_node), tmp_output_folder)
+        print(filename)
+
     if not filename:
         return
 

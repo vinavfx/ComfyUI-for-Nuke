@@ -19,7 +19,7 @@ from ..settings import IP, PORT, COMFYUI_DIR
 from .common import get_comfyui_dir, update_images_and_mask_inputs
 from .connection import POST, interrupt, check_connection, queue_running
 from .nodes import extract_data, get_connected_comfyui_nodes
-from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, get_filename
+from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
 states = {}
@@ -154,7 +154,7 @@ def submit(run_node=None, success_callback=None):
     global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
         nuke.comfyui_running = False
-        read = create_read(run_node, get_filename(run_node), data)
+        read = create_read(run_node, data)
 
         if success_callback:
             success_callback(read)
@@ -264,10 +264,8 @@ def submit(run_node=None, success_callback=None):
         nuke.comfyui_running = False
 
     def progress_finished(n):
-        filename = get_filename(run_node)
-
         try:
-            read = create_read(n, filename, data)
+            read = create_read(n, data)
 
             if success_callback:
                 success_callback(read)
