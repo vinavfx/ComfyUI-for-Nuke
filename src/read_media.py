@@ -268,7 +268,6 @@ def create_read(run_node, data={}):
 
         filename = download_images(
             get_filename_prefix(run_node), tmp_output_folder)
-        print(filename)
 
     if not filename:
         return
