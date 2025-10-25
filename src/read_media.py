@@ -248,6 +248,9 @@ def move_filename(filename):
     if not IMAGE_OUTPUT_WITHIN_PROJECT:
         return filename
 
+    if nuke.root().name() == 'Root':
+        return filename
+
     OUTPUT_DIR = os.path.join(os.path.dirname(nuke.scriptName()), 'inferences')
     if not os.path.isdir(OUTPUT_DIR):
         os.mkdir(OUTPUT_DIR)
