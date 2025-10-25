@@ -8,7 +8,7 @@ import os
 import nuke  # type: ignore
 from ..nuke_util.nuke_util import set_hex_color
 from ..python_util.util import jread
-from .update_menu import create_comfyui_node, remove_signs, update_menu
+from .update_menu import create_comfyui_node, normalize_nodename, update_menu
 from .run import error_node_style
 from .nodes import get_node_data
 from .connection import convert_to_utf8
@@ -59,13 +59,13 @@ def import_workflow():
         elif attrs['type'] in ('easy getNode', 'easy setNode'):
             node = nuke.createNode('Dot', inpanel=False)
             prefix = 'Get' if attrs['type'] == 'easy getNode' else 'Set'
-            name = prefix + remove_signs(attrs['title'])
+            name = prefix + normalize_nodename(attrs['title'])
             node.setName(name)
-            node.knob('label').setValue(remove_signs(attrs['title']))
+            node.knob('label').setValue(normalize_nodename(attrs['title']))
 
         elif not node:
             node = nuke.createNode('NoOp', inpanel=False)
-            node.setName(remove_signs(attrs['type']))
+            node.setName(normalize_nodename(attrs['type']))
             error_node_style(node.fullName(), True, 'Node not installed !')
             not_installed.append(attrs['type'])
 

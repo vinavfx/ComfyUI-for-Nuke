@@ -16,8 +16,15 @@ comfyui_nodes = {}
 menu_updated = False
 
 
-def remove_signs(string):
-    return re.sub(r'[^a-zA-Z0-9_]', '', string)
+def normalize_nodename(name):
+    if not name.strip():
+        return 'unnamed'
+
+    name = re.sub(r'[^a-zA-Z0-9_]', '', name)
+    if name and name[0].isdigit():
+        name = '_' + name
+
+    return name
 
 
 def get_nodes():
@@ -43,8 +50,8 @@ def create_node(data, inpanel=True):
 
     n = nuke.createNode('Group', inpanel=inpanel)
 
-    name = remove_signs(data['name'])
-    display_name = remove_signs(data['display_name'])
+    name = normalize_nodename(data['name'])
+    display_name = normalize_nodename(data['display_name'])
     if display_name[0].isdigit():
         display_name = '_' + display_name
 
@@ -182,7 +189,7 @@ def create_node(data, inpanel=True):
             continue
 
         inode = nuke.createNode('Input', inpanel=False)
-        inode.setName(remove_signs(key))
+        inode.setName(normalize_nodename(key))
 
         _inputs.append({
             'name': key,
