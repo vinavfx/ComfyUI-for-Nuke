@@ -51,9 +51,8 @@ def extract_data(run_node):
             if n.knob('randomize').value():
                 random_value = random.randrange(1, 9999)
 
-                seed_knob = n.knob('seed_')
-                if not seed_knob:
-                    seed_knob = n.knob('noise_seed_')
+                seed_knob = next((n.knob(k) for k in (
+                    'seed_', 'noise_seed_', 'value_') if n.knob(k)), None)
 
                 if seed_knob:
                     seed_knob.setValue(random_value)
