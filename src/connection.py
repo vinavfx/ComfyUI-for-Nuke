@@ -17,12 +17,11 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
-from ..settings import IP, PORT
 
 protocol = 'http'
 
-def GET(relative_url):
-    url = '{}://{}:{}/{}'.format(protocol, IP, PORT, relative_url)
+def GET(relative_url, settings):
+    url = '{}://{}:{}/{}'.format(protocol, settings['IP'], settings['PORT'], relative_url)
 
     try:
         response = urllib2.urlopen(url)
@@ -30,23 +29,23 @@ def GET(relative_url):
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
         nuke.message(
-            'Error connecting to server {} on port {} !'.format(IP, PORT))
+            'Error connecting to server {} on port {} !'.format(settings['IP'], settings['PORT']))
 
 
-def check_connection():
+def check_connection(settings):
     try:
-        url ='{}://{}:{}'.format(protocol, IP, PORT)
+        url = '{}://{}:{}'.format(protocol, settings['IP'], settings['PORT'])
         response = urllib2.urlopen(url)
         if response.getcode() == 200:
             return True
     except:
         nuke.message(
-            'Error connecting to server {} on port {} !'.format(IP, PORT))
+            'Error connecting to server {} on port {} !'.format(settings['IP'], settings['PORT']))
         return
 
 
-def queue_running():
-    queue = GET('queue')
+def queue_running(settings):
+    queue = GET('queue', settings)
     if not queue:
         return False
 
@@ -55,17 +54,17 @@ def queue_running():
 
     if running or pending:
         if nuke.ask('Processes running, wait or interrupt to send new processes\n\nRunning: {}\nPending: {}\n\n interrupt?'.format(len(running), len(pending))):
-            interrupt()
+            interrupt(settings)
 
         return True
 
     return False
 
 
-def upload_images(folder):
+def upload_images(folder, settings):
     task = nuke.ProgressTask('Uploading to ComfyUI')
 
-    url = '{}://{}:{}/upload/image'.format(protocol, IP, PORT)
+    url = '{}://{}:{}/upload/image'.format(protocol, settings['IP'], settings['PORT'])
     results = []
     files = os.listdir(folder)
     total = len(files)
@@ -90,7 +89,7 @@ def upload_images(folder):
     return results
 
 
-def download_images(filename, dst_folder, frange):
+def download_images(filename, dst_folder, frange, settings):
     filename_prefix, sequence_output = filename
 
     ext = 'png'
@@ -108,7 +107,7 @@ def download_images(filename, dst_folder, frange):
         image = '{}_{}_.{}'.format(filename_prefix, str(i).zfill(5), ext)
 
         url = '{}://{}:{}/api/view?filename={}&subfolder={}'.format(
-            protocol, IP, PORT, image, subfolder)
+            protocol, settings['IP'], settings['PORT'], image, subfolder)
 
         r = requests.get(url, stream=True)
 
@@ -130,8 +129,8 @@ def download_images(filename, dst_folder, frange):
     return '{}/{}_#####_.{} 1-{}'.format(output, filename_prefix, ext, last_frame)
 
 
-def POST(relative_url, data={}):
-    url = '{}://{}:{}/{}'.format(protocol, IP, PORT, relative_url)
+def POST(relative_url, data, settings):
+    url = '{}://{}:{}/{}'.format(protocol, settings['IP'], settings['PORT'], relative_url)
     headers = {'Content-Type': 'application/json'}
     bytes_data = json.dumps(data).encode('utf-8')
     request = urllib2.Request(url, bytes_data, headers)
@@ -185,8 +184,8 @@ def convert_to_utf8(data):
         return data
 
 
-def interrupt():
-    error = POST('interrupt')
+def interrupt(settings):
+    error = POST('interrupt', {}, settings)
 
     if error:
         nuke.message(error)

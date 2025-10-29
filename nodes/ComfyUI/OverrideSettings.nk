@@ -1,0 +1,35 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+Group {
+ name OverrideSettings
+ onCreate "this = nuke.thisNode()\n\nif not this.knob('created').value():\n    this.knob('ip').setValue(comfyui.settings.IP)\n    this.knob('port').setValue(comfyui.settings.PORT)\n    this.knob('comfyui_dir').setValue(comfyui.settings.COMFYUI_DIR)\n    this.knob('use_exr_to_load_images').setValue(comfyui.settings.USE_EXR_TO_LOAD_IMAGES)\n    this.knob('display_meta_in_read_node').setValue(comfyui.settings.DISPLAY_META_IN_READ_NODE)\n    this.knob('remote_comfyui').setValue(not comfyui.settings.COMFYUI_LOCAL)\n\n    this.knob('created').setValue(True)"
+ tile_color 0x609e38ff
+ selected true
+ xpos 125
+ ypos -83
+ addUserKnob {20 User}
+ addUserKnob {26 override_settings +INVISIBLE}
+ addUserKnob {6 created +INVISIBLE +STARTLINE}
+ addUserKnob {1 ip l IP}
+ ip 127.0.0.1
+ addUserKnob {3 port l Port}
+ port 8188
+ addUserKnob {2 comfyui_dir l "ComfyUI DIrectory" t "Path to the repository where ComfyUI is located. If it’s a remote connection, it should point to the ComfyUI path on the server."}
+ addUserKnob {26 ""}
+ addUserKnob {6 use_exr_to_load_images l "Use EXR to laod images" t "If enabled, EXR images will be loaded using the ComfyUI-HQ-Image-Save add-on; otherwise, PNGs will be loaded using the sequence loader from the ComfyUI-VideoHelperSuite add-on." +STARTLINE}
+ addUserKnob {6 display_meta_in_read_node l "Display metadata in Read Node" t "Will display the generation metadata in the Read node — seed, cfg, steps, etc." +STARTLINE}
+ addUserKnob {6 remote_comfyui l "Remote ComfyUI Server" t "If enabled, a shared folder is not required to access the images — they will be uploaded and downloaded directly through ComfyUI’s HTTP server. However, this will be slower since the files, especially EXR images, will need to be transferred back and forth." +STARTLINE}
+ addUserKnob {2 output_directory l "Output Directory" t "Directory where the inference images will be saved. If the path is relative, it will be relative to the Nuke .nk project."}
+}
+ Input {
+  inputs 0
+  name Input
+  xpos 0
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 300
+ }
+end_group

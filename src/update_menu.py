@@ -11,6 +11,7 @@ import nuke  # type: ignore
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import GET, convert_to_utf8
 from ..settings import COMFYUI2NUKE
+from .common import get_settings
 
 comfyui_nodes = {}
 menu_updated = False
@@ -258,7 +259,7 @@ def update_menu():
 def update():
     global menu_updated
 
-    info = GET('object_info')
+    info = GET('object_info', get_settings())
     if not info:
         return
 

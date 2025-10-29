@@ -15,8 +15,7 @@ import threading
 import copy
 
 from ..nuke_util.nuke_util import set_tile_color
-from ..settings import IP, PORT, COMFYUI_DIR
-from .common import get_comfyui_dir, update_images_and_mask_inputs
+from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings
 from .connection import POST, interrupt, check_connection, queue_running
 from .nodes import extract_data, get_connected_comfyui_nodes
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
@@ -47,13 +46,13 @@ def remove_all_error_style(root_node):
             error_node_style(n.fullName(), False)
 
 
-def update_node(node_name, data, run_node):
+def update_node(node_name, data, run_node, settings):
 
     if 'ShowText' in node_name:
         show_text_uptate(node_name, data, run_node)
 
     elif 'PreviewImage' in node_name:
-        preview_image_update(node_name, data)
+        preview_image_update(node_name, data, settings)
 
 
 def show_text_uptate(node_name, data, run_node):
@@ -91,7 +90,7 @@ def show_text_uptate(node_name, data, run_node):
     output_text_node.setXYpos(xpos, ypos)
 
 
-def preview_image_update(node_name, data):
+def preview_image_update(node_name, data, settings):
     output = data.get('output', {})
     images = output.get('images', [])
 
@@ -108,7 +107,7 @@ def preview_image_update(node_name, data):
 
     preview_node.begin()
 
-    filename = '{}/temp/{}'.format(COMFYUI_DIR, filename)
+    filename = '{}/temp/{}'.format(settings['COMFYUI_DIR'], filename)
     read = nuke.toNode('read')
 
     if not read:
@@ -123,29 +122,31 @@ def preview_image_update(node_name, data):
 
 
 def submit(run_node=None, success_callback=None):
-    if not check_connection():
+    run_node = run_node or nuke.thisNode()
+    settings = get_settings(run_node)
+
+    if not check_connection(settings):
         return
 
-    update_images_and_mask_inputs()
+    update_images_and_mask_inputs(settings)
 
     if nuke.comfyui_running:
         nuke.message('Inference in execution !')
         return
 
-    if queue_running():
+    if queue_running(settings):
         return
 
     nuke.comfyui_running = True
 
-    comfyui_dir = get_comfyui_dir()
+    comfyui_dir = get_comfyui_dir(settings)
     if not comfyui_dir:
         nuke.comfyui_running = False
         return
 
-    run_node = run_node if run_node else nuke.thisNode()
     exr_filepath_fixed(run_node)
 
-    data, input_node_changed = extract_data(run_node)
+    data, input_node_changed = extract_data(run_node, settings)
 
     if not data:
         nuke.comfyui_running = False
@@ -154,14 +155,14 @@ def submit(run_node=None, success_callback=None):
     global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
         nuke.comfyui_running = False
-        read = create_read(run_node, data)
+        read = create_read(run_node, data, settings)
 
         if success_callback:
             success_callback(read)
         return
 
     update_filename_prefix(run_node)
-    data, _ = extract_data(run_node)
+    data, _ = extract_data(run_node, settings)
 
     state_data = copy.deepcopy(data)
     run_node.knob('comfyui_submit').setEnabled(False)
@@ -172,7 +173,7 @@ def submit(run_node=None, success_callback=None):
         'extra_data': {}
     }
 
-    url = "ws://{}:{}/ws?clientId={}".format(IP, PORT, client_id)
+    url = "ws://{}:{}/ws?clientId={}".format(settings['IP'], settings['PORT'], client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
     execution_error = [False]
@@ -247,7 +248,7 @@ def submit(run_node=None, success_callback=None):
 
             sleep(.1)
 
-        interrupt()
+        interrupt(settings)
 
         if task:
             del task[0]
@@ -265,7 +266,7 @@ def submit(run_node=None, success_callback=None):
 
     def progress_finished(n):
         try:
-            read = create_read(n, data)
+            read = create_read(n, data, settings)
 
             if success_callback:
                 success_callback(read)
@@ -283,7 +284,7 @@ def submit(run_node=None, success_callback=None):
     threading.Thread(target=ws.run_forever).start()
     threading.Thread(target=progress_task_loop).start()
 
-    error = POST('prompt', body)
+    error = POST('prompt', body, settings)
 
     if error:
         execution_error[0] = True

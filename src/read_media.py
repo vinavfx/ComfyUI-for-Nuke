@@ -7,12 +7,10 @@ import os
 import shutil
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import get_input
 from ..nuke_util.media_util import get_padding
-from ..settings import COMFYUI_DIR, COMFYUI2NUKE, DISPLAY_META_IN_READ_NODE, IMAGE_OUTPUT_WITHIN_PROJECT, COMFYUI_LOCAL, TEMPORAL_DIR
 from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes
-from .common import get_date_code
+from .common import get_date_code, get_output_node
 from .connection import download_images
 
 
@@ -33,7 +31,7 @@ def exr_filepath_fixed(run_node):
 
 
 def get_tonemap(run_node):
-    save_node = get_input(run_node, 0)
+    save_node = get_output_node(run_node)
 
     if not save_node:
         return 'sRGB'
@@ -46,7 +44,7 @@ def get_tonemap(run_node):
 
 
 def update_filename_prefix(run_node):
-    output_node = get_input(run_node, 0)
+    output_node = get_output_node(run_node)
     if not output_node:
         return
 
@@ -86,8 +84,8 @@ def get_gizmo_group(run_node):
             return gizmo
 
 
-def get_filename_prefix(run_node):
-    output_node = get_input(run_node, 0)
+def get_filename_prefix(run_node, settings):
+    output_node = get_output_node(run_node)
     if not output_node:
         return None, None
 
@@ -98,7 +96,7 @@ def get_filename_prefix(run_node):
         filename_prefix = os.path.basename(filename)
 
         sequence_output = os.path.join(
-            COMFYUI_DIR, 'output', os.path.dirname(filename))
+            settings['COMFYUI_DIR'], 'output', os.path.dirname(filename))
 
         return filename_prefix, sequence_output
 
@@ -106,8 +104,8 @@ def get_filename_prefix(run_node):
         return None, None
 
 
-def get_filename(run_node):
-    filename_prefix, sequence_output = get_filename_prefix(run_node)
+def get_filename(run_node, settings):
+    filename_prefix, sequence_output = get_filename_prefix(run_node, settings)
     if not sequence_output:
         return
 
@@ -244,8 +242,8 @@ def get_frame_range(data):
     return max(ranges, key=lambda r: r[1] - r[0])
 
 
-def move_filename(filename):
-    if not IMAGE_OUTPUT_WITHIN_PROJECT:
+def move_filename(filename, settings):
+    if not settings['IMAGE_OUTPUT_WITHIN_PROJECT']:
         return filename
 
     if nuke.root().name() == 'Root':
@@ -260,22 +258,22 @@ def move_filename(filename):
     return os.path.join(OUTPUT_DIR, os.path.basename(os.path.dirname(filename)), os.path.basename(filename))
 
 
-def create_read(run_node, data={}):
-    if COMFYUI_LOCAL:
-        filename = get_filename(run_node)
+def create_read(run_node, data, settings):
+    if settings['COMFYUI_LOCAL']:
+        filename = get_filename(run_node, settings)
     else:
-        tmp_output_folder = os.path.join(TEMPORAL_DIR, 'output')
+        tmp_output_folder = os.path.join(settings['TEMPORAL_DIR'], 'output')
 
         if not os.path.isdir(tmp_output_folder):
             os.makedirs(tmp_output_folder)
 
         filename = download_images(
-            get_filename_prefix(run_node), tmp_output_folder, get_frame_range(data))
+            get_filename_prefix(run_node, settings), tmp_output_folder, get_frame_range(data), settings)
 
     if not filename:
         return
 
-    filename = move_filename(filename)
+    filename = move_filename(filename, settings)
 
     meta = []
     if data:
@@ -302,14 +300,6 @@ def create_read(run_node, data={}):
 
         set_correct_colorspace(read)
 
-    elif ext in ['flac', 'mp3', 'wav']:
-        read = nuke.toNode(name)
-        if not read:
-            read = nuke.nodePaste(os.path.join(
-                COMFYUI2NUKE, 'nodes', 'ComfyUI', 'AudioPlay.nk'))
-
-        read.knob('audio').setValue(filename)
-
     elif ext in ['glb']:
         read = glb2obj(filename)
 
@@ -321,7 +311,7 @@ def create_read(run_node, data={}):
     read.knob('tile_color').setValue(
         main_node.knob('tile_color').value())
 
-    if meta and DISPLAY_META_IN_READ_NODE:
+    if meta and settings['DISPLAY_META_IN_READ_NODE']:
         label = '<center>'
         for key, value in meta:
             label += '<font color="green" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
