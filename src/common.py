@@ -8,6 +8,7 @@ import nuke  # type: ignore
 from datetime import datetime
 import hashlib
 from ..settings import *
+from ..nuke_util.nuke_util import get_input
 
 if not getattr(nuke, 'comfyui_running', False):
     nuke.comfyui_running = False
@@ -81,6 +82,18 @@ def get_settings(run_node=None):
         'DISPLAY_META_IN_READ_NODE': DISPLAY_META_IN_READ_NODE,
         'TEMPORAL_DIR': TEMPORAL_DIR
     }
+
+    override_node = get_input(run_node, 0)
+    if override_node and override_node.knob('override_settings'):
+        settings['COMFYUI_DIR'] = override_node.knob('comfyui_dir').value()
+        settings['IP'] = override_node.knob('ip').value()
+        settings['PORT'] = int(override_node.knob('port').value())
+        settings['COMFYUI_LOCAL'] = not override_node.knob(
+            'remote_comfyui').value()
+        settings['USE_EXR_TO_LOAD_IMAGES'] = override_node.knob(
+            'use_exr_to_load_images').value()
+        settings['DISPLAY_META_IN_READ_NODE'] = override_node.knob(
+            'display_meta_in_read_node').value()
 
     return settings
 
