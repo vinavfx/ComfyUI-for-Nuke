@@ -8,7 +8,7 @@ import os
 from ..nodes import extract_data
 from ...nuke_util.nuke_util import selected_node
 from ...python_util.util import jwrite
-from ..common import update_images_and_mask_inputs
+from ..common import update_images_and_mask_inputs, get_settings
 
 
 def export_workflow():
@@ -24,8 +24,9 @@ def export_workflow():
         nuke.message("Select the 'Run' node")
         return
 
-    update_images_and_mask_inputs()
-    data, _ = extract_data(node)
+    settings = get_settings()
+    update_images_and_mask_inputs(settings)
+    data, _ = extract_data(node, settings)
 
     if not data:
         return
