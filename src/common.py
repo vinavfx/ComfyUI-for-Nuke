@@ -102,11 +102,10 @@ def get_comfyui_dir(settings):
     COMFYUI_DIR = settings['COMFYUI_DIR']
 
     if not settings['COMFYUI_LOCAL']:
-        return COMFYUI_DIR
+        return ''
 
     if os.path.isdir(os.path.join(COMFYUI_DIR, 'comfy')):
         return COMFYUI_DIR
 
     nuke.message('Directory "{}" does not exist'.format(COMFYUI_DIR))
-
     return ''

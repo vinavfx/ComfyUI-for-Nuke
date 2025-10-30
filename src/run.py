@@ -138,8 +138,7 @@ def submit(run_node=None, success_callback=None):
 
     nuke.comfyui_running = True
 
-    comfyui_dir = get_comfyui_dir(settings)
-    if not comfyui_dir:
+    if settings['COMFYUI_LOCAL'] and not get_comfyui_dir(settings):
         nuke.comfyui_running = False
         return
 
