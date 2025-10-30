@@ -14,10 +14,10 @@ import json
 import threading
 import copy
 
-from ..nuke_util.nuke_util import set_tile_color
+from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes
 from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings
 from .connection import POST, interrupt, check_connection, queue_running
-from .nodes import extract_data, get_connected_comfyui_nodes
+from .nodes import extract_data
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
@@ -40,14 +40,13 @@ def error_node_style(node_name, enable, message=''):
 
 
 def remove_all_error_style(root_node):
-    for n, _ in get_connected_comfyui_nodes(root_node):
+    for n in get_connected_nodes(root_node):
         label_knob = n.knob('label')
         if 'ERROR' in label_knob.value():
             error_node_style(n.fullName(), False)
 
 
 def update_node(node_name, data, run_node, settings):
-
     if 'ShowText' in node_name:
         show_text_uptate(node_name, data, run_node)
 
@@ -195,7 +194,7 @@ def submit(run_node=None, success_callback=None):
         elif type_data == 'executed':
             node = data.get('node')
             nuke.executeInMainThread(
-                update_node, args=(node, data, run_node))
+                update_node, args=(node, data, run_node, settings))
 
         elif type_data == 'progress':
             progress = int(data['value'] * 100 / data['max'])

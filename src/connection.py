@@ -17,6 +17,7 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
+from .common import get_output_node
 
 protocol = 'http'
 
@@ -89,10 +90,26 @@ def upload_images(folder, settings):
     return results
 
 
-def download_images(filename, dst_folder, frange, settings):
+def download_images(filename, dst_folder, frange, settings, run_node):
+    from .nodes import get_node_data
     filename_prefix, sequence_output = filename
 
-    ext = 'png'
+    save_node = get_output_node(run_node)
+    class_type = ''
+    if save_node:
+        save_node_data = get_node_data(save_node)
+        class_type = save_node_data['class_type']
+
+    ext_map = {
+        'SaveEXR': 'exr',
+        'SaveGLB': 'glb',
+        'SaveImage': 'png'
+    }
+
+    ext = ext_map.get(class_type, None)
+    if not ext:
+        return ''
+
     subfolder = os.path.basename(sequence_output)
 
     output = os.path.join(dst_folder, subfolder)

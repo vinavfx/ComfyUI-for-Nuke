@@ -268,7 +268,7 @@ def create_read(run_node, data, settings):
             os.makedirs(tmp_output_folder)
 
         filename = download_images(
-            get_filename_prefix(run_node, settings), tmp_output_folder, get_frame_range(data), settings)
+            get_filename_prefix(run_node, settings), tmp_output_folder, get_frame_range(data), settings, run_node)
 
     if not filename:
         return

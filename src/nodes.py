@@ -161,13 +161,13 @@ def create_load_images_and_save(node, tonemap, settings):
     if current_state.get('connected_nodes') == prev_state.get('connected_nodes'):
         sequence_dir = prev_state.get('sequence_dir', 'none')
         comfyui_input_dir = prev_state.get('comfyui_input_dir', 'none')
+        same_exr_setting = prev_state.get(
+            'USE_EXR_TO_LOAD_IMAGES') == USE_EXR_TO_LOAD_IMAGES
 
-        if os.path.isdir(sequence_dir):
-            files = os.listdir(sequence_dir)
-            if files:
-                load_image_data['inputs'][filepath_key] = comfyui_input_dir
-                load_image_data['inputs']['id'] = prev_state.get('state_id', 0)
-                return load_image_data, False, False
+        if os.path.isdir(sequence_dir) and os.listdir(sequence_dir) and same_exr_setting:
+            load_image_data['inputs'][filepath_key] = comfyui_input_dir
+            load_image_data['inputs']['id'] = prev_state.get('state_id', 0)
+            return load_image_data, False, False
 
     # For debugging
     #  status_diff(prev_state.get('connected_nodes'),
@@ -228,6 +228,7 @@ def create_load_images_and_save(node, tonemap, settings):
     state_id = random.randrange(1, 9999)
     current_state['sequence_dir'] = sequence_dir
     current_state['comfyui_input_dir'] = comfyui_input_dir
+    current_state['USE_EXR_TO_LOAD_IMAGES'] = USE_EXR_TO_LOAD_IMAGES
     current_state['state_id'] = state_id
 
     states[node.fullName()] = current_state
