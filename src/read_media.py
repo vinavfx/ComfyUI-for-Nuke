@@ -242,38 +242,50 @@ def get_frame_range(data):
     return max(ranges, key=lambda r: r[1] - r[0])
 
 
+def get_output_path(settings):
+    output_dir = settings['OUTPUT_DIRECTORY'].strip()
+
+    if os.path.isabs(output_dir) and os.path.isdir(output_dir):
+        print(output_dir)
+        return output_dir
+
+    elif output_dir and not nuke.root().name() == 'Root':
+        return os.path.join(os.path.dirname(nuke.scriptName()), output_dir)
+
+    return os.path.join(settings['TEMPORAL_DIR'], 'output')
+
+
 def move_filename(filename, settings):
-    if not settings['IMAGE_OUTPUT_WITHIN_PROJECT']:
+    if not settings['OUTPUT_DIRECTORY'].strip():
         return filename
 
-    if nuke.root().name() == 'Root':
-        return filename
+    if not filename:
+        return
 
-    OUTPUT_DIR = os.path.join(os.path.dirname(nuke.scriptName()), 'inferences')
-    if not os.path.isdir(OUTPUT_DIR):
-        os.mkdir(OUTPUT_DIR)
+    output_dir = get_output_path(settings)
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
 
-    shutil.move(os.path.dirname(filename), OUTPUT_DIR)
+    shutil.move(os.path.dirname(filename), output_dir)
 
-    return os.path.join(OUTPUT_DIR, os.path.basename(os.path.dirname(filename)), os.path.basename(filename))
+    return os.path.join(output_dir, os.path.basename(os.path.dirname(filename)), os.path.basename(filename))
 
 
 def create_read(run_node, data, settings):
     if settings['COMFYUI_LOCAL']:
         filename = get_filename(run_node, settings)
+        filename = move_filename(filename, settings)
     else:
-        tmp_output_folder = os.path.join(settings['TEMPORAL_DIR'], 'output')
+        output_dir = get_output_path(settings)
 
-        if not os.path.isdir(tmp_output_folder):
-            os.makedirs(tmp_output_folder)
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
 
-        filename = download_images(
-            get_filename_prefix(run_node, settings), tmp_output_folder, get_frame_range(data), settings, run_node)
+        filename = download_images(get_filename_prefix(
+            run_node, settings), output_dir, get_frame_range(data), settings, run_node)
 
     if not filename:
         return
-
-    filename = move_filename(filename, settings)
 
     meta = []
     if data:

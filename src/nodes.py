@@ -155,17 +155,17 @@ def create_load_images_and_save(node, tonemap, settings):
                 'select_every_nth': 1,
                 'image_load_cap': 0
             },
-            'class_type': 'VHS_LoadImages'
+            'class_type': 'VHS_LoadImagesPath'
         }
 
     if current_state.get('connected_nodes') == prev_state.get('connected_nodes'):
         sequence_dir = prev_state.get('sequence_dir', 'none')
-        comfyui_input_dir = prev_state.get('comfyui_input_dir', 'none')
+        relative_input = prev_state.get('relative_input', 'none')
         same_exr_setting = prev_state.get(
             'USE_EXR_TO_LOAD_IMAGES') == USE_EXR_TO_LOAD_IMAGES
 
         if os.path.isdir(sequence_dir) and os.listdir(sequence_dir) and same_exr_setting:
-            load_image_data['inputs'][filepath_key] = comfyui_input_dir
+            load_image_data['inputs'][filepath_key] = relative_input
             load_image_data['inputs']['id'] = prev_state.get('state_id', 0)
             return load_image_data, False, False
 
@@ -176,10 +176,12 @@ def create_load_images_and_save(node, tonemap, settings):
     dirname = get_name_code('{}{}{}{}'.format(
         get_project_name(), node.fullName(), frame_range[0], frame_range[1]))
 
-    comfyui_input_dir = os.path.join(
-        get_comfyui_dir(settings), 'input', dirname).replace('\\', '/')
+    relative_input = os.path.join('input', dirname)
 
-    tmp_input_dir = os.path.join(settings['TEMPORAL_DIR'], 'input', dirname)
+    comfyui_input_dir = os.path.join(
+        get_comfyui_dir(settings), relative_input).replace('\\', '/')
+
+    tmp_input_dir = os.path.join(settings['TEMPORAL_DIR'], relative_input)
     sequence_dir = comfyui_input_dir if settings['COMFYUI_LOCAL'] else tmp_input_dir
 
     if os.path.isdir(sequence_dir):
@@ -227,13 +229,13 @@ def create_load_images_and_save(node, tonemap, settings):
 
     state_id = random.randrange(1, 9999)
     current_state['sequence_dir'] = sequence_dir
-    current_state['comfyui_input_dir'] = comfyui_input_dir
+    current_state['relative_input'] = relative_input
     current_state['USE_EXR_TO_LOAD_IMAGES'] = USE_EXR_TO_LOAD_IMAGES
     current_state['state_id'] = state_id
 
     states[node.fullName()] = current_state
 
-    load_image_data['inputs'][filepath_key] = comfyui_input_dir
+    load_image_data['inputs'][filepath_key] = relative_input
     load_image_data['inputs']['id'] = state_id
 
     return load_image_data, True, False

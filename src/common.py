@@ -76,7 +76,7 @@ def get_settings(run_node=None):
         'IP': IP,
         'PORT': PORT,
         'COMFYUI_LOCAL': COMFYUI_LOCAL,
-        'IMAGE_OUTPUT_WITHIN_PROJECT': IMAGE_OUTPUT_WITHIN_PROJECT,
+        'OUTPUT_DIRECTORY': OUTPUT_DIRECTORY,
         'UPDATE_MENU_AT_START': UPDATE_MENU_AT_START,
         'USE_EXR_TO_LOAD_IMAGES': USE_EXR_TO_LOAD_IMAGES,
         'DISPLAY_META_IN_READ_NODE': DISPLAY_META_IN_READ_NODE,
@@ -88,6 +88,7 @@ def get_settings(run_node=None):
         settings['COMFYUI_DIR'] = override_node.knob('comfyui_dir').value()
         settings['IP'] = override_node.knob('ip').value()
         settings['PORT'] = int(override_node.knob('port').value())
+        settings['OUTPUT_DIRECTORY'] = override_node.knob('output_directory').value()
         settings['COMFYUI_LOCAL'] = not override_node.knob(
             'remote_comfyui').value()
         settings['USE_EXR_TO_LOAD_IMAGES'] = override_node.knob(
