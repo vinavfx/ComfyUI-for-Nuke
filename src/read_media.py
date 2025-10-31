@@ -323,13 +323,14 @@ def create_read(run_node, data, settings):
     read.knob('tile_color').setValue(
         main_node.knob('tile_color').value())
 
+    label = ''
     if meta and settings['DISPLAY_META_IN_READ_NODE']:
         label = '<center>'
         for key, value in meta:
             label += '<font color="green" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
                 key, value)
 
-        read.knob('label').setValue(label)
+    read.knob('label').setValue(label)
 
     return read
 
