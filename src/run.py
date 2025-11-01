@@ -22,6 +22,7 @@ from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
 states = {}
+nuke.comfyui_running = {}
 
 
 def error_node_style(node_name, enable, message=''):
@@ -120,6 +121,10 @@ def preview_image_update(node_name, data, settings):
     preview_node.end()
 
 
+def set_comfyui_running(settings, running):
+    nuke.comfyui_running[settings['IP']] = running
+
+
 def submit(run_node=None, success_callback=None):
     run_node = run_node or nuke.thisNode()
     settings = get_settings(run_node)
@@ -129,17 +134,17 @@ def submit(run_node=None, success_callback=None):
 
     update_images_and_mask_inputs(settings)
 
-    if nuke.comfyui_running:
-        nuke.message('Inference in execution !')
+    if nuke.comfyui_running.get(settings['IP']):
+        nuke.message('Inference running on {} !'.format(settings['IP']))
         return
 
     if queue_running(settings):
         return
 
-    nuke.comfyui_running = True
+    set_comfyui_running(settings, True)
 
     if settings['COMFYUI_LOCAL'] and not get_comfyui_dir(settings):
-        nuke.comfyui_running = False
+        set_comfyui_running(settings, False)
         return
 
     exr_filepath_fixed(run_node)
@@ -147,12 +152,12 @@ def submit(run_node=None, success_callback=None):
     data, input_node_changed = extract_data(run_node, settings)
 
     if not data:
-        nuke.comfyui_running = False
+        set_comfyui_running(settings, False)
         return
 
     global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
-        nuke.comfyui_running = False
+        set_comfyui_running(settings, False)
         read = create_read(run_node, data, settings)
 
         if success_callback:
@@ -256,12 +261,12 @@ def submit(run_node=None, success_callback=None):
 
         if cancelled:
             run_node.knob('comfyui_submit').setEnabled(True)
-            nuke.comfyui_running = False
+            set_comfyui_running(settings, False)
             return
 
         nuke.executeInMainThread(progress_finished, args=(run_node))
         run_node.knob('comfyui_submit').setEnabled(True)
-        nuke.comfyui_running = False
+        set_comfyui_running(settings, False)
 
     def progress_finished(n):
         try:
@@ -289,6 +294,6 @@ def submit(run_node=None, success_callback=None):
         execution_error[0] = True
         if task:
             del task[0]
-        nuke.comfyui_running = False
+        set_comfyui_running(settings, False)
         nuke.message(error)
         run_node.knob('comfyui_submit').setEnabled(True)
