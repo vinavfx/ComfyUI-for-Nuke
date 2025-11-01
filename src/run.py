@@ -171,7 +171,8 @@ def submit(run_node=None, success_callback=None):
         'extra_data': {}
     }
 
-    url = "ws://{}:{}/ws?clientId={}".format(settings['IP'], settings['PORT'], client_id)
+    url = "{}://{}:{}/ws?clientId={}".format(
+        settings['PROTOCOL_WEBSOCKET'], settings['IP'], settings['PORT'], client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
 
     execution_error = [False]

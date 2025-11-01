@@ -96,6 +96,10 @@ def get_settings(run_node=None):
         settings['DISPLAY_META_IN_READ_NODE'] = override_node.knob(
             'display_meta_in_read_node').value()
 
+    protocol_secure = settings['PORT'] == 443
+    settings['PROTOCOL'] = 'https' if protocol_secure else 'http'
+    settings['PROTOCOL_WEBSOCKET'] = 'wss' if protocol_secure else 'ws'
+
     return settings
 
 

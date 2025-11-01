@@ -19,10 +19,10 @@ else:
 import nuke  # type: ignore
 from .common import get_output_node
 
-protocol = 'http'
 
 def GET(relative_url, settings):
-    url = '{}://{}:{}/{}'.format(protocol, settings['IP'], settings['PORT'], relative_url)
+    url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
+                                 settings['IP'], settings['PORT'], relative_url)
 
     try:
         response = urllib2.urlopen(url)
@@ -35,7 +35,8 @@ def GET(relative_url, settings):
 
 def check_connection(settings):
     try:
-        url = '{}://{}:{}'.format(protocol, settings['IP'], settings['PORT'])
+        url = '{}://{}:{}'.format(settings['PROTOCOL'],
+                                  settings['IP'], settings['PORT'])
         response = urllib2.urlopen(url)
         if response.getcode() == 200:
             return True
@@ -65,7 +66,8 @@ def queue_running(settings):
 def upload_images(folder, settings):
     task = nuke.ProgressTask('Uploading to ComfyUI')
 
-    url = '{}://{}:{}/upload/image'.format(protocol, settings['IP'], settings['PORT'])
+    url = '{}://{}:{}/upload/image'.format(
+        settings['PROTOCOL'], settings['IP'], settings['PORT'])
     results = []
     files = os.listdir(folder)
     total = len(files)
@@ -124,7 +126,7 @@ def download_images(filename, dst_folder, frange, settings, run_node):
         image = '{}_{}_.{}'.format(filename_prefix, str(i).zfill(5), ext)
 
         url = '{}://{}:{}/api/view?filename={}&subfolder={}'.format(
-            protocol, settings['IP'], settings['PORT'], image, subfolder)
+            settings['PROTOCOL'], settings['IP'], settings['PORT'], image, subfolder)
 
         r = requests.get(url, stream=True)
 
@@ -147,7 +149,8 @@ def download_images(filename, dst_folder, frange, settings, run_node):
 
 
 def POST(relative_url, data, settings):
-    url = '{}://{}:{}/{}'.format(protocol, settings['IP'], settings['PORT'], relative_url)
+    url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
+                                 settings['IP'], settings['PORT'], relative_url)
     headers = {'Content-Type': 'application/json'}
     bytes_data = json.dumps(data).encode('utf-8')
     request = urllib2.Request(url, bytes_data, headers)
