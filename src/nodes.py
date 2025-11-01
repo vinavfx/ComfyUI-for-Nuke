@@ -14,7 +14,8 @@ from ..testing.testing import status_diff
 from .connection import upload_images
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
-from .common import image_inputs, mask_inputs, get_comfyui_dir, get_name_code, get_output_node
+from .common import (image_inputs, mask_inputs, get_server_comfyui_dir,
+                     get_comfyui_dir, get_name_code, get_output_node)
 
 states = {}
 
@@ -160,12 +161,12 @@ def create_load_images_and_save(node, tonemap, settings):
 
     if current_state.get('connected_nodes') == prev_state.get('connected_nodes'):
         sequence_dir = prev_state.get('sequence_dir', 'none')
-        relative_input = prev_state.get('relative_input', 'none')
+        filepath = prev_state.get('filepath', 'none')
         same_exr_setting = prev_state.get(
             'USE_EXR_TO_LOAD_IMAGES') == USE_EXR_TO_LOAD_IMAGES
 
         if os.path.isdir(sequence_dir) and os.listdir(sequence_dir) and same_exr_setting:
-            load_image_data['inputs'][filepath_key] = relative_input
+            load_image_data['inputs'][filepath_key] = filepath
             load_image_data['inputs']['id'] = prev_state.get('state_id', 0)
             return load_image_data, False, False
 
@@ -177,6 +178,7 @@ def create_load_images_and_save(node, tonemap, settings):
         get_project_name(), node.fullName(), frame_range[0], frame_range[1]))
 
     relative_input = os.path.join('input', dirname)
+    filepath = os.path.join(get_server_comfyui_dir(settings), relative_input)
 
     comfyui_input_dir = os.path.join(
         get_comfyui_dir(settings), relative_input).replace('\\', '/')
@@ -229,13 +231,13 @@ def create_load_images_and_save(node, tonemap, settings):
 
     state_id = random.randrange(1, 9999)
     current_state['sequence_dir'] = sequence_dir
-    current_state['relative_input'] = relative_input
+    current_state['filepath'] = filepath
     current_state['USE_EXR_TO_LOAD_IMAGES'] = USE_EXR_TO_LOAD_IMAGES
     current_state['state_id'] = state_id
 
     states[node.fullName()] = current_state
 
-    load_image_data['inputs'][filepath_key] = relative_input
+    load_image_data['inputs'][filepath_key] = filepath
     load_image_data['inputs']['id'] = state_id
 
     return load_image_data, True, False

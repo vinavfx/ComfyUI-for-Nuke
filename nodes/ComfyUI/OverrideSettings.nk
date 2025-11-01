@@ -13,7 +13,7 @@ Group {
  addUserKnob {26 override_settings +INVISIBLE}
  addUserKnob {6 created +INVISIBLE +STARTLINE}
  created false
- addUserKnob {1 ip l IP}
+ addUserKnob {1 ip l "IP / Host"}
  ip 0.0.0.0
  addUserKnob {3 port l Port}
  port 8188

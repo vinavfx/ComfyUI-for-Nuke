@@ -103,6 +103,16 @@ def get_settings(run_node=None):
     return settings
 
 
+def get_server_comfyui_dir(settings):
+    from .connection import GET
+    info = GET('system_stats', settings)
+    if not info:
+        return '.'
+
+    main_py = info['system']['argv'][0]
+    return os.path.dirname(main_py)
+
+
 def get_comfyui_dir(settings):
     COMFYUI_DIR = settings['COMFYUI_DIR']
 
