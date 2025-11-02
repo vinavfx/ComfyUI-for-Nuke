@@ -15,13 +15,13 @@ from .connection import upload_images
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
 from .common import (image_inputs, mask_inputs, get_server_comfyui_dir,
-                     get_comfyui_dir, get_name_code, get_output_node)
+                     get_comfyui_dir, get_name_code)
 
 states = {}
 
 
 def extract_data(run_node, settings):
-    output_node = get_output_node(run_node)
+    output_node = get_input(run_node, 0)
 
     if not output_node:
         nuke.message('Run is not connected!')
@@ -498,7 +498,7 @@ def get_input(node, i, ignore_disabled=True):
         if disable_knob and ignore_disabled:
             disabled_node = inode.knob('disable').value()
 
-        if inode.Class() == 'Dot' or disabled_node:
+        if inode.Class() == 'Dot' or disabled_node or inode.knob('override_settings'):
             if inode.input(0):
                 inode = inode.input(0)
                 continue

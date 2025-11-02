@@ -17,7 +17,6 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
-from .common import get_output_node
 
 
 def GET(relative_url, settings):
@@ -96,7 +95,8 @@ def download_images(filename, dst_folder, frange, settings, run_node):
     from .nodes import get_node_data
     filename_prefix, sequence_output = filename
 
-    save_node = get_output_node(run_node)
+    from .nodes import get_input
+    save_node = get_input(run_node, 0)
     class_type = ''
     if save_node:
         save_node_data = get_node_data(save_node)

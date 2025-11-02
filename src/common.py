@@ -8,7 +8,7 @@ import nuke  # type: ignore
 from datetime import datetime
 import hashlib
 from ..settings import *
-from ..nuke_util.nuke_util import get_input
+from ..nuke_util.nuke_util import get_connected_nodes
 
 if not getattr(nuke, 'comfyui_running', False):
     nuke.comfyui_running = False
@@ -61,15 +61,6 @@ def get_name_code(name, length=15):
     return code
 
 
-def get_output_node(run_node):
-    from .nodes import get_input
-
-    node = get_input(run_node, 0)
-    if node and node.knob('override_settings'):
-        node = get_input(node, 0)
-    return node
-
-
 def get_settings(run_node=None):
     settings = {
         'COMFYUI_DIR': COMFYUI_DIR,
@@ -83,12 +74,18 @@ def get_settings(run_node=None):
         'TEMPORAL_DIR': TEMPORAL_DIR
     }
 
-    override_node = get_input(run_node, 0)
+    override_node = None
+    for n in get_connected_nodes(run_node, ignore_disabled=True, continue_at_up_level=True):
+        if n.knob('override_settings'):
+            override_node = n
+            break
+
     if override_node and override_node.knob('override_settings'):
         settings['COMFYUI_DIR'] = override_node.knob('comfyui_dir').value()
         settings['IP'] = override_node.knob('ip').value()
         settings['PORT'] = int(override_node.knob('port').value())
-        settings['OUTPUT_DIRECTORY'] = override_node.knob('output_directory').value()
+        settings['OUTPUT_DIRECTORY'] = override_node.knob(
+            'output_directory').value()
         settings['COMFYUI_LOCAL'] = not override_node.knob(
             'remote_comfyui').value()
         settings['USE_EXR_TO_LOAD_IMAGES'] = override_node.knob(

@@ -9,8 +9,8 @@ import nuke  # type: ignore
 
 from ..nuke_util.media_util import get_padding
 from ..nuke_util.media_util import get_name_no_padding
-from .nodes import get_connected_comfyui_nodes
-from .common import get_date_code, get_output_node
+from .nodes import get_connected_comfyui_nodes, get_input
+from .common import get_date_code
 from .connection import download_images
 
 
@@ -31,7 +31,7 @@ def exr_filepath_fixed(run_node):
 
 
 def get_tonemap(run_node):
-    save_node = get_output_node(run_node)
+    save_node = get_input(run_node, 0)
 
     if not save_node:
         return 'sRGB'
@@ -44,7 +44,7 @@ def get_tonemap(run_node):
 
 
 def update_filename_prefix(run_node):
-    output_node = get_output_node(run_node)
+    output_node = get_input(run_node, 0)
     if not output_node:
         return
 
@@ -85,7 +85,7 @@ def get_gizmo_group(run_node):
 
 
 def get_filename_prefix(run_node, settings):
-    output_node = get_output_node(run_node)
+    output_node = get_input(run_node, 0)
     if not output_node:
         return None, None
 
