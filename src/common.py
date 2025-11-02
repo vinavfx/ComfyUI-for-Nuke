@@ -96,6 +96,8 @@ def get_settings(run_node=None):
     protocol_secure = settings['PORT'] == 443
     settings['PROTOCOL'] = 'https' if protocol_secure else 'http'
     settings['PROTOCOL_WEBSOCKET'] = 'wss' if protocol_secure else 'ws'
+    settings['IP'] = settings['IP'].replace(
+        'https://', '').replace('http://', '')
 
     return settings
 

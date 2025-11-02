@@ -246,7 +246,6 @@ def get_output_path(settings):
     output_dir = settings['OUTPUT_DIRECTORY'].strip()
 
     if os.path.isabs(output_dir) and os.path.isdir(output_dir):
-        print(output_dir)
         return output_dir
 
     elif output_dir and not nuke.root().name() == 'Root':

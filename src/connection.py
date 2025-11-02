@@ -121,6 +121,7 @@ def download_images(filename, dst_folder, frange, settings, run_node):
     last_frame = 0
     task = nuke.ProgressTask('Downloading from ComfyUI')
     total = frange[1] - frange[0] + 1
+    downloaded = 0
 
     for i in range(1, 10000):
         image = '{}_{}_.{}'.format(filename_prefix, str(i).zfill(5), ext)
@@ -139,11 +140,15 @@ def download_images(filename, dst_folder, frange, settings, run_node):
         with open(dst_path, 'wb') as f:
             for chunk in r.iter_content(8192):
                 f.write(chunk)
+        downloaded += 1
 
         task.setMessage('Downloading: ' + image)
         task.setProgress(int((i / float(total)) * 100))
 
     task.setProgress(100)
+
+    if not downloaded:
+        return
 
     return '{}/{}_#####_.{} 1-{}'.format(output, filename_prefix, ext, last_frame)
 
