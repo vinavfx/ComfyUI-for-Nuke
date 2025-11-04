@@ -5,6 +5,7 @@
 # -----------------------------------------------------------
 import os
 import nuke  # type: ignore
+import json
 from datetime import datetime
 import hashlib
 from ..settings import *
@@ -71,7 +72,8 @@ def get_settings(run_node=None):
         'UPDATE_MENU_AT_START': UPDATE_MENU_AT_START,
         'USE_EXR_TO_LOAD_IMAGES': USE_EXR_TO_LOAD_IMAGES,
         'DISPLAY_META_IN_READ_NODE': DISPLAY_META_IN_READ_NODE,
-        'TEMPORAL_DIR': TEMPORAL_DIR
+        'TEMPORAL_DIR': TEMPORAL_DIR,
+        'HTTP_HEADER': {}
     }
 
     override_node = None
@@ -92,6 +94,15 @@ def get_settings(run_node=None):
             'use_exr_to_load_images').value()
         settings['DISPLAY_META_IN_READ_NODE'] = override_node.knob(
             'display_meta_in_read_node').value()
+
+        headers_value = override_node.knob( 'headers').value().replace("'", '"').strip()
+        if headers_value:
+            try:
+                headers = json.loads(headers_value)
+            except Exception as e:
+                nuke.message("Error parsing headers: {}".format(e))
+                headers = {}
+            settings['HTTP_HEADER'] = headers
 
     protocol_secure = settings['PORT'] == 443
     settings['PROTOCOL'] = 'https' if protocol_secure else 'http'

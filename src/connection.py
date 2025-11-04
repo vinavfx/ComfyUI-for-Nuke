@@ -23,8 +23,10 @@ def GET(relative_url, settings):
     url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
                                  settings['IP'], settings['PORT'], relative_url)
 
+    request = urllib2.Request(url, headers=settings['HTTP_HEADER'])
+
     try:
-        response = urllib2.urlopen(url)
+        response = urllib2.urlopen(request)
         data = response.read().decode()
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
@@ -33,16 +35,10 @@ def GET(relative_url, settings):
 
 
 def check_connection(settings):
-    try:
-        url = '{}://{}:{}'.format(settings['PROTOCOL'],
-                                  settings['IP'], settings['PORT'])
-        response = urllib2.urlopen(url)
-        if response.getcode() == 200:
-            return True
-    except:
-        nuke.message(
-            'Error connecting to server {} on port {} !'.format(settings['IP'], settings['PORT']))
-        return
+    if not GET('system_stats', settings):
+        return False
+
+    return True
 
 
 def queue_running(settings):
@@ -80,7 +76,8 @@ def upload_images(folder, settings):
                 'subfolder': os.path.basename(folder),
                 'overwrite': 'true'
             }
-            resp = requests.post(url, files=files, data=data)
+
+            resp = requests.post(url, headers=settings['HTTP_HEADER'], files=files, data=data)
             results.append((resp.status_code, resp.text))
 
         task.setMessage('Uploading: ' + file)
@@ -129,11 +126,14 @@ def download_images(filename, dst_folder, frange, settings, run_node):
         url = '{}://{}:{}/api/view?filename={}&subfolder={}'.format(
             settings['PROTOCOL'], settings['IP'], settings['PORT'], image, subfolder)
 
-        r = requests.get(url, stream=True)
+        r = requests.get(url, headers=settings['HTTP_HEADER'], stream=True)
 
         if r.status_code != 200:
             last_frame = i - 1
             break
+
+        if task.isCancelled():
+            return
 
         dst_path = os.path.join(output, image)
 
@@ -157,6 +157,8 @@ def POST(relative_url, data, settings):
     url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
                                  settings['IP'], settings['PORT'], relative_url)
     headers = {'Content-Type': 'application/json'}
+    headers.update(settings['HTTP_HEADER'])
+
     bytes_data = json.dumps(data).encode('utf-8')
     request = urllib2.Request(url, bytes_data, headers)
 

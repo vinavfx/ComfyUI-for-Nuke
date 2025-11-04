@@ -283,7 +283,8 @@ def submit(run_node=None, success_callback=None):
             nuke.executeInMainThread(
                 nuke.message, args=(traceback.format_exc()))
 
-    ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
+    headers = ["{}: {}".format(k, v) for k, v in settings['HTTP_HEADER'].items()]
+    ws = websocket.WebSocketApp(url, header=headers, on_message=on_message, on_error=on_error)
 
     threading.Thread(target=ws.run_forever).start()
     threading.Thread(target=progress_task_loop).start()

@@ -17,6 +17,7 @@ Group {
  ip 0.0.0.0
  addUserKnob {3 port l Port}
  port 8188
+ addUserKnob {1 headers l Headers -STARTLINE}
  addUserKnob {2 comfyui_dir l "ComfyUI DIrectory" t "Path to the repository where ComfyUI is located. If it’s a remote connection, it should point to the ComfyUI path on the server."}
  addUserKnob {26 ""}
  addUserKnob {6 use_exr_to_load_images l "Use EXR to laod images" t "If enabled, EXR images will be loaded using the ComfyUI-HQ-Image-Save add-on; otherwise, PNGs will be loaded using the sequence loader from the ComfyUI-VideoHelperSuite add-on." +STARTLINE}
