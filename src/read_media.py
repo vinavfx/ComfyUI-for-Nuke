@@ -270,18 +270,25 @@ def move_filename(filename, settings):
     return os.path.join(output_dir, os.path.basename(os.path.dirname(filename)), os.path.basename(filename))
 
 
-def create_read(run_node, data, settings):
+def download_filename(run_node, data, settings):
+    if settings['COMFYUI_LOCAL']:
+        return ''
+
+    output_dir = get_output_path(settings)
+
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+
+    return download_images(get_filename_prefix(
+        run_node, settings), output_dir, get_frame_range(data), settings, run_node)
+
+
+def create_read(run_node, data, settings, downloaded_filename):
     if settings['COMFYUI_LOCAL']:
         filename = get_filename(run_node, settings)
         filename = move_filename(filename, settings)
     else:
-        output_dir = get_output_path(settings)
-
-        if not os.path.isdir(output_dir):
-            os.makedirs(output_dir)
-
-        filename = download_images(get_filename_prefix(
-            run_node, settings), output_dir, get_frame_range(data), settings, run_node)
+        filename = downloaded_filename
 
     if not filename:
         return

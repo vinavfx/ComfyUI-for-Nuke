@@ -18,7 +18,7 @@ from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes
 from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings
 from .connection import POST, interrupt, check_connection, queue_running
 from .nodes import extract_data
-from .read_media import create_read, update_filename_prefix, exr_filepath_fixed
+from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, download_filename
 
 client_id = str(uuid.uuid4())[:32].replace('-', '')
 states = {}
@@ -158,7 +158,8 @@ def submit(run_node=None, success_callback=None):
     global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
         set_comfyui_running(settings, False)
-        read = create_read(run_node, data, settings)
+        downloaded_filename = download_filename(run_node, data, settings)
+        read = create_read(run_node, data, settings, downloaded_filename)
 
         if success_callback:
             success_callback(read)
@@ -264,13 +265,15 @@ def submit(run_node=None, success_callback=None):
             set_comfyui_running(settings, False)
             return
 
-        nuke.executeInMainThread(progress_finished, args=(run_node))
+        downloaded_filename = download_filename(run_node, data, settings)
+        nuke.executeInMainThread(progress_finished, args=(run_node, downloaded_filename))
+
         run_node.knob('comfyui_submit').setEnabled(True)
         set_comfyui_running(settings, False)
 
-    def progress_finished(n):
+    def progress_finished(n, downloaded_filename):
         try:
-            read = create_read(n, data, settings)
+            read = create_read(n, data, settings, downloaded_filename)
 
             if success_callback:
                 success_callback(read)

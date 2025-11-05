@@ -117,6 +117,8 @@ def download_images(filename, dst_folder, frange, settings, run_node):
 
     last_frame = 0
     task = nuke.ProgressTask('Downloading from ComfyUI')
+    task.setMessage('Downloading: ...')
+    task.setProgress(0)
     total = frange[1] - frange[0] + 1
     downloaded = 0
 
