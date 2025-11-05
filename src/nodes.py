@@ -411,7 +411,7 @@ def check_node(node):
             if input_name in image_inputs + mask_inputs:
                 if inode.bbox().w() < 10 or inode.bbox().h() < 10:
                     nuke.message(
-                        '{}: input "{}" without image !'.format(node.name(), input_name))
+                        '{}: input "{}" not connected or bbox without information in some frame !'.format(node.name(), input_name))
                     return
                 continue
 

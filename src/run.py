@@ -150,7 +150,6 @@ def submit(run_node=None, success_callback=None):
     exr_filepath_fixed(run_node)
 
     data, input_node_changed = extract_data(run_node, settings)
-
     if not data:
         set_comfyui_running(settings, False)
         return
@@ -166,7 +165,11 @@ def submit(run_node=None, success_callback=None):
         return
 
     update_filename_prefix(run_node)
+
     data, _ = extract_data(run_node, settings)
+    if not data:
+        set_comfyui_running(settings, False)
+        return
 
     state_data = copy.deepcopy(data)
     run_node.knob('comfyui_submit').setEnabled(False)
