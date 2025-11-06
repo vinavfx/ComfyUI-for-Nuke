@@ -292,10 +292,15 @@ def submit(run_node=None, success_callback=None):
     headers = ["{}: {}".format(k, v) for k, v in settings['HTTP_HEADER'].items()]
     ws = websocket.WebSocketApp(url, header=headers, on_message=on_message, on_error=on_error)
 
-    threading.Thread(target=ws.run_forever).start()
-    threading.Thread(target=progress_task_loop).start()
+    if not settings['BACKGROUND_SUBMIT']:
+        threading.Thread(target=ws.run_forever).start()
+        threading.Thread(target=progress_task_loop).start()
 
     error = POST('prompt', body, settings)
+
+    if settings['BACKGROUND_SUBMIT'] and not error:
+        set_comfyui_running(settings, False)
+        nuke.message('Workflow sent to the ComfyUI Queue')
 
     if error:
         execution_error[0] = True

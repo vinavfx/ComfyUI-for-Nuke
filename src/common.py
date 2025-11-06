@@ -73,7 +73,8 @@ def get_settings(run_node=None):
         'USE_EXR_TO_LOAD_IMAGES': USE_EXR_TO_LOAD_IMAGES,
         'DISPLAY_META_IN_READ_NODE': DISPLAY_META_IN_READ_NODE,
         'TEMPORAL_DIR': TEMPORAL_DIR,
-        'HTTP_HEADER': {}
+        'HTTP_HEADER': {},
+        'BACKGROUND_SUBMIT': False
     }
 
     override_node = None
@@ -83,19 +84,24 @@ def get_settings(run_node=None):
             break
 
     if override_node and override_node.knob('override_settings'):
-        settings['COMFYUI_DIR'] = override_node.knob('comfyui_dir').value()
-        settings['IP'] = override_node.knob('ip').value()
-        settings['PORT'] = int(override_node.knob('port').value())
-        settings['OUTPUT_DIRECTORY'] = override_node.knob(
-            'output_directory').value()
+        def override(key, integer=False):
+            knob = override_node.knob(key)
+            if knob:
+                value = override_node.knob(key).value()
+                settings[key.upper()] = int(value) if integer else value
+
+        override('comfyui_dir')
+        override('ip')
+        override('port', True)
+        override('background_submit')
+        override('output_directory')
+        override('use_exr_to_load_images')
+        override('display_meta_in_read_node')
         settings['COMFYUI_LOCAL'] = not override_node.knob(
             'remote_comfyui').value()
-        settings['USE_EXR_TO_LOAD_IMAGES'] = override_node.knob(
-            'use_exr_to_load_images').value()
-        settings['DISPLAY_META_IN_READ_NODE'] = override_node.knob(
-            'display_meta_in_read_node').value()
 
-        headers_value = override_node.knob( 'headers').value().replace("'", '"').strip()
+        headers_value = override_node.knob(
+            'headers').value().replace("'", '"').strip()
         if headers_value:
             try:
                 headers = json.loads(headers_value)
