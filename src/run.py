@@ -6,7 +6,7 @@
 import textwrap
 import sys
 import nuke  # type: ignore
-import uuid
+import os
 import traceback
 from time import sleep
 import websocket
@@ -14,13 +14,13 @@ import json
 import threading
 import copy
 
-from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes
+from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
 from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings
 from .connection import POST, interrupt, check_connection, queue_running
 from .nodes import extract_data
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, download_filename
 
-client_id = str(uuid.uuid4())[:32].replace('-', '')
+
 states = {}
 nuke.comfyui_running = {}
 
@@ -173,6 +173,9 @@ def submit(run_node=None, success_callback=None):
 
     state_data = copy.deepcopy(data)
     run_node.knob('comfyui_submit').setEnabled(False)
+
+    client_id = '{}:{}'.format(os.path.basename(
+        get_user_path()), get_project_name()).replace(' ', '-')
 
     body = {
         'client_id': client_id,

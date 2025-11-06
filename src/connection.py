@@ -50,8 +50,17 @@ def queue_running(settings):
     pending = queue['queue_pending']
 
     if running or pending:
-        if nuke.ask('Processes running, wait or interrupt to send new processes\n\nRunning: {}\nPending: {}\n\n interrupt?'.format(len(running), len(pending))):
-            interrupt(settings)
+        msg = 'Running:\n'
+        for i, r in enumerate(running):
+            msg += '    {} - {}\n'.format(i+1, r[3]['client_id'])
+
+        msg += '\nPending:\n'
+        for i, p in enumerate(pending):
+            msg += '    {} - {}\n'.format(i+1, p[3]['client_id'])
+
+        if nuke.ask('{}\n\nProcess running: submit in background?'.format(msg)):
+            settings['BACKGROUND_SUBMIT'] = True
+            return False
 
         return True
 
