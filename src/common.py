@@ -74,7 +74,9 @@ def get_settings(run_node=None):
         'DISPLAY_META_IN_READ_NODE': DISPLAY_META_IN_READ_NODE,
         'TEMPORAL_DIR': TEMPORAL_DIR,
         'HTTP_HEADER': {},
-        'BACKGROUND_SUBMIT': False
+        'BACKGROUND_SUBMIT': False,
+        'PROTOCOL': 'http',
+        'PROTOCOL_WEBSOCKET': 'ws'
     }
 
     override_node = None
@@ -84,15 +86,14 @@ def get_settings(run_node=None):
             break
 
     if override_node and override_node.knob('override_settings'):
-        def override(key, integer=False):
+        def override(key):
             knob = override_node.knob(key)
             if knob:
-                value = override_node.knob(key).value()
-                settings[key.upper()] = int(value) if integer else value
+                settings[key.upper()] = override_node.knob(key).value()
 
         override('comfyui_dir')
         override('ip')
-        override('port', True)
+        override('port')
         override('background_submit')
         override('output_directory')
         override('use_exr_to_load_images')
@@ -110,11 +111,11 @@ def get_settings(run_node=None):
                 headers = {}
             settings['HTTP_HEADER'] = headers
 
-    protocol_secure = settings['PORT'] == 443
-    settings['PROTOCOL'] = 'https' if protocol_secure else 'http'
-    settings['PROTOCOL_WEBSOCKET'] = 'wss' if protocol_secure else 'ws'
-    settings['IP'] = settings['IP'].replace(
-        'https://', '').replace('http://', '')
+    #  protocol_secure = settings['PORT'] == '443'
+    #  settings['PROTOCOL'] = 'https' if protocol_secure else 'http'
+    #  settings['PROTOCOL_WEBSOCKET'] = 'wss' if protocol_secure else 'ws'
+    #  settings['IP'] = settings['IP'].replace(
+        #  'https://', '').replace('http://', '')
 
     return settings
 

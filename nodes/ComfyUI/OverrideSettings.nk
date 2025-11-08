@@ -15,7 +15,7 @@ Group {
  created false
  addUserKnob {1 ip l "IP / Host"}
  ip 0.0.0.0
- addUserKnob {3 port l Port}
+ addUserKnob {1 port l Port}
  port 8188
  addUserKnob {1 headers l Headers -STARTLINE}
  addUserKnob {2 comfyui_dir l "ComfyUI DIrectory" t "Path to the repository where ComfyUI is located. If it’s a remote connection, it should point to the ComfyUI path on the server."}

@@ -13,10 +13,11 @@ import websocket
 import json
 import threading
 import copy
+from random import randint
 
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
 from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings
-from .connection import POST, interrupt, check_connection, queue_running
+from .connection import POST, resolve_submission_target
 from .nodes import extract_data
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, download_filename
 
@@ -121,42 +122,27 @@ def preview_image_update(node_name, data, settings):
     preview_node.end()
 
 
-def set_comfyui_running(settings, running):
-    nuke.comfyui_running[settings['IP']] = running
-
 
 def submit(run_node=None, success_callback=None):
     run_node = run_node or nuke.thisNode()
     settings = get_settings(run_node)
 
-    if not check_connection(settings):
+    if not resolve_submission_target(settings):
         return
 
     update_images_and_mask_inputs(settings)
 
-    if nuke.comfyui_running.get(settings['IP']):
-        nuke.message('Inference running on {} !'.format(settings['IP']))
-        return
-
-    if queue_running(settings):
-        return
-
-    set_comfyui_running(settings, True)
-
     if settings['COMFYUI_LOCAL'] and not get_comfyui_dir(settings):
-        set_comfyui_running(settings, False)
         return
 
     exr_filepath_fixed(run_node)
 
     data, input_node_changed = extract_data(run_node, settings)
     if not data:
-        set_comfyui_running(settings, False)
         return
 
     global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
-        set_comfyui_running(settings, False)
         downloaded_filename = download_filename(run_node, data, settings)
         read = create_read(run_node, data, settings, downloaded_filename)
 
@@ -168,14 +154,13 @@ def submit(run_node=None, success_callback=None):
 
     data, _ = extract_data(run_node, settings)
     if not data:
-        set_comfyui_running(settings, False)
         return
 
     state_data = copy.deepcopy(data)
     run_node.knob('comfyui_submit').setEnabled(False)
 
-    client_id = '{}:{}'.format(os.path.basename(
-        get_user_path()), get_project_name()).replace(' ', '-')
+    client_id = '{}:{}:{}'.format(os.path.basename(
+        get_user_path()), get_project_name(), randint(1, 99999)).replace(' ', '-')
 
     body = {
         'client_id': client_id,
@@ -186,15 +171,14 @@ def submit(run_node=None, success_callback=None):
     url = "{}://{}:{}/ws?clientId={}".format(
         settings['PROTOCOL_WEBSOCKET'], settings['IP'], settings['PORT'], client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
+    task[0].setMessage('Waiting in Queue ...')
 
     execution_error = [False]
 
     def on_message(_, message):
-        # Check if message is binary data. This e.g. happens when a live preview is send from ComfyUI.
         try:
             message = json.loads(message)
         except:
-            # TODO: maybe show the preview image in Nuke?
             return
 
         data = message.get('data', None)
@@ -259,8 +243,6 @@ def submit(run_node=None, success_callback=None):
 
             sleep(.1)
 
-        interrupt(settings)
-
         if task:
             del task[0]
 
@@ -268,14 +250,12 @@ def submit(run_node=None, success_callback=None):
 
         if cancelled:
             run_node.knob('comfyui_submit').setEnabled(True)
-            set_comfyui_running(settings, False)
             return
 
         downloaded_filename = download_filename(run_node, data, settings)
         nuke.executeInMainThread(progress_finished, args=(run_node, downloaded_filename))
 
         run_node.knob('comfyui_submit').setEnabled(True)
-        set_comfyui_running(settings, False)
 
     def progress_finished(n, downloaded_filename):
         try:
@@ -302,13 +282,11 @@ def submit(run_node=None, success_callback=None):
     error = POST('prompt', body, settings)
 
     if settings['BACKGROUND_SUBMIT'] and not error:
-        set_comfyui_running(settings, False)
         nuke.message('Workflow sent to the ComfyUI Queue')
 
     if error:
         execution_error[0] = True
         if task:
             del task[0]
-        set_comfyui_running(settings, False)
         nuke.message(error)
         run_node.knob('comfyui_submit').setEnabled(True)

@@ -19,7 +19,7 @@ else:
 import nuke  # type: ignore
 
 
-def GET(relative_url, settings):
+def GET(relative_url, settings, warning=True):
     url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
                                  settings['IP'], settings['PORT'], relative_url)
 
@@ -30,41 +30,98 @@ def GET(relative_url, settings):
         data = response.read().decode()
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
-        nuke.message(
-            'Error connecting to server {} on port {} !'.format(settings['IP'], settings['PORT']))
+        if warning:
+            nuke.message(
+                'Error connecting to server {} on port {} !'.format(settings['IP'], settings['PORT']))
 
 
-def check_connection(settings):
+def resolve_submission_target(settings):
+    ips = json.loads(settings['IP'])
+
+    available_ip = ''
+    lowest_load_ip = None
+    lowest_pending = 99999
+
+    running_client = []
+    pending_client = []
+
+    for ip in ips:
+        settings['IP'] = ip
+        queue = GET('queue', settings, warning=False)
+
+        if not queue:
+            continue
+
+        running = queue['queue_running']
+        pending = queue['queue_pending']
+
+        if len(pending) < lowest_pending:
+            lowest_pending = len(pending)
+            lowest_load_ip = ip
+
+        if not available_ip and not running:
+            available_ip = ip
+
+        running_client += [r[3]['client_id'] for r in running]
+        pending_client += [p[3]['client_id'] for p in pending]
+
+    msg = 'Running:\n'
+    for i, client in enumerate(running_client):
+        msg += '    {} - {}\n'.format(i+1, client)
+
+    msg += '\nPending:\n'
+    for i, client in enumerate(pending_client):
+        msg += '    {} - {}\n'.format(i+1, client)
+
+    if available_ip:
+        settings['IP'] = available_ip
+    else:
+        if nuke.ask("{}\n\nThese IPs have jobs running; submit to the Queue or to localhost ?".format(msg)):
+            panel = nuke.Panel('Submit')
+            panel.addButton("Cancel")
+            panel.addButton("Submit to Queue")
+            panel.addButton("Submit to localhost")
+
+            choice = panel.show()
+            if not choice:
+                return
+            elif choice == 1:
+                settings['IP'] = lowest_load_ip
+            elif choice == 2:
+                settings['IP'] = 'localhost'
+        else:
+            return
+
     if not GET('system_stats', settings):
-        return False
+        return
 
     return True
 
 
-def queue_running(settings):
-    queue = GET('queue', settings)
-    if not queue:
-        return False
+#  def queue_running(settings):
+    #  queue = GET('queue', settings)
+    #  if not queue:
+        #  return False
 
-    running = queue['queue_running']
-    pending = queue['queue_pending']
+    #  running = queue['queue_running']
+    #  pending = queue['queue_pending']
 
-    if running or pending:
-        msg = 'Running:\n'
-        for i, r in enumerate(running):
-            msg += '    {} - {}\n'.format(i+1, r[3]['client_id'])
+    #  if running or pending:
+        #  msg = 'Running:\n'
+        #  for i, r in enumerate(running):
+            #  msg += '    {} - {}\n'.format(i+1, r[3]['client_id'])
 
-        msg += '\nPending:\n'
-        for i, p in enumerate(pending):
-            msg += '    {} - {}\n'.format(i+1, p[3]['client_id'])
+        #  msg += '\nPending:\n'
+        #  for i, p in enumerate(pending):
+            #  msg += '    {} - {}\n'.format(i+1, p[3]['client_id'])
 
-        if nuke.ask('{}\n\nProcess running: submit in background?'.format(msg)):
-            settings['BACKGROUND_SUBMIT'] = True
-            return False
+        #  if nuke.ask('{}\n\nProcess running: submit in background?'.format(msg)):
+            #  settings['BACKGROUND_SUBMIT'] = True
+            #  return False
 
-        return True
+        #  return True
 
-    return False
+    #  return False
 
 
 def upload_images(folder, settings):
