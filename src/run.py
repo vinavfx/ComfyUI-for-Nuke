@@ -13,17 +13,16 @@ import websocket
 import json
 import threading
 import copy
-from random import randint
 
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
 from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings
-from .connection import POST, resolve_submission_target
+from .connection import POST, resolve_submission_target, interrupt
 from .nodes import extract_data
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, download_filename
 
 
 states = {}
-nuke.comfyui_running = {}
+prompt_counter = 0
 
 
 def error_node_style(node_name, enable, message=''):
@@ -159,8 +158,9 @@ def submit(run_node=None, success_callback=None):
     state_data = copy.deepcopy(data)
     run_node.knob('comfyui_submit').setEnabled(False)
 
+    global prompt_counter; prompt_counter += 1
     client_id = '{}:{}:{}'.format(os.path.basename(
-        get_user_path()), get_project_name(), randint(1, 99999)).replace(' ', '-')
+        get_user_path()), get_project_name(), prompt_counter).replace(' ', '-')
 
     body = {
         'client_id': client_id,
@@ -242,6 +242,8 @@ def submit(run_node=None, success_callback=None):
                 break
 
             sleep(.1)
+
+        interrupt(settings, client_id)
 
         if task:
             del task[0]

@@ -19,9 +19,9 @@ else:
 import nuke  # type: ignore
 
 
-def GET(relative_url, settings, warning=True):
+def GET(endpoint, settings, warning=True):
     url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
-                                 settings['IP'], settings['PORT'], relative_url)
+                                 settings['IP'], settings['PORT'], endpoint)
 
     request = urllib2.Request(url, headers=settings['HTTP_HEADER'])
 
@@ -69,9 +69,10 @@ def resolve_submission_target(settings):
     for i, client in enumerate(running_client):
         msg += '    {} - {}\n'.format(i+1, client)
 
-    msg += '\nPending:\n'
-    for i, client in enumerate(pending_client):
-        msg += '    {} - {}\n'.format(i+1, client)
+    if pending_client:
+        msg += '\nPending:\n'
+        for i, client in enumerate(pending_client):
+            msg += '    {} - {}\n'.format(i+1, client)
 
     if available_ip:
         settings['IP'] = available_ip
@@ -96,32 +97,6 @@ def resolve_submission_target(settings):
         return
 
     return True
-
-
-#  def queue_running(settings):
-    #  queue = GET('queue', settings)
-    #  if not queue:
-        #  return False
-
-    #  running = queue['queue_running']
-    #  pending = queue['queue_pending']
-
-    #  if running or pending:
-        #  msg = 'Running:\n'
-        #  for i, r in enumerate(running):
-            #  msg += '    {} - {}\n'.format(i+1, r[3]['client_id'])
-
-        #  msg += '\nPending:\n'
-        #  for i, p in enumerate(pending):
-            #  msg += '    {} - {}\n'.format(i+1, p[3]['client_id'])
-
-        #  if nuke.ask('{}\n\nProcess running: submit in background?'.format(msg)):
-            #  settings['BACKGROUND_SUBMIT'] = True
-            #  return False
-
-        #  return True
-
-    #  return False
 
 
 def upload_images(folder, settings):
@@ -221,9 +196,9 @@ def download_images(filename, dst_folder, frange, settings, run_node):
     return '{}/{}_#####_.{} 1-{}'.format(output, filename_prefix, ext, last_frame)
 
 
-def POST(relative_url, data, settings):
+def POST(endpoint, data, settings):
     url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
-                                 settings['IP'], settings['PORT'], relative_url)
+                                 settings['IP'], settings['PORT'], endpoint)
     headers = {'Content-Type': 'application/json'}
     headers.update(settings['HTTP_HEADER'])
 
@@ -279,8 +254,21 @@ def convert_to_utf8(data):
         return data
 
 
-def interrupt(settings):
-    error = POST('interrupt', {}, settings)
+def interrupt(settings, client_id):
+    queue = GET('queue', settings)
+    if not queue:
+        return
 
-    if error:
-        nuke.message(error)
+    def find_prompt_id(queue_list):
+        return next((r[1] for r in queue_list if r[3].get('client_id') == client_id), '')
+
+    prompt_id = find_prompt_id(queue['queue_running'])
+    endpoint = 'interrupt' if prompt_id else 'queue'
+
+    if not prompt_id:
+        prompt_id = find_prompt_id(queue['queue_pending'])
+
+    if prompt_id:
+        error = POST(endpoint, {'delete': [prompt_id]}, settings)
+        if error:
+            nuke.message(error)
