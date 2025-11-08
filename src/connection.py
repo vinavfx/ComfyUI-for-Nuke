@@ -77,18 +77,18 @@ def resolve_submission_target(settings):
     if available_ip:
         settings['IP'] = available_ip
     else:
-        if nuke.ask("{}\n\nThere are running inferences. Continue anyway?".format(msg)):
-            panel = nuke.Panel('Submit')
-            panel.addButton("Cancel")
-            panel.addButton("Submit to Queue")
-            panel.addButton("Submit to localhost")
+        ms = "{}\n\nThere are running inferences !".format(msg)
+        panel = nuke.Panel('Submit')
+        panel.addEnumerationPulldown(
+            ms, "Send\\ to\\ Queue\nSend\\ to\\ localhost")
+        panel.addButton("No")
+        panel.addButton("Submit anyway ?")
 
-            choice = panel.show()
-            if not choice:
-                return
-            elif choice == 1:
+        if panel.show():
+            choice = panel.value(ms)
+            if choice == 'Send to Queue':
                 settings['IP'] = lowest_load_ip
-            elif choice == 2:
+            else:
                 settings['IP'] = 'localhost'
         else:
             return

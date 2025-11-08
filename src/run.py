@@ -156,7 +156,6 @@ def submit(run_node=None, success_callback=None):
         return
 
     state_data = copy.deepcopy(data)
-    run_node.knob('comfyui_submit').setEnabled(False)
 
     global prompt_counter; prompt_counter += 1
     client_id = '{}:{}:{}'.format(os.path.basename(
@@ -255,13 +254,11 @@ def submit(run_node=None, success_callback=None):
         ws.close()
 
         if cancelled:
-            run_node.knob('comfyui_submit').setEnabled(True)
             return
 
         downloaded_filename = download_filename(run_node, data, settings)
-        nuke.executeInMainThread(progress_finished, args=(run_node, downloaded_filename))
-
-        run_node.knob('comfyui_submit').setEnabled(True)
+        nuke.executeInMainThread(
+            progress_finished, args=(run_node, downloaded_filename))
 
     def progress_finished(n, downloaded_filename):
         try:
@@ -295,4 +292,3 @@ def submit(run_node=None, success_callback=None):
         if task:
             del task[0]
         nuke.message(error)
-        run_node.knob('comfyui_submit').setEnabled(True)
