@@ -149,7 +149,7 @@ def submit(run_node=None, success_callback=None):
             success_callback(read)
         return
 
-    update_filename_prefix(run_node)
+    settings['filename_prefix'] = update_filename_prefix(run_node)
 
     data, _ = extract_data(run_node, settings)
     if not data:

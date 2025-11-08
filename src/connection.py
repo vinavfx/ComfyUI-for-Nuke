@@ -77,7 +77,7 @@ def resolve_submission_target(settings):
     if available_ip:
         settings['IP'] = available_ip
     else:
-        if nuke.ask("{}\n\nThese IPs have jobs running; submit to the Queue or to localhost ?".format(msg)):
+        if nuke.ask("{}\n\nThere are running inferences. Continue anyway?".format(msg)):
             panel = nuke.Panel('Submit')
             panel.addButton("Cancel")
             panel.addButton("Submit to Queue")

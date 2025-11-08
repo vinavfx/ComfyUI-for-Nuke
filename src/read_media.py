@@ -60,6 +60,7 @@ def update_filename_prefix(run_node):
 
     new_prefix = '{}/{}'.format(get_date_code(), prefix)
     filename_prefix_knob.setValue(new_prefix)
+    return new_prefix
 
 
 def set_correct_colorspace(read):
@@ -84,15 +85,11 @@ def get_gizmo_group(run_node):
             return gizmo
 
 
-def get_filename_prefix(run_node, settings):
-    output_node = get_input(run_node, 0)
-    if not output_node:
-        return None, None
+def get_filename_prefix(settings):
+    _filename_prefix = settings['filename_prefix']
 
-    filename_prefix_knob = output_node.knob('filename_prefix_')
-
-    if filename_prefix_knob:
-        filename = filename_prefix_knob.value()
+    if _filename_prefix:
+        filename = _filename_prefix
         filename_prefix = os.path.basename(filename)
 
         sequence_output = os.path.join(
@@ -104,8 +101,8 @@ def get_filename_prefix(run_node, settings):
         return None, None
 
 
-def get_filename(run_node, settings):
-    filename_prefix, sequence_output = get_filename_prefix(run_node, settings)
+def get_filename(settings):
+    filename_prefix, sequence_output = get_filename_prefix(settings)
     if not sequence_output:
         return
 
@@ -280,12 +277,12 @@ def download_filename(run_node, data, settings):
         os.makedirs(output_dir)
 
     return download_images(get_filename_prefix(
-        run_node, settings), output_dir, get_frame_range(data), settings, run_node)
+        settings), output_dir, get_frame_range(data), settings, run_node)
 
 
 def create_read(run_node, data, settings, downloaded_filename):
     if settings['COMFYUI_LOCAL']:
-        filename = get_filename(run_node, settings)
+        filename = get_filename(settings)
         filename = move_filename(filename, settings)
     else:
         filename = downloaded_filename
