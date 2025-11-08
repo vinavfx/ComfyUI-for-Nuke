@@ -19,14 +19,14 @@ else:
 import nuke  # type: ignore
 
 
-def GET(endpoint, settings, warning=True):
+def GET(endpoint, settings, warning=True, timeout=30):
     url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
                                  settings['IP'], settings['PORT'], endpoint)
 
     request = urllib2.Request(url, headers=settings['HTTP_HEADER'])
 
     try:
-        response = urllib2.urlopen(request)
+        response = urllib2.urlopen(request, timeout=timeout)
         data = response.read().decode()
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
@@ -47,7 +47,7 @@ def resolve_submission_target(settings):
 
     for ip in ips:
         settings['IP'] = ip
-        queue = GET('queue', settings, warning=False)
+        queue = GET('queue', settings, warning=False, timeout=1)
 
         if not queue:
             continue
