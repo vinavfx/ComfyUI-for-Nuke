@@ -241,7 +241,7 @@ def submit(run_node=None, success_callback=None):
                         'Are you sure? This will stop the ComfyUI inference')):
                     cancelled = True
                     break
-                else:
+                elif task:
                     task[0] = nuke.ProgressTask('ComfyUI Connection...')
 
             sleep(.1)

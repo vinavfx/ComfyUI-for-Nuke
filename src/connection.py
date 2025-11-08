@@ -6,6 +6,7 @@
 import sys
 import os
 import json
+import re
 import traceback
 from collections import OrderedDict
 import requests
@@ -36,7 +37,18 @@ def GET(endpoint, settings, warning=True, timeout=30):
 
 
 def resolve_submission_target(settings):
-    ips = json.loads(settings['IP'])
+    ip = settings['IP']
+    ips = []
+
+    if re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
+        ips = [ip]
+    else:
+        try:
+            ips = json.loads(ip)
+        except:
+            nuke.message(
+                '{}\nIt has to be an IP address or a list of IP addresses as JSON !'.format(ip))
+            return
 
     available_ip = ''
     lowest_load_ip = None
