@@ -80,18 +80,24 @@ def resolve_submission_target(settings):
         running_client += [r[3]['client_id'] for r in running]
         pending_client += [p[3]['client_id'] for p in pending]
 
-    msg = 'Running:\n'
-    for i, client in enumerate(running_client):
-        msg += '    {} - {}\n'.format(i+1, client)
+    if not available_url and not lowest_load_url:
+        nuke.message(
+            "{}\nNo ComfyUI servers found running !".format(', '.join(urls)))
+        return
 
-    if pending_client:
-        msg += '\nPending:\n'
-        for i, client in enumerate(pending_client):
+    elif available_url:
+        settings['URL'] = available_url
+
+    else:
+        msg = 'Running:\n'
+        for i, client in enumerate(running_client):
             msg += '    {} - {}\n'.format(i+1, client)
 
-    if available_url:
-        settings['URL'] = available_url
-    else:
+        if pending_client:
+            msg += '\nPending:\n'
+            for i, client in enumerate(pending_client):
+                msg += '    {} - {}\n'.format(i+1, client)
+
         ms = "{}\n\nThere are running inferences !".format(msg)
         panel = nuke.Panel('Submit')
         panel.addEnumerationPulldown(
