@@ -168,7 +168,7 @@ def submit(run_node=None, success_callback=None):
     }
 
     url = "{}/ws?clientId={}".format(settings['URL'].replace('http', 'ws'), client_id)
-    task = [nuke.ProgressTask('ComfyUI Connection...')]
+    task = [nuke.ProgressTask('Inferencing')]
     task[0].setMessage('Waiting in Queue ...')
 
     execution_error = [False]
@@ -200,7 +200,7 @@ def submit(run_node=None, success_callback=None):
 
             if task:
                 if node:
-                    task[0].setMessage('Inference: ' + node)
+                    task[0].setMessage(node)
                 else:
                     del task[0]
 
@@ -241,7 +241,7 @@ def submit(run_node=None, success_callback=None):
                     cancelled = True
                     break
                 elif task:
-                    task[0] = nuke.ProgressTask('ComfyUI Connection...')
+                    task[0] = nuke.ProgressTask('Inferencing')
 
             sleep(.1)
 

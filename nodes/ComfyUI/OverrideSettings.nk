@@ -13,7 +13,7 @@ Group {
  addUserKnob {26 override_settings +INVISIBLE}
  addUserKnob {6 created +INVISIBLE +STARTLINE}
  created false
- addUserKnob {1 url l "URL"}
+ addUserKnob {1 url l URL t "Add a single URL like 192.168.1.1:8188, or a list of URLs in JSON format like \[\"http://localhost:8188\", \"192.168.1.1:8188\"]"}
  url http://0.0.0.0:8188
  addUserKnob {1 headers l Headers}
  addUserKnob {2 comfyui_dir l "ComfyUI DIrectory" t "Path to the repository where ComfyUI is located. If it’s a remote connection, it should point to the ComfyUI path on the server."}

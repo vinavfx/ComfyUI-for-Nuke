@@ -58,6 +58,9 @@ def resolve_submission_target(settings):
     pending_client = []
 
     for url in urls:
+        if not '://' in url:
+            url  = 'http://' + url
+
         settings['URL'] = url
         queue = GET('queue', settings, warning=False, timeout=1)
 
