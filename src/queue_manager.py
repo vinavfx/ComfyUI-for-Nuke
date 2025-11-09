@@ -5,6 +5,7 @@
 # -----------------------------------------------------------
 import json
 import re
+import os
 import nuke  # type: ignore
 
 from .connection import GET, POST
@@ -24,6 +25,27 @@ def resolve_submission_target(settings):
                 '{}\nIt has to be an URL address or a list of URL addresses as JSON !'.format(url))
             return
 
+    urls = [
+        url if '://' in url else 'http://{}'.format(url)
+        for url in urls
+    ]
+
+    comfyui_dir = settings['COMFYUI_DIR']
+    comfyui_dirs = []
+
+    if os.path.exists(comfyui_dir):
+        comfyui_dirs = [comfyui_dir]
+    else:
+        try:
+            comfyui_dirs = json.loads(comfyui_dir)
+        except:
+            nuke.message(
+                '{}\nIt must be a ComfyUI directory or a list of ComfyUI directories in JSON format!'.format(comfyui_dir))
+            return
+
+    if not len(urls) == len(comfyui_dirs):
+        comfyui_dirs = [comfyui_dirs[0]] * len(urls)
+
     available_url = ''
     lowest_load_url = None
     lowest_pending = 99999
@@ -32,9 +54,6 @@ def resolve_submission_target(settings):
     pending_client = []
 
     for url in urls:
-        if not '://' in url:
-            url = 'http://' + url
-
         settings['URL'] = url
         queue = GET('queue', settings, warning=False, timeout=1)
 
@@ -87,6 +106,12 @@ def resolve_submission_target(settings):
                 settings['URL'] = 'http://0.0.0.0:8188'
         else:
             return
+
+    settings['COMFYUI_DIR'] = dict(zip(urls, comfyui_dirs)).get(settings['URL'], '')
+    if not settings['COMFYUI_DIR']:
+        nuke.message(
+            'URL "{}" without assigned ComfyUI directory !'.format(settings['URL']))
+        return
 
     if not GET('system_stats', settings):
         return
