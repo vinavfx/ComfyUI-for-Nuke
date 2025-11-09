@@ -217,14 +217,15 @@ def get_output_path(settings, default_output=False):
         return default_output_dir
 
     output_dir = settings['OUTPUT_DIRECTORY'].strip()
+    untitled = nuke.root().name() == 'Root'
 
     if os.path.isabs(output_dir) and os.path.isdir(output_dir):
         return output_dir
 
-    elif output_dir and not nuke.root().name() == 'Root':
+    elif output_dir and not untitled:
         return os.path.join(os.path.dirname(nuke.scriptName()), output_dir)
 
-    if settings['COMFYUI_LOCAL']:
+    elif settings['COMFYUI_LOCAL'] and not untitled:
         return default_output_dir
 
     return os.path.join(settings['TEMPORAL_DIR'], 'output')
