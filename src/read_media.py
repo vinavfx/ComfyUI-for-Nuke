@@ -43,7 +43,7 @@ def get_tonemap(run_node):
     return tonemap_knob.value()
 
 
-def update_filename_prefix(run_node):
+def update_filename_prefix(run_node, update=True):
     output_node = get_input(run_node, 0)
     if not output_node:
         return
@@ -51,6 +51,9 @@ def update_filename_prefix(run_node):
     filename_prefix_knob = output_node.knob('filename_prefix_')
     if not filename_prefix_knob:
         return
+
+    if not update:
+        return filename_prefix_knob.value()
 
     prefix = filename_prefix_knob.value()
     old_rand = prefix.split('/')[0]
@@ -86,7 +89,7 @@ def get_gizmo_group(run_node):
 
 
 def get_filename_prefix(settings):
-    _filename_prefix = settings['filename_prefix']
+    _filename_prefix = settings.get('filename_prefix')
 
     if _filename_prefix:
         filename = _filename_prefix

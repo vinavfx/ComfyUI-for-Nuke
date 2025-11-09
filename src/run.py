@@ -143,6 +143,7 @@ def submit(run_node=None, success_callback=None):
 
     global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
+        settings['filename_prefix'] = update_filename_prefix(run_node, False)
         downloaded_filename = download_filename(run_node, data, settings)
         read = create_read(run_node, data, settings, downloaded_filename)
 
