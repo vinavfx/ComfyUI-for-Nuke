@@ -88,39 +88,6 @@ def get_gizmo_group(run_node):
             return gizmo
 
 
-def get_filename_prefix(settings):
-    _filename_prefix = settings.get('filename_prefix')
-
-    if _filename_prefix:
-        filename = _filename_prefix
-        filename_prefix = os.path.basename(filename)
-
-        sequence_output = os.path.join(
-            settings['COMFYUI_DIR'], 'output', os.path.dirname(filename))
-
-        return filename_prefix, sequence_output
-
-    else:
-        return None, None
-
-
-def get_filename(settings):
-    filename_prefix, sequence_output = get_filename_prefix(settings)
-    if not sequence_output:
-        return
-
-    filenames = nuke.getFileNameList(sequence_output)
-    if not filenames:
-        return
-
-    filename = next((fn for fn in filenames if filename_prefix in fn), None)
-
-    if not filename:
-        return
-
-    return os.path.join(sequence_output, filename)
-
-
 def extract_meta(data):
     noise_seed = seed = steps = denoise = guidance = causvid = strength = -1
     scheduler = sampler_name = lora = lora2 = lora3 = cnet = ''
@@ -159,7 +126,8 @@ def extract_meta(data):
             strength = inputs.get('strength')
 
         if name in ('extra_lora1', 'extra_lora2', 'extra_lora3'):
-            lora_name = inputs.get('lora_name', '').split('/')[-1].rsplit('.', 1)[0]
+            lora_name = inputs.get('lora_name', '').split(
+                '/')[-1].rsplit('.', 1)[0]
             lora_strength = inputs.get('strength_model', 0)
             formatted = '{}:{}'.format(lora_name, lora_strength)
 
@@ -220,7 +188,7 @@ def extract_meta(data):
 
 
 def glb2obj(filename):
-    import trimesh # type: ignore
+    import trimesh  # type: ignore
 
     mesh = trimesh.load(filename)
     obj = filename[:-3] + 'obj'
@@ -242,7 +210,12 @@ def get_frame_range(data):
     return max(ranges, key=lambda r: r[1] - r[0])
 
 
-def get_output_path(settings):
+def get_output_path(settings, default_output=False):
+    default_output_dir = os.path.join(settings['COMFYUI_DIR'], 'output')
+
+    if default_output:
+        return default_output_dir
+
     output_dir = settings['OUTPUT_DIRECTORY'].strip()
 
     if os.path.isabs(output_dir) and os.path.isdir(output_dir):
@@ -251,10 +224,13 @@ def get_output_path(settings):
     elif output_dir and not nuke.root().name() == 'Root':
         return os.path.join(os.path.dirname(nuke.scriptName()), output_dir)
 
+    if settings['COMFYUI_LOCAL']:
+        return default_output_dir
+
     return os.path.join(settings['TEMPORAL_DIR'], 'output')
 
 
-def move_filename(filename, settings):
+def relocate_filename(filename, settings):
     if not settings['OUTPUT_DIRECTORY'].strip():
         return filename
 
@@ -276,6 +252,40 @@ def move_filename(filename, settings):
     return os.path.join(dst_dir, os.path.basename(filename))
 
 
+def get_separate_filename(settings, default_output=False):
+    filename_prefix = settings.get('filename_prefix')
+
+    if filename_prefix:
+        basename = os.path.basename(filename_prefix)
+        dirname = os.path.dirname(filename_prefix)
+
+        sequence_output = os.path.join(get_output_path(
+            settings, default_output), dirname)
+
+        return filename_prefix, basename, sequence_output
+
+    else:
+        return None, None, None
+
+
+def get_local_filename(settings, default_output=False):
+    _, basename, sequence_output = get_separate_filename(settings, default_output)
+
+    if not sequence_output:
+        return
+
+    filenames = nuke.getFileNameList(sequence_output)
+    if not filenames:
+        return
+
+    filename = next((fn for fn in filenames if basename in fn), None)
+
+    if not filename:
+        return
+
+    return os.path.join(sequence_output, filename)
+
+
 def download_filename(run_node, data, settings):
     if settings['COMFYUI_LOCAL']:
         return ''
@@ -285,14 +295,18 @@ def download_filename(run_node, data, settings):
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
 
-    return download_images(get_filename_prefix(
-        settings), output_dir, get_frame_range(data), settings, run_node)
+    return download_images(
+        get_separate_filename(settings), output_dir,
+        get_frame_range(data), settings, run_node)
 
 
-def create_read(run_node, data, settings, downloaded_filename):
+def create_read(run_node, data, settings, downloaded_filename, already_generated=False):
     if settings['COMFYUI_LOCAL']:
-        filename = get_filename(settings)
-        filename = move_filename(filename, settings)
+        if already_generated:
+            filename = get_local_filename(settings)
+        else:
+            filename = get_local_filename(settings, default_output=True)
+            filename = relocate_filename(filename, settings)
     else:
         filename = downloaded_filename
 

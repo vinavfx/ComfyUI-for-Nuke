@@ -41,9 +41,9 @@ def upload_images(folder, settings):
     return results
 
 
-def download_images(filename, dst_folder, frange, settings, run_node):
+def download_images(separated_filename, dst_folder, frange, settings, run_node):
     from .nodes import get_node_data
-    filename_prefix, sequence_output = filename
+    _, basename, sequence_output = separated_filename
 
     from .nodes import get_input
     save_node = get_input(run_node, 0)
@@ -76,7 +76,7 @@ def download_images(filename, dst_folder, frange, settings, run_node):
     downloaded = 0
 
     for i in range(1, 10000):
-        image = '{}_{}_.{}'.format(filename_prefix, str(i).zfill(5), ext)
+        image = '{}_{}_.{}'.format(basename, str(i).zfill(5), ext)
 
         url = '{}/api/view?filename={}&subfolder={}'.format(
             settings['URL'], image, subfolder)
@@ -105,7 +105,7 @@ def download_images(filename, dst_folder, frange, settings, run_node):
     if not downloaded:
         return
 
-    return '{}/{}_#####_.{} 1-{}'.format(output, filename_prefix, ext, last_frame)
+    return '{}/{}_#####_.{} 1-{}'.format(output, basename, ext, last_frame)
 
 
 def upload_media():
