@@ -11,7 +11,7 @@ from ..nuke_util.media_util import get_padding
 from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes, get_input
 from .common import get_date_code
-from .connection import download_images
+from .upload_and_download import download_images
 
 
 def exr_filepath_fixed(run_node):

@@ -16,7 +16,8 @@ import copy
 
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
 from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings
-from .connection import POST, resolve_submission_target, interrupt
+from .connection import POST
+from .queue_manager import resolve_submission_target, interrupt
 from .nodes import extract_data
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, download_filename
 

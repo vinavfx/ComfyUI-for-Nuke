@@ -11,7 +11,7 @@ import traceback
 from collections import Counter
 import nuke  # type: ignore
 from ..testing.testing import status_diff
-from .connection import upload_images
+from .upload_and_download import upload_images
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
 from .common import (image_inputs, mask_inputs, get_server_comfyui_dir,

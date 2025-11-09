@@ -5,8 +5,9 @@ from . import (
     run,
     update_menu,
     read_media,
-    upload,
+    upload_and_download,
     workflow_importer,
     scripts,
-    multi_run
+    multi_run,
+    queue_manager
 )
