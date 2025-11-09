@@ -66,13 +66,11 @@ comfyui.setup()
 
 ```python
 COMFYUI_DIR = '<path_to_ComfyUI>' # Put the directory where ComfyUI is installed !
-IP = '127.0.0.1'
-PORT = 8188
+HOST = '127.0.0.1:8188'
 ```
 Alternatively, you can set these environment variables instead of modifying [settings.py](./settings.py)
 - `NUKE_COMFYUI_DIR` - Path where ComfyUI directory is mounted/mapped
-- `NUKE_COMFYUI_IP` - IP address of the remote ComfyUI server
-- `NUKE_COMFYUI_PORT` - Port number (default: 8188)
+- `NUKE_COMFYUI_HOST` - IP:PORT address of the remote ComfyUI server
 
 2 - Run ComfyUI Server
 

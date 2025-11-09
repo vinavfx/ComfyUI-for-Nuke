@@ -65,8 +65,7 @@ def get_name_code(name, length=15):
 def get_settings(run_node=None):
     settings = {
         'COMFYUI_DIR': COMFYUI_DIR,
-        'IP': IP,
-        'PORT': PORT,
+        'HOST': HOST,
         'COMFYUI_LOCAL': COMFYUI_LOCAL,
         'OUTPUT_DIRECTORY': OUTPUT_DIRECTORY,
         'UPDATE_MENU_AT_START': UPDATE_MENU_AT_START,
@@ -92,8 +91,7 @@ def get_settings(run_node=None):
                 settings[key.upper()] = override_node.knob(key).value()
 
         override('comfyui_dir')
-        override('ip')
-        override('port')
+        override('host')
         override('background_submit')
         override('output_directory')
         override('use_exr_to_load_images')
@@ -110,12 +108,6 @@ def get_settings(run_node=None):
                 nuke.message("Error parsing headers: {}".format(e))
                 headers = {}
             settings['HTTP_HEADER'] = headers
-
-    #  protocol_secure = settings['PORT'] == '443'
-    #  settings['PROTOCOL'] = 'https' if protocol_secure else 'http'
-    #  settings['PROTOCOL_WEBSOCKET'] = 'wss' if protocol_secure else 'ws'
-    #  settings['IP'] = settings['IP'].replace(
-        #  'https://', '').replace('http://', '')
 
     return settings
 

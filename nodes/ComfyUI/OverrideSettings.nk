@@ -3,7 +3,7 @@ version 12.0 v8
 push $cut_paste_input
 Group {
  name OverrideSettings
- onCreate "this = nuke.thisNode()\n\nif not this.knob('created').value():\n    this.knob('ip').setValue(comfyui.settings.IP)\n    this.knob('port').setValue(comfyui.settings.PORT)\n    this.knob('comfyui_dir').setValue(comfyui.settings.COMFYUI_DIR)\n    this.knob('use_exr_to_load_images').setValue(comfyui.settings.USE_EXR_TO_LOAD_IMAGES)\n    this.knob('display_meta_in_read_node').setValue(comfyui.settings.DISPLAY_META_IN_READ_NODE)\n    this.knob('remote_comfyui').setValue(not comfyui.settings.COMFYUI_LOCAL)\n    this.knob('output_directory').setValue(comfyui.settings.OUTPUT_DIRECTORY)\n\n    this.knob('created').setValue(True)"
+ onCreate "this = nuke.thisNode()\n\nif not this.knob('created').value():\n    this.knob('host').setValue(comfyui.settings.HOST)\n    this.knob('comfyui_dir').setValue(comfyui.settings.COMFYUI_DIR)\n    this.knob('use_exr_to_load_images').setValue(comfyui.settings.USE_EXR_TO_LOAD_IMAGES)\n    this.knob('display_meta_in_read_node').setValue(comfyui.settings.DISPLAY_META_IN_READ_NODE)\n    this.knob('remote_comfyui').setValue(not comfyui.settings.COMFYUI_LOCAL)\n    this.knob('output_directory').setValue(comfyui.settings.OUTPUT_DIRECTORY)\n\n    this.knob('created').setValue(True)"
  knobChanged "if nuke.thisKnob().name() == 'remote_comfyui':\n    nuke.thisNode().knob('comfyui_dir').setEnabled(not nuke.thisKnob().value())"
  tile_color 0x609e38ff
  selected true
@@ -13,11 +13,9 @@ Group {
  addUserKnob {26 override_settings +INVISIBLE}
  addUserKnob {6 created +INVISIBLE +STARTLINE}
  created false
- addUserKnob {1 ip l "IP / Host"}
- ip 0.0.0.0
- addUserKnob {1 port l Port}
- port 8188
- addUserKnob {1 headers l Headers -STARTLINE}
+ addUserKnob {1 host l "Host"}
+ host 0.0.0.0:8188
+ addUserKnob {1 headers l Headers}
  addUserKnob {2 comfyui_dir l "ComfyUI DIrectory" t "Path to the repository where ComfyUI is located. If it’s a remote connection, it should point to the ComfyUI path on the server."}
  addUserKnob {26 ""}
  addUserKnob {6 use_exr_to_load_images l "Use EXR to laod images" t "If enabled, EXR images will be loaded using the ComfyUI-HQ-Image-Save add-on; otherwise, PNGs will be loaded using the sequence loader from the ComfyUI-VideoHelperSuite add-on." +STARTLINE}

@@ -21,8 +21,7 @@ import nuke  # type: ignore
 
 
 def GET(endpoint, settings, warning=True, timeout=30):
-    url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
-                                 settings['IP'], settings['PORT'], endpoint)
+    url = '{}://{}/{}'.format(settings['PROTOCOL'], settings['HOST'], endpoint)
 
     request = urllib2.Request(url, headers=settings['HTTP_HEADER'])
 
@@ -33,32 +32,32 @@ def GET(endpoint, settings, warning=True, timeout=30):
     except:
         if warning:
             nuke.message(
-                'Error connecting to server {} on port {} !'.format(settings['IP'], settings['PORT']))
+                'Error connecting to server {} !'.format(settings['HOST']))
 
 
 def resolve_submission_target(settings):
-    ip = settings['IP']
-    ips = []
+    host = settings['HOST']
+    hosts = []
 
-    if re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
-        ips = [ip]
+    if re.match(r'^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$', host):
+        hosts = [host]
     else:
         try:
-            ips = json.loads(ip)
+            hosts = json.loads(host)
         except:
             nuke.message(
-                '{}\nIt has to be an IP address or a list of IP addresses as JSON !'.format(ip))
+                '{}\nIt has to be an IP:PORT address or a list of IP:PORT addresses as JSON !'.format(host))
             return
 
-    available_ip = ''
-    lowest_load_ip = None
+    available_host = ''
+    lowest_load_host = None
     lowest_pending = 99999
 
     running_client = []
     pending_client = []
 
-    for ip in ips:
-        settings['IP'] = ip
+    for host in hosts:
+        settings['HOST'] = host
         queue = GET('queue', settings, warning=False, timeout=1)
 
         if not queue:
@@ -69,10 +68,10 @@ def resolve_submission_target(settings):
 
         if len(pending) < lowest_pending:
             lowest_pending = len(pending)
-            lowest_load_ip = ip
+            lowest_load_host = host
 
-        if not available_ip and not running:
-            available_ip = ip
+        if not available_host and not running:
+            available_host = host
 
         running_client += [r[3]['client_id'] for r in running]
         pending_client += [p[3]['client_id'] for p in pending]
@@ -86,8 +85,8 @@ def resolve_submission_target(settings):
         for i, client in enumerate(pending_client):
             msg += '    {} - {}\n'.format(i+1, client)
 
-    if available_ip:
-        settings['IP'] = available_ip
+    if available_host:
+        settings['HOST'] = available_host
     else:
         ms = "{}\n\nThere are running inferences !".format(msg)
         panel = nuke.Panel('Submit')
@@ -99,11 +98,17 @@ def resolve_submission_target(settings):
         if panel.show():
             choice = panel.value(ms)
             if choice == 'Send to Queue':
-                settings['IP'] = lowest_load_ip
+                settings['HOST'] = lowest_load_host
             else:
-                settings['IP'] = 'localhost'
+                settings['HOST'] = 'localhost'
         else:
             return
+
+    #  protocol_secure = settings['PORT'] == '443'
+    #  settings['PROTOCOL'] = 'https' if protocol_secure else 'http'
+    #  settings['PROTOCOL_WEBSOCKET'] = 'wss' if protocol_secure else 'ws'
+    #  settings['HOST'] = settings['HOST'].replace(
+        #  'https://', '').replace('http://', '')
 
     if not GET('system_stats', settings):
         return
@@ -114,8 +119,7 @@ def resolve_submission_target(settings):
 def upload_images(folder, settings):
     task = nuke.ProgressTask('Uploading to ComfyUI')
 
-    url = '{}://{}:{}/upload/image'.format(
-        settings['PROTOCOL'], settings['IP'], settings['PORT'])
+    url = '{}://{}/upload/image'.format(settings['PROTOCOL'], settings['HOST'])
     results = []
     files = os.listdir(folder)
     total = len(files)
@@ -178,8 +182,8 @@ def download_images(filename, dst_folder, frange, settings, run_node):
     for i in range(1, 10000):
         image = '{}_{}_.{}'.format(filename_prefix, str(i).zfill(5), ext)
 
-        url = '{}://{}:{}/api/view?filename={}&subfolder={}'.format(
-            settings['PROTOCOL'], settings['IP'], settings['PORT'], image, subfolder)
+        url = '{}://{}/api/view?filename={}&subfolder={}'.format(
+            settings['PROTOCOL'], settings['HOST'], image, subfolder)
 
         r = requests.get(url, headers=settings['HTTP_HEADER'], stream=True)
 
@@ -209,8 +213,7 @@ def download_images(filename, dst_folder, frange, settings, run_node):
 
 
 def POST(endpoint, data, settings):
-    url = '{}://{}:{}/{}'.format(settings['PROTOCOL'],
-                                 settings['IP'], settings['PORT'], endpoint)
+    url = '{}://{}/{}'.format(settings['PROTOCOL'], settings['HOST'], endpoint)
     headers = {'Content-Type': 'application/json'}
     headers.update(settings['HTTP_HEADER'])
 
