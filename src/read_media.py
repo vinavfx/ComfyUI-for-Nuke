@@ -265,9 +265,15 @@ def move_filename(filename, settings):
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
 
-    shutil.move(os.path.dirname(filename), output_dir)
+    src_dir = os.path.dirname(filename)
+    dst_dir = os.path.join(output_dir, os.path.basename(src_dir))
 
-    return os.path.join(output_dir, os.path.basename(os.path.dirname(filename)), os.path.basename(filename))
+    if os.path.exists(dst_dir):
+        shutil.rmtree(dst_dir)
+
+    shutil.move(src_dir, dst_dir)
+
+    return os.path.join(dst_dir, os.path.basename(filename))
 
 
 def download_filename(run_node, data, settings):

@@ -7,3 +7,4 @@ __pycache__
 _*/
 *.code-workspace
 .vscode
+tasks.todo
