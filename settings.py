@@ -2,7 +2,7 @@ import os
 
 # ENVIRONMENT VARIABLES
 COMFYUI_DIR =                       os.getenv('NUKE_COMFYUI_DIR', '')
-HOST =                              os.getenv('NUKE_COMFYUI_HOST', '0.0.0.0:8188')
+URL =                               os.getenv('NUKE_COMFYUI_URL', 'http://0.0.0.0:8188')
 COMFYUI2NUKE =                      os.path.dirname(__file__)
 COMFYUI_LOCAL =                     bool(int(os.getenv('COMFYUI_LOCAL', '1')))
 OUTPUT_DIRECTORY =                  os.getenv('OUTPUT_DIRECTORY', '')

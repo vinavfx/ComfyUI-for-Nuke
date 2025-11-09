@@ -65,7 +65,7 @@ def get_name_code(name, length=15):
 def get_settings(run_node=None):
     settings = {
         'COMFYUI_DIR': COMFYUI_DIR,
-        'HOST': HOST,
+        'URL': URL,
         'COMFYUI_LOCAL': COMFYUI_LOCAL,
         'OUTPUT_DIRECTORY': OUTPUT_DIRECTORY,
         'UPDATE_MENU_AT_START': UPDATE_MENU_AT_START,
@@ -73,9 +73,7 @@ def get_settings(run_node=None):
         'DISPLAY_META_IN_READ_NODE': DISPLAY_META_IN_READ_NODE,
         'TEMPORAL_DIR': TEMPORAL_DIR,
         'HTTP_HEADER': {},
-        'BACKGROUND_SUBMIT': False,
-        'PROTOCOL': 'http',
-        'PROTOCOL_WEBSOCKET': 'ws'
+        'BACKGROUND_SUBMIT': False
     }
 
     override_node = None
@@ -91,7 +89,7 @@ def get_settings(run_node=None):
                 settings[key.upper()] = override_node.knob(key).value()
 
         override('comfyui_dir')
-        override('host')
+        override('url')
         override('background_submit')
         override('output_directory')
         override('use_exr_to_load_images')

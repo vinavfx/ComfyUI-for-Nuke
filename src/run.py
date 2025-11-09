@@ -167,8 +167,7 @@ def submit(run_node=None, success_callback=None):
         'extra_data': {}
     }
 
-    url = "{}://{}/ws?clientId={}".format(
-        settings['PROTOCOL_WEBSOCKET'], settings['HOST'], client_id)
+    url = "{}/ws?clientId={}".format(settings['URL'].replace('http', 'ws'), client_id)
     task = [nuke.ProgressTask('ComfyUI Connection...')]
     task[0].setMessage('Waiting in Queue ...')
 
