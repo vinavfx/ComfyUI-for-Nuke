@@ -75,21 +75,10 @@ def resolve_submission_target(settings):
             for i, client in enumerate(pending_client):
                 msg += '    {} - {}\n'.format(i+1, client)
 
-        ms = "{}\n\nThere are running inferences !".format(msg)
-        panel = nuke.Panel('Submit')
-        panel.addEnumerationPulldown(
-            ms, "Send\\ to\\ Queue\nSend\\ to\\ localhost")
-        panel.addButton("No")
-        panel.addButton("Submit anyway ?")
-
-        if panel.show():
-            choice = panel.value(ms)
-            if choice == 'Send to Queue':
-                settings['URL'] = lowest_load_url
-            else:
-                settings['URL'] = 'http://0.0.0.0:8188'
+        if nuke.ask("{}\n\nJobs running. Queue or run locally?\nYes = Queue / No = localhost".format(msg)):
+            settings['URL'] = lowest_load_url
         else:
-            return
+            settings['URL'] = 'http://localhost:8188'
 
     if settings['COMFYUI_LOCAL']:
         comfyui_dir = settings['COMFYUI_DIR']
