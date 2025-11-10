@@ -33,6 +33,7 @@ def resolve_submission_target(settings):
     available_url = ''
     lowest_load_url = None
     lowest_pending = 99999
+    localhost_submit = False
 
     running_client = []
     pending_client = []
@@ -79,6 +80,7 @@ def resolve_submission_target(settings):
             settings['URL'] = lowest_load_url
         else:
             settings['URL'] = 'http://localhost:8188'
+            localhost_submit = True
 
     if settings['COMFYUI_LOCAL']:
         comfyui_dir = settings['COMFYUI_DIR']
@@ -100,7 +102,10 @@ def resolve_submission_target(settings):
 
         settings['COMFYUI_DIR'] = dict(
             zip(urls, comfyui_dirs)).get(settings['URL'], '')
-        if not settings['COMFYUI_DIR']:
+
+        if localhost_submit:
+            settings['COMFYUI_DIR'] = comfyui_dirs[0]
+        elif not settings['COMFYUI_DIR']:
             nuke.message(
                 'URL "{}" without assigned ComfyUI directory !'.format(settings['URL']))
             return
