@@ -5,7 +5,6 @@
 # -----------------------------------------------------------
 import json
 import re
-import os
 import nuke  # type: ignore
 
 from .connection import GET, POST

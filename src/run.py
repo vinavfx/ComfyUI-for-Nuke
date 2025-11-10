@@ -170,8 +170,11 @@ def submit(run_node=None, success_callback=None):
     }
 
     url = "{}/ws?clientId={}".format(settings['URL'].replace('http', 'ws'), client_id)
-    task = [nuke.ProgressTask('Inferencing')]
-    task[0].setMessage('Waiting in Queue ...')
+
+    task_status = {'title': 'Inferencing',
+                   'progress': 0, 'message': 'Waiting in Queue ...'}
+    task = [nuke.ProgressTask(task_status['title'])]
+    task[0].setMessage(task_status['message'])
 
     execution_error = [False]
 
@@ -196,6 +199,7 @@ def submit(run_node=None, success_callback=None):
             progress = int(data['value'] * 100 / data['max'])
             if task:
                 task[0].setProgress(progress)
+                task_status['progress'] = progress
 
         elif type_data == 'executing':
             node = data.get('node')
@@ -203,6 +207,7 @@ def submit(run_node=None, success_callback=None):
             if task:
                 if node:
                     task[0].setMessage(node)
+                    task_status['message'] = node
                 else:
                     del task[0]
 
@@ -243,7 +248,9 @@ def submit(run_node=None, success_callback=None):
                     cancelled = True
                     break
                 elif task:
-                    task[0] = nuke.ProgressTask('Inferencing')
+                    task[0] = nuke.ProgressTask(task_status['title'])
+                    task[0].setProgress(task_status['progress'])
+                    task[0].setMessage(task_status['message'])
 
             sleep(.1)
 
