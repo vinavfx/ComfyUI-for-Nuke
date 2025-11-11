@@ -293,7 +293,8 @@ def submit(run_node=None, success_callback=None):
     error = POST('prompt', body, settings)
 
     if settings['BACKGROUND_SUBMIT'] and not error:
-        nuke.message('Workflow sent to the ComfyUI Queue')
+        nuke.message('Workflow sent to the ComfyUI Queue\n{}/output/{}'.format(
+            settings['COMFYUI_DIR'], os.path.dirname(settings['filename_prefix'] or '')))
 
     if error:
         execution_error[0] = True
