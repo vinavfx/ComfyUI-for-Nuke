@@ -196,7 +196,7 @@ def submit(run_node=None, success_callback=None):
                 update_node, args=(node, data, run_node, settings))
 
         elif type_data == 'progress':
-            progress = int(data['value'] * 100 / data['max'])
+            progress = int(data['value'] * 100 / float(data['max'] or 0.01))
             if task:
                 task[0].setProgress(progress)
                 task_status['progress'] = progress
