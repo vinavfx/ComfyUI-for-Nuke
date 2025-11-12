@@ -394,9 +394,11 @@ def save_image_backup(run_node=None):
 
     xpos = read.xpos() + 50
 
-    for n in nuke.allNodes('Read'):
-        if not n.name().split('Backup')[0] == main_node.name():
-            continue
-
+    reads = sorted(
+        [n for n in nuke.allNodes('Read') if n.name().split('Backup')[0] == main_node.name()],
+        key=lambda n: n.name(),
+        reverse=True
+    )
+    for n in reads:
         xpos += 100
         n.setXYpos(xpos, read.ypos())
