@@ -392,13 +392,20 @@ def save_image_backup(run_node=None):
         new_read.knob('frame').setValue(read.knob('frame').value())
         set_correct_colorspace(new_read)
 
-    xpos = read.xpos() + 50
-
     reads = sorted(
         [n for n in nuke.allNodes('Read') if n.name().split('Backup')[0] == main_node.name()],
         key=lambda n: n.name(),
         reverse=True
     )
-    for n in reads:
-        xpos += 100
-        n.setXYpos(xpos, read.ypos())
+
+    xpos = read.xpos() + 150
+    ypos = read.ypos()
+
+    offset_x = 100
+    offset_y = 150
+    per_row = 10
+
+    for i, n in enumerate(reads):
+        col = i % per_row
+        row = i // per_row
+        n.setXYpos(xpos + col * offset_x, ypos + row * offset_y)
