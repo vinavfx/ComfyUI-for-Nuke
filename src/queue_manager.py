@@ -66,20 +66,27 @@ def resolve_submission_target(settings):
         settings['URL'] = available_url
 
     else:
-        msg = 'Running:\n'
+        msg = '<b>Running</b>:\n'
         for i, client in enumerate(running_client):
-            msg += '    {} - {}\n'.format(i+1, client)
+            user, nk, send_id = (client.split(':') + [client, '', 1])[:3]
+            msg += '    {} - <font color=orange>{}</font> : {}:<font color=#6cb56b>{}</font>\n'.format(
+                i+1, user, nk, send_id)
 
         if pending_client:
-            msg += '\nPending:\n'
+            msg += '\n<b>Pending</b>:\n'
             for i, client in enumerate(pending_client):
-                msg += '    {} - {}\n'.format(i+1, client)
+                user, nk, send_id = (client.split(':') + [client, '', ''])[:3]
+                msg += '    {} - <font color=orange>{}</font> : {}:<font color=#6cb56b>{}</font>\n'.format(
+                    i+1, user, nk, send_id)
 
-        if nuke.ask("{}\n\nJobs running. Queue or run locally?\nYes = Queue / No = localhost".format(msg)):
-            settings['URL'] = lowest_load_url
-        else:
-            settings['URL'] = 'http://localhost:8188'
-            localhost_submit = True
+        try:
+            if nuke.askWithCancel("{}\n\nJobs running. Queue or run locally?\n<font color=#6cb56b>Yes = Queue / No = localhost".format(msg)):
+                settings['URL'] = lowest_load_url
+            else:
+                settings['URL'] = 'http://localhost:8188'
+                localhost_submit = True
+        except:
+            return
 
     if settings['COMFYUI_LOCAL']:
         comfyui_dir = settings['COMFYUI_DIR']
