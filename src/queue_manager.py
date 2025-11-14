@@ -66,18 +66,19 @@ def resolve_submission_target(settings):
         settings['URL'] = available_url
 
     else:
+        def ellipsis(s, n): return s if len(s) <= n else s[:n-3] + "..."
         msg = '<b>Running</b>:\n'
         for i, client in enumerate(running_client):
             user, nk, send_id = (client.split(':') + [client, '', 1])[:3]
-            msg += '    {} - <font color=orange>{}</font> : {}:<font color=#6cb56b>{}</font>\n'.format(
-                i+1, user, nk, send_id)
+            msg += '    {} - <font color=orange>{}</font> : {} : <font color=#6cb56b>{}</font>\n'.format(
+                i+1, user, ellipsis(nk, 50), send_id)
 
         if pending_client:
             msg += '\n<b>Pending</b>:\n'
             for i, client in enumerate(pending_client):
                 user, nk, send_id = (client.split(':') + [client, '', ''])[:3]
-                msg += '    {} - <font color=orange>{}</font> : {}:<font color=#6cb56b>{}</font>\n'.format(
-                    i+1, user, nk, send_id)
+                msg += '    {} - <font color=orange>{}</font> : {} : <font color=#6cb56b>{}</font>\n'.format(
+                    i+1, user, ellipsis(nk, 50), send_id)
 
         try:
             if nuke.askWithCancel("{}\n\nJobs running. Queue or run locally?\n<font color=#6cb56b>Yes = Queue / No = localhost".format(msg)):
