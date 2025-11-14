@@ -145,9 +145,14 @@ def create_node(data, inpanel=True):
             knob.setValue(default_value)
             knob.setTooltip(tooltip)
 
-        elif type(_class) == list:
+        elif type(_class) == list or _class == 'COMBO':
+            if _class == 'COMBO':
+                options = info.get('options', [])
+            else:
+                options = _class
+
             knob = nuke.Enumeration_Knob(
-                knob_name, key, [str(i) for i in _class])
+                knob_name, key, [str(i) for i in options])
 
             knob.setTooltip(tooltip)
             default_item = str(info.get('default', None))
