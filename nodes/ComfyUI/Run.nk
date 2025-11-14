@@ -6,10 +6,10 @@ Group {
  tile_color 0x609e38ff
  note_font "Bitstream Vera Sans"
  selected true
- xpos 268
- ypos -60
+ xpos -40
+ ypos -369
  addUserKnob {20 controls l Controls}
- addUserKnob {22 comfyui_submit l Run t "Send a request to ComfyUI Server" T comfyui.run.submit() +STARTLINE}
+ addUserKnob {22 comfyui_submit l Run t "Send a request to ComfyUI Server" T "def inference_callback(_, run_node):\n    callback = run_node.parent().knob('inferenceCallback')\n    if callback:\n        callback.execute()\n\ncomfyui.run.submit(nuke.thisNode(), inference_callback)" +STARTLINE}
  addUserKnob {22 backup_result l "Backup Result" t "Create a new Read Node from the last result" -STARTLINE T comfyui.read_media.save_image_backup()}
 }
  Input {

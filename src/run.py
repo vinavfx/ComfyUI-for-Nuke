@@ -122,8 +122,16 @@ def preview_image_update(node_name, data, settings):
     preview_node.end()
 
 
-
 def submit(run_node=None, success_callback=None):
+    def success_callback_wrapper(read, run_node):
+        if not success_callback:
+            return
+
+        if success_callback.__code__.co_argcount >= 2:
+            success_callback(read, run_node)
+        else:
+            success_callback(read)
+
     run_node = run_node or nuke.thisNode()
     settings = get_settings(run_node)
 
@@ -147,8 +155,7 @@ def submit(run_node=None, success_callback=None):
         downloaded_filename = download_filename(run_node, data, settings)
         read = create_read(run_node, data, settings, downloaded_filename, True)
 
-        if success_callback:
-            success_callback(read)
+        success_callback_wrapper(read, run_node)
         return
 
     settings['filename_prefix'] = update_filename_prefix(run_node)
@@ -271,9 +278,7 @@ def submit(run_node=None, success_callback=None):
     def progress_finished(n, downloaded_filename):
         try:
             read = create_read(n, data, settings, downloaded_filename)
-
-            if success_callback:
-                success_callback(read)
+            success_callback_wrapper(read, run_node)
 
             if not execution_error[0]:
                 remove_all_error_style(run_node)
