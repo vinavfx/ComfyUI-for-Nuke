@@ -44,7 +44,7 @@ def execute_runs():
                 runs.append(qp)
                 continue
 
-        if not inode.knob('comfyui_submit'):
+        if not inode.knob('run'):
             continue
 
         runs.append(inode)

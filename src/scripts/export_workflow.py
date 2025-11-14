@@ -20,7 +20,7 @@ def export_workflow():
         node.begin()
         node = nuke.toNode('Run')
 
-    elif not node.knob('comfyui_submit'):
+    elif not node.knob('run'):
         nuke.message("Select the 'Run' node")
         return
 

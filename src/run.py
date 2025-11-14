@@ -122,6 +122,16 @@ def preview_image_update(node_name, data, settings):
     preview_node.end()
 
 
+def execute_in_main_thread(func, args=(), kwargs=None):
+    if kwargs is None:
+        kwargs = {}
+
+    if nuke.GUI:
+        return nuke.executeInMainThread(func, args=args, kwargs=kwargs)
+
+    return func(*args, **kwargs)
+
+
 def submit(run_node=None, success_callback=None):
     def success_callback_wrapper(read, run_node):
         if not success_callback:
@@ -199,7 +209,7 @@ def submit(run_node=None, success_callback=None):
 
         elif type_data == 'executed':
             node = data.get('node')
-            nuke.executeInMainThread(
+            execute_in_main_thread(
                 update_node, args=(node, data, run_node, settings))
 
         elif type_data == 'progress':
@@ -231,9 +241,9 @@ def submit(run_node=None, success_callback=None):
             if task:
                 del task[0]
 
-            nuke.executeInMainThread(
+            execute_in_main_thread(
                 error_node_style, args=(data.get('node_id'), True, execution_message))
-            nuke.executeInMainThread(nuke.message, args=(error))
+            execute_in_main_thread(nuke.message, args=(error))
 
     def on_error(ws, error):
         ws.close()
@@ -244,7 +254,7 @@ def submit(run_node=None, success_callback=None):
             return
 
         execution_error[0] = True
-        nuke.executeInMainThread(nuke.message, args=('error: ' + str(error)))
+        execute_in_main_thread(nuke.message, args=('error: ' + str(error)))
 
     def progress_task_loop():
         cancelled = False
@@ -272,7 +282,7 @@ def submit(run_node=None, success_callback=None):
             return
 
         downloaded_filename = download_filename(run_node, data, settings)
-        nuke.executeInMainThread(
+        execute_in_main_thread(
             progress_finished, args=(run_node, downloaded_filename))
 
     def progress_finished(n, downloaded_filename):
@@ -285,7 +295,7 @@ def submit(run_node=None, success_callback=None):
                 states[run_node.fullName()] = state_data
 
         except:
-            nuke.executeInMainThread(
+            execute_in_main_thread(
                 nuke.message, args=(traceback.format_exc()))
 
     headers = ["{}: {}".format(k, v) for k, v in settings['HTTP_HEADER'].items()]
