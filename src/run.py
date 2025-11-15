@@ -154,6 +154,7 @@ def submit(run_node=None, success_callback=None):
         return
 
     exr_filepath_fixed(run_node)
+    settings['project_name'] = nuke.root().name()
 
     data, input_node_changed = extract_data(run_node, settings)
     if not data:
@@ -295,15 +296,20 @@ def submit(run_node=None, success_callback=None):
                 states[run_node.fullName()] = state_data
 
         except:
+            if not nuke.GUI:
+                print(traceback.format_exc())
+
             execute_in_main_thread(
                 nuke.message, args=(traceback.format_exc()))
 
     headers = ["{}: {}".format(k, v) for k, v in settings['HTTP_HEADER'].items()]
     ws = websocket.WebSocketApp(url, header=headers, on_message=on_message, on_error=on_error)
 
+    task_loop = None
     if not settings['BACKGROUND_SUBMIT']:
         threading.Thread(target=ws.run_forever).start()
-        threading.Thread(target=progress_task_loop).start()
+        task_loop = threading.Thread(target=progress_task_loop)
+        task_loop.start()
 
     error = POST('prompt', body, settings)
 
@@ -316,3 +322,6 @@ def submit(run_node=None, success_callback=None):
         if task:
             del task[0]
         nuke.message(error)
+
+    if not nuke.GUI:
+        task_loop.join() if task_loop else None
