@@ -18,7 +18,11 @@ import nuke  # type: ignore
 
 
 def GET(endpoint, settings, warning=True, timeout=30):
-    url = '{}/{}'.format(settings['URL'], endpoint)
+    url = settings['URL']
+    if not '://' in url:
+        url = 'http://{}'.format(url)
+
+    url = '{}/{}'.format(url, endpoint)
     request = urllib2.Request(url, headers=settings['HTTP_HEADER'])
 
     try:
