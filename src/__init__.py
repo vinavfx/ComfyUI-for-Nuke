@@ -9,5 +9,6 @@ from . import (
     workflow_importer,
     scripts,
     multi_run,
-    queue_manager
+    queue_manager,
+    cmd
 )

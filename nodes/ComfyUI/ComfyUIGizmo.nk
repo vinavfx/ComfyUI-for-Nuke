@@ -5,13 +5,13 @@ Group {
  name ComfyUIGizmo
  tile_color 0xa2b275ff
  selected true
- xpos 124
- ypos -78
+ xpos 28
+ ypos -48
  addUserKnob {20 controls l Controls}
  addUserKnob {26 comfyui_gizmo l ComfyUIGizmo +INVISIBLE T "This knob only allows the read and backup to be outside the gizmo !"}
  addUserKnob {41 run l Run T Run.run}
  addUserKnob {41 backup_result l "Backup Result" -STARTLINE T Run.backup_result}
- addUserKnob {22 inferenceCallback +HIDDEN T "read = nuke.toNode(nuke.thisNode().fullName() + 'Read')" +STARTLINE}
+ addUserKnob {22 inferenceCallback +HIDDEN T "read = comfyui.cmd.get_read()" +STARTLINE}
 }
  Input {
   inputs 0
@@ -45,7 +45,7 @@ Group {
   xpos -40
   ypos -369
   addUserKnob {20 controls l Controls}
-  addUserKnob {22 run l Run t "Send a request to ComfyUI Server" T "def inference_callback(_, run_node):\n    callback = run_node.parent().knob('inferenceCallback')\n    if callback:\n        callback.execute()\n\ncomfyui.run.submit(nuke.thisNode(), inference_callback)" +STARTLINE}
+  addUserKnob {22 run l Run t "Send a request to ComfyUI Server" T comfyui.cmd.run() +STARTLINE}
   addUserKnob {22 backup_result l "Backup Result" t "Create a new Read Node from the last result" -STARTLINE T comfyui.read_media.save_image_backup()}
  }
   Input {
