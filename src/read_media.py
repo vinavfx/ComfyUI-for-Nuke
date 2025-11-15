@@ -399,7 +399,7 @@ def save_image_backup(run_node=None):
     ypos = read.ypos()
 
     offset_x = 100
-    offset_y = 150
+    offset_y = 20 + max(reads, key=lambda n: n.screenHeight()).screenHeight()
     per_row = 10
 
     for i, n in enumerate(reads):
