@@ -19,7 +19,7 @@ from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings
 from .connection import POST
 from .queue_manager import resolve_submission_target, interrupt
 from .nodes import extract_data
-from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, download_filename
+from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, resolve_filename
 
 
 states = {}
@@ -163,8 +163,8 @@ def submit(run_node=None, success_callback=None):
     global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
         settings['filename_prefix'] = update_filename_prefix(run_node, False)
-        downloaded_filename = download_filename(run_node, data, settings)
-        read = create_read(run_node, data, settings, downloaded_filename, True)
+        filename = resolve_filename(run_node, data, settings, True)
+        read = create_read(run_node, data, settings, filename)
 
         success_callback_wrapper(read, run_node)
         return
@@ -282,13 +282,14 @@ def submit(run_node=None, success_callback=None):
         if cancelled:
             return
 
-        downloaded_filename = download_filename(run_node, data, settings)
-        execute_in_main_thread(
-            progress_finished, args=(run_node, downloaded_filename))
+        filename = resolve_filename(run_node, data, settings)
 
-    def progress_finished(n, downloaded_filename):
+        execute_in_main_thread(
+            progress_finished, args=(run_node, filename))
+
+    def progress_finished(n, filename):
         try:
-            read = create_read(n, data, settings, downloaded_filename)
+            read = create_read(n, data, settings, filename)
             success_callback_wrapper(read, run_node)
 
             if not execution_error[0]:

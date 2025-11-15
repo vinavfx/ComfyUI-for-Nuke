@@ -287,21 +287,7 @@ def get_local_filename(settings, default_output=False):
     return os.path.join(sequence_output, filename)
 
 
-def download_filename(run_node, data, settings):
-    if settings['COMFYUI_LOCAL']:
-        return ''
-
-    output_dir = get_output_path(settings)
-
-    if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
-
-    return download_images(
-        get_separate_filename(settings), output_dir,
-        get_frame_range(data), settings, run_node)
-
-
-def create_read(run_node, data, settings, downloaded_filename, already_generated=False):
+def resolve_filename(run_node, data, settings, already_generated=False):
     if settings['COMFYUI_LOCAL']:
         if already_generated:
             filename = get_local_filename(settings)
@@ -309,8 +295,19 @@ def create_read(run_node, data, settings, downloaded_filename, already_generated
             filename = get_local_filename(settings, default_output=True)
             filename = relocate_filename(filename, settings)
     else:
-        filename = downloaded_filename
+        output_dir = get_output_path(settings)
 
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+
+        filename = download_images(
+            get_separate_filename(settings), output_dir,
+            get_frame_range(data), settings, run_node)
+
+    return filename
+
+
+def create_read(run_node, data, settings, filename):
     if not filename:
         return
 
