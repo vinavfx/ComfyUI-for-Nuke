@@ -8,12 +8,15 @@ import nuke  # type: ignore
 from .run import submit
 
 
-def get_read():
+def get_read(group=None):
     if nuke.GUI:
         return nuke.toNode(nuke.thisNode().fullName() + 'Read')
 
-    for n in nuke.thisNode().parent().nodes():
-        if n.name() == nuke.thisNode().name() + 'Read':
+    if not group:
+        group = nuke.thisNode()
+
+    for n in group.parent().nodes():
+        if n.name() == group.name() + 'Read':
             return n
 
 
