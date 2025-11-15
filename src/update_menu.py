@@ -43,6 +43,15 @@ def create_comfyui_node(node_type, inpanel=True):
     return create_node(node_data, inpanel)
 
 
+def refresh_models(node, knob_name, class_type):
+    update()
+    nodes = get_nodes()
+
+    knob = node.knob(knob_name)
+    models = nodes[class_type]['input']['required'][knob_name[:-1]][0]
+    knob.setValues(models)
+
+
 def create_node(data, inpanel=True):
     try:
         selected_node = nuke.selectedNode()
@@ -175,6 +184,13 @@ def create_node(data, inpanel=True):
             upload_knob.setValue('comfyui.upload.upload_media()')
             n.addKnob(upload_knob)
 
+        if category == 'loaders' and 'name' in knob_name:
+            refresh_models_knob = nuke.PyScript_Knob(
+                'refresh_models', 'Refresh Models')
+            refresh_models_knob.setValue(
+                'comfyui.update_menu.refresh_models(nuke.thisNode(), "{}", "{}")'. format(knob_name, data['name']))
+            n.addKnob(refresh_models_knob)
+
         if 'seed' in key:
             randomize_knob = nuke.Boolean_Knob('randomize')
             randomize_knob.setTooltip(
@@ -202,7 +218,6 @@ def create_node(data, inpanel=True):
             'outputs': [_class.lower()],
             'opt': is_optional
         })
-
 
     nuke.createNode('Output', inpanel=False)
     n.end()
