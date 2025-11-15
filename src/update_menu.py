@@ -181,7 +181,7 @@ def create_node(data, inpanel=True):
 
         if name in ['LoadAudio', 'LoadImage']:
             upload_knob = nuke.PyScript_Knob('upload', '+')
-            upload_knob.setValue('comfyui.upload.upload_media()')
+            upload_knob.setValue('comfyui.upload_and_download.upload_media()')
             n.addKnob(upload_knob)
 
         if category == 'loaders' and 'name' in knob_name:
