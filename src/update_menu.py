@@ -263,6 +263,9 @@ def update_menu():
 
 def update():
     global menu_updated
+    progress = nuke.ProgressTask('Updating ComfyUI')
+    progress.setMessage('Loading data from server...')
+    progress.setProgress(0)
 
     info = GET('object_info', get_settings())
     if not info:
@@ -313,8 +316,11 @@ def update():
         nuke.message('ComfyUI-HQ-Image-Save module is required !')
 
     icon_gray = '{}/icons/comfyui_icon_gray.png'.format(COMFYUI2NUKE)
+    progress.setMessage('Refreshing menu items...')
 
-    for fullname, value in sorted(nodes.items()):
+    for i, (fullname, value) in enumerate(sorted(nodes.items())):
+        progress.setProgress(i * 100 / len(nodes))
+
         input_data = value.get('input', {})
         input_order = value.get('input_order', {})
 
@@ -331,4 +337,5 @@ def update():
         comfyui_menu.addCommand(fullname, partial(
             create_node, value_utf8), '', icon_gray)
 
+    del progress
     return True
