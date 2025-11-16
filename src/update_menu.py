@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # -----------------------------------------------------------
 # AUTHOR --------> Francisco Contreras
 # OFFICE --------> Senior VFX Compositor, Software Developer
@@ -185,8 +186,7 @@ def create_node(data, inpanel=True):
             n.addKnob(upload_knob)
 
         if category == 'loaders' and 'name' in knob_name:
-            refresh_models_knob = nuke.PyScript_Knob(
-                'refresh_models', 'Refresh Models')
+            refresh_models_knob = nuke.PyScript_Knob('refresh_models', '🔄')
             refresh_models_knob.setValue(
                 'comfyui.update_menu.refresh_models(nuke.thisNode(), "{}", "{}")'. format(knob_name, data['name']))
             n.addKnob(refresh_models_knob)
@@ -334,7 +334,7 @@ def update():
     progress.setMessage('Refreshing menu items...')
 
     for i, (fullname, value) in enumerate(sorted(nodes.items())):
-        progress.setProgress(i * 100 / len(nodes))
+        progress.setProgress(int(i * 100 / len(nodes)))
 
         input_data = value.get('input', {})
         input_order = value.get('input_order', {})
