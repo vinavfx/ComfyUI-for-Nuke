@@ -61,10 +61,10 @@ def import_workflow():
                 knobs_to_inputs.append(
                     [True, name + '_', name, input_item['type'].lower()])
 
-        if node:
+        if node and knobs_to_inputs:
             convert_knobs(node, get_node_data(node), knobs_to_inputs)
 
-        if attrs['type'] == 'Note':
+        if attrs['type'] in ['Note', 'MarkdownNote']:
             node = nuke.createNode('StickyNote', inpanel=False)
             text = str(convert_to_utf8(attrs['widgets_values'][0]))
             formatted_note = '\n'.join(textwrap.wrap(text, width=40))
