@@ -9,7 +9,6 @@ from ..nodes import get_node_data, save_node_data
 
 
 def knob_to_input():
-
     node = selected_node()
     if not node:
         return
@@ -37,8 +36,14 @@ def knob_to_input():
     if not panel.show():
         return
 
-    for knob, knob_name, _class in knobs:
-        value = panel.value(knob_name)
+    knobs = [[panel.value(knob_name), knob, knob_name, _class]
+             for knob, knob_name, _class in knobs]
+
+    convert_knobs(node, data, knobs)
+
+
+def convert_knobs(node, data, knobs):
+    for value, knob, knob_name, _class in knobs:
 
         knob_data = {
             'opt': False,

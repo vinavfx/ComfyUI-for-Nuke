@@ -13,6 +13,7 @@ from .run import error_node_style
 from .nodes import get_node_data
 from .connection import convert_to_utf8
 from ..settings import COMFYUI2NUKE
+from .scripts.knob2input import convert_knobs
 
 
 def center_nodes(nodes):
@@ -30,6 +31,10 @@ def import_workflow():
     if not workflow_path:
         return
 
+    if not os.path.isfile(workflow_path):
+        nuke.message("Please select a JSON file, not a folder")
+        return
+
     if not update_menu():
         return
 
@@ -39,13 +44,25 @@ def import_workflow():
     created_nodes = {}
     not_installed = []
     nodes = []
-    ignore_nodes = ['PrimitiveNode']
+    ignore_nodes = []
 
     for attrs in data['nodes']:
         if attrs['type'] in ignore_nodes:
             continue
 
         node = create_comfyui_node(attrs['type'], inpanel=False)
+
+        knobs_to_inputs = []
+        knobs_to_inputs_names = []
+        for input_item in attrs.get('inputs', []):
+            if 'widget' in input_item and 'name' in input_item['widget']:
+                name = input_item['widget']['name']
+                knobs_to_inputs_names.append(name)
+                knobs_to_inputs.append(
+                    [True, name + '_', name, input_item['type'].lower()])
+
+        if node:
+            convert_knobs(node, get_node_data(node), knobs_to_inputs)
 
         if attrs['type'] == 'Note':
             node = nuke.createNode('StickyNote', inpanel=False)
@@ -72,7 +89,7 @@ def import_workflow():
         if not node.knob('tile_color').value():
             set_hex_color(node, attrs.get('bgcolor'))
 
-        created_nodes[attrs['id']] = (node, attrs)
+        created_nodes[attrs['id']] = (node, attrs, knobs_to_inputs_names)
         nodes.append(node)
         node.setSelected(False)
 
@@ -110,7 +127,7 @@ def import_workflow():
         if not link:
             return
 
-        for node, attrs in created_nodes.values():
+        for node, attrs, _ in created_nodes.values():
             for odata in attrs.get('outputs', {}):
                 links = odata['links']
                 if not links:
@@ -119,7 +136,7 @@ def import_workflow():
                 if link in links:
                     return node
 
-    for node, attrs in created_nodes.values():
+    for node, attrs, knobs_to_inputs_names in created_nodes.values():
 
         if attrs['type'] in ('Reroute', 'easy setNode'):
             knobs_order = []
@@ -162,6 +179,8 @@ def import_workflow():
 
             value = convert_to_utf8(value)
             knob = node.knob(knobs_order[i])
+            if not knob:
+                continue
 
             if type(value) == int:
                 value = value if value < 1e9 else 1e9
@@ -176,7 +195,7 @@ def import_workflow():
         for i, idata in enumerate(attrs.get('inputs', {})):
             link = idata['link']
 
-            if idata['name'] + '_' in knobs_order:
+            if idata['name'] + '_' in knobs_order and not idata['name'] in knobs_to_inputs_names:
                 continue
 
             onode = find_node_link(link)
