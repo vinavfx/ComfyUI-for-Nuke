@@ -83,16 +83,15 @@ def get_settings(run_node=None):
             break
 
     if override_node and override_node.knob('override_settings'):
-        def override(key, evaluate=False):
+        def override(key):
             knob = override_node.knob(key)
             if knob:
-                settings[key.upper()] = knob.evaluate(
-                ) if evaluate else knob.value()
+                settings[key.upper()] = override_node.knob(key).value()
 
-        override('url', True)
-        override('comfyui_dir', True)
+        override('comfyui_dir')
+        override('url')
         override('background_submit')
-        override('output_directory', True)
+        override('output_directory')
         override('use_exr_to_load_images')
         override('display_meta_in_read_node')
         settings['COMFYUI_LOCAL'] = not override_node.knob(
