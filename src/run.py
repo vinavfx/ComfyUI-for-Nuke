@@ -225,6 +225,7 @@ def submit(run_node=None, success_callback=None):
             if task:
                 if node:
                     task[0].setMessage(node)
+                    task[0].setProgress(0)
                     task_status['message'] = node
                 else:
                     del task[0]
