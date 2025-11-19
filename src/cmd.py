@@ -20,11 +20,11 @@ def get_read(group=None):
             return n
 
 
-def inference_callback(_, run_node):
-    callback = run_node.parent().knob('inferenceCallback')
+def inference_end(_, run_node):
+    callback = run_node.parent().knob('inferenceEnd')
     if callback:
         callback.execute()
 
 
 def run():
-    submit(nuke.thisNode(), inference_callback)
+    submit(nuke.thisNode(), inference_end)

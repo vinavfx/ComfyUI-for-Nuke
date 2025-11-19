@@ -11,7 +11,7 @@ Group {
  addUserKnob {26 comfyui_gizmo l ComfyUIGizmo +INVISIBLE T "This knob only allows the read and backup to be outside the gizmo !"}
  addUserKnob {41 run l Run T Run.run}
  addUserKnob {41 backup_result l "Backup Result" -STARTLINE T Run.backup_result}
- addUserKnob {22 inferenceCallback +HIDDEN T "read = comfyui.cmd.get_read()" +STARTLINE}
+ addUserKnob {22 inferenceEnd +HIDDEN T "read = comfyui.cmd.get_read()" +STARTLINE}
 }
  Input {
   inputs 0
