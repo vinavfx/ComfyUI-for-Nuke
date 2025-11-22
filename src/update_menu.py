@@ -49,7 +49,12 @@ def refresh_models(node, knob_name, class_type):
     nodes = get_nodes()
 
     knob = node.knob(knob_name)
-    models = nodes[class_type]['input']['required'][knob_name[:-1]][0]
+    _knob = nodes[class_type]['input']['required'][knob_name[:-1]]
+    models = _knob[0]
+
+    if models == 'COMBO':
+        models = _knob[1].get('options', [])
+
     knob.setValues(models)
 
 
