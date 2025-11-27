@@ -8,7 +8,7 @@ from ..nuke_util.nuke_util import get_output_nodes, get_input
 from .run import submit
 
 
-def multi_runs(runs):
+def multi_runs(runs, success_callback=None):
     if not runs:
         return
 
@@ -16,12 +16,15 @@ def multi_runs(runs):
     aux = run
 
     if run.knob('comfyui_gizmo'):
-        run = nuke.toNode(run.name() + '.Run')
+        run = nuke.toNode(run.fullName() + '.Run')
 
     def on_success(read):
         if read:
             for i, n in get_output_nodes(aux):
                 n.setInput(i, read)
+
+        if not runs and success_callback:
+            success_callback()
 
         multi_runs(runs)
 
