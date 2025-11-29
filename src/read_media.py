@@ -12,6 +12,7 @@ from ..nuke_util.media_util import get_name_no_padding
 from .nodes import get_connected_comfyui_nodes, get_input
 from .common import get_date_code
 from .upload_and_download import download_images
+from .update_menu import normalize_nodename
 
 
 def exr_filepath_fixed(run_node):
@@ -379,6 +380,7 @@ def save_image_backup(run_node=None):
     basename = get_name_no_padding(filename).replace(' ', '_')
     rand = os.path.basename(os.path.dirname(filename)).strip()
     name = '{}Backup_{}_{}'.format(main_node.name(), rand, basename)
+    name = normalize_nodename(name)
 
     if not nuke.toNode(name):
         new_read = nuke.createNode('Read', inpanel=False)
