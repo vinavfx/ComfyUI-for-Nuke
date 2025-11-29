@@ -35,11 +35,16 @@ def import_workflow():
         nuke.message("Please select a JSON file, not a folder")
         return
 
-    if not update_menu():
-        return
-
     data = jread(workflow_path)
     [n.setSelected(False) for n in nuke.selectedNodes()]
+
+    if not 'nodes' in data:
+        nuke.message(
+            "Incompatible workflow, perhaps exported from 'Export(API)'")
+        return
+
+    if not update_menu():
+        return
 
     created_nodes = {}
     not_installed = []
