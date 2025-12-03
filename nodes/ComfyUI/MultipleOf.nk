@@ -2,7 +2,7 @@ set cut_paste_input [stack 0]
 version 12.0 v8
 push $cut_paste_input
 Group {
- name PrepareImageForLatent
+ name MultipleOf
  tile_color 0xa57aaaff
  selected true
  xpos 701

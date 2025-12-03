@@ -80,7 +80,7 @@ of the output because that will be the batch size.
 
 2 - To make ComfyUI work with pixel values greater than 1 and less than 0, change tonemap knob to <b>'linear'</b> in the <b>'SaveEXR'</b> node
 
-3 - Latent images only work with formats with multiple of 8, add the '<b>PrepareImageForLatent</b>' node before passing the image
+3 - Latent images only work with formats with multiple of 8, add the '<b>MultipleOf</b>' node before passing the image
 to latent, and in the same node there is a button to create a restore node, put it on the image after inference to restore.
 
 4 - To load all ComfyUI nodes when Nuke starts, change the '<b>UPDATE_MENU_AT_START</b>' variable in the [settings.py](./settings.py) file
