@@ -5,10 +5,11 @@ Group {
  name PrepareImageForLatent
  tile_color 0xa57aaaff
  selected true
- xpos 119
- ypos -9
+ xpos 701
+ ypos -8
  addUserKnob {20 controls l Controls}
- addUserKnob {4 multiple_of l "Multiple of" M {8 16 32 64 "" "" "" "" ""}}
+ addUserKnob {3 multiple_of l "Multiple of"}
+ multiple_of 8
  addUserKnob {22 restore_format l "restore format" T "this = nuke.thisNode()\nthis.parent().begin()\n\n\[n.setSelected(False) for n in nuke.selectedNodes()]\n\nrestore_node = nuke.createNode('Reformat', inpanel=False)\nrestore_node.setName('RestoreFormat')\nrestore_node.knob('resize').setValue('none')\nrestore_node.knob('center').setValue(False)\nrestore_node.knob('type').setValue('to box')\nrestore_node.knob('box_fixed').setValue(True)\nrestore_node.setXYpos(this.xpos() + 120, this.ypos())\n\nrestore_node.knob('box_width').setExpression('\{\}.Input.width'.format(this.fullName()))\nrestore_node.knob('box_height').setExpression('\{\}.Input.height'.format(this.fullName()))" +STARTLINE}
 }
  Input {
@@ -17,30 +18,17 @@ Group {
   xpos -40
   ypos 39
  }
- Reformat {
-  type "to box"
-  box_width {{"ceil(input0.width / multiple) * multiple"}}
-  box_height {{"ceil(input0.height / multiple) * multiple"}}
-  box_fixed true
-  resize none
-  center false
-  name reformat
-  xpos -40
-  ypos 63
-  addUserKnob {20 User}
-  addUserKnob {3 multiple}
-  multiple {{"8 * pow(2, parent.multiple_of)"}}
- }
  Crop {
-  box {0 0 {input.width} {input.height}}
+  box {0 0 {"ceil(input0.width / multiple_of) * multiple_of"} {"ceil(input0.height / multiple_of) * multiple_of"}}
+  reformat true
   crop false
   name crop
   xpos -40
-  ypos 87
+  ypos 63
  }
  Output {
   name Output1
   xpos -40
-  ypos 111
+  ypos 87
  }
 end_group
