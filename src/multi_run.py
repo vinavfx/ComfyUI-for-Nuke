@@ -6,9 +6,10 @@
 import nuke  # type: ignore
 from ..nuke_util.nuke_util import get_output_nodes, get_input
 from .run import submit
+from .read_media import save_image_backup
 
 
-def multi_runs(runs, success_callback=None):
+def multi_runs(runs, success_callback=None, backup=False):
     if not runs:
         return
 
@@ -23,12 +24,24 @@ def multi_runs(runs, success_callback=None):
             for i, n in get_output_nodes(aux):
                 n.setInput(i, read)
 
+        if backup:
+            save_image_backup(run)
+
         if not runs and success_callback:
             success_callback()
 
-        multi_runs(runs)
+        multi_runs(runs, success_callback, backup)
 
     submit(run, success_callback=on_success)
+
+
+def multi_versions(run, versions, success_callback=None):
+    for n in run.nodes():
+        if versions > 1 and n.knob('randomize'):
+            n.knob('randomize').setValue(True)
+
+    runs = [run] * versions
+    multi_runs(runs, success_callback, backup=True)
 
 
 def execute_runs():
