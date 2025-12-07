@@ -31,8 +31,8 @@ def GET(endpoint, settings, warning=True, timeout=30):
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
         if warning:
-            nuke.message(
-                'Error connecting to server {} !'.format(settings['URL']))
+            nuke.executeInMainThread(nuke.message, args=(
+                'Error connecting to server {} !'.format(settings['URL']),))
 
 
 def POST(endpoint, data, settings):
