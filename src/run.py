@@ -132,7 +132,7 @@ def execute_in_main_thread(func, args=(), kwargs=None):
     return func(*args, **kwargs)
 
 
-def submit(run_node=None, success_callback=None):
+def submit(run_node=None, success_callback=None, force_queue=None):
     def success_callback_wrapper(read, run_node):
         if not success_callback:
             return
@@ -145,7 +145,7 @@ def submit(run_node=None, success_callback=None):
     run_node = run_node or nuke.thisNode()
     settings = get_settings(run_node)
 
-    if not resolve_submission_target(settings):
+    if not resolve_submission_target(settings, force_queue):
         return
 
     update_images_and_mask_inputs(settings)

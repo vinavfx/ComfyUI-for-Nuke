@@ -7,9 +7,11 @@ import nuke  # type: ignore
 from ..nuke_util.nuke_util import get_output_nodes, get_input
 from .run import submit
 from .read_media import save_image_backup
+from .queue_manager import resolve_submission_target
+from .common import get_settings
 
 
-def multi_runs(runs, success_callback=None, backup=False):
+def multi_runs(runs, success_callback=None, backup=False, force_queue=None):
     if not runs:
         return
 
@@ -30,9 +32,17 @@ def multi_runs(runs, success_callback=None, backup=False):
         if not runs and success_callback:
             success_callback()
 
-        multi_runs(runs, success_callback, backup)
+        multi_runs(runs, success_callback, backup, force_queue)
 
-    submit(run, success_callback=on_success)
+    if not force_queue:
+        settings = get_settings(run)
+        settings = resolve_submission_target(settings)
+        if not settings:
+            return
+
+        force_queue = 'localhost' if 'localhost' in settings['URL'] else 'server'
+
+    submit(run, success_callback=on_success, force_queue=force_queue)
 
 
 def multi_versions(run, versions, success_callback=None):

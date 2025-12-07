@@ -9,7 +9,7 @@ import nuke  # type: ignore
 
 from .connection import GET, POST
 
-def resolve_submission_target(settings):
+def resolve_submission_target(settings, force_queue=None):
     url = settings['URL']
     urls = []
 
@@ -81,7 +81,14 @@ def resolve_submission_target(settings):
                     i+1, user, ellipsis(nk, 50), send_id)
 
         try:
-            if nuke.askWithCancel("{}\n\nJobs running. Queue or run locally?\n<font color=#6cb56b>Yes = Queue / No = localhost".format(msg)):
+            if force_queue:
+                if force_queue == 'localhost':
+                    settings['URL'] = 'http://localhost:8188'
+                    localhost_submit = True
+                else:
+                    settings['URL'] = lowest_load_url
+
+            elif nuke.askWithCancel("{}\n\nJobs running. Queue or run locally?\n<font color=#6cb56b>Yes = Queue / No = localhost".format(msg)):
                 settings['URL'] = lowest_load_url
             else:
                 settings['URL'] = 'http://localhost:8188'
@@ -120,7 +127,7 @@ def resolve_submission_target(settings):
     if not GET('system_stats', settings):
         return
 
-    return True
+    return settings
 
 
 def interrupt(settings, client_id):
