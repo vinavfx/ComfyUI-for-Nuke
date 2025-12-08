@@ -239,6 +239,10 @@ def relocate_filename(filename, settings):
     if not filename:
         return
 
+    task = nuke.ProgressTask('Relocate from ComfyUI')
+    task.setMessage('Relocating: ...')
+    task.setProgress(0)
+
     output_dir = get_output_path(settings)
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
@@ -249,7 +253,18 @@ def relocate_filename(filename, settings):
     if os.path.exists(dst_dir):
         shutil.rmtree(dst_dir)
 
-    shutil.move(src_dir, dst_dir)
+    os.mkdir(dst_dir)
+    files = os.listdir(src_dir)
+
+    for i, f in enumerate(files):
+        src_file = os.path.join(src_dir, f)
+        if os.path.isfile(src_file):
+            shutil.move(src_file, dst_dir)
+
+        task.setMessage('Relocating: ' + f)
+        task.setProgress(int((i / float(len(files))) * 100))
+
+    task.setProgress(100)
 
     return os.path.join(dst_dir, os.path.basename(filename))
 
