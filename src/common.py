@@ -19,6 +19,13 @@ mask_inputs = ['mask', 'attn_mask', 'mask_optional']
 updated_inputs = False
 
 
+def show_message(msg):
+    if nuke.GUI:
+        nuke.message(msg)
+    else:
+        print(msg)
+
+
 def update_images_and_mask_inputs(settings):
     global image_inputs, mask_inputs, updated_inputs
 
@@ -103,7 +110,7 @@ def get_settings(run_node=None):
             try:
                 headers = json.loads(headers_value)
             except Exception as e:
-                nuke.message("Error parsing headers: {}".format(e))
+                show_message("Error parsing headers: {}".format(e))
                 headers = {}
             settings['HTTP_HEADER'] = headers
 
@@ -129,5 +136,5 @@ def get_comfyui_dir(settings):
     if os.path.isdir(os.path.join(COMFYUI_DIR, 'comfy')):
         return COMFYUI_DIR
 
-    nuke.message('Directory "{}" does not exist'.format(COMFYUI_DIR))
+    show_message('Directory "{}" does not exist'.format(COMFYUI_DIR))
     return ''

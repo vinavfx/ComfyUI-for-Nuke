@@ -8,14 +8,14 @@ import sys
 import nuke  # type: ignore
 import os
 import traceback
-from time import sleep
+from time import sleep, time
 import websocket
 import json
 import threading
 import copy
 
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
-from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings
+from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings, show_message
 from .connection import POST
 from .queue_manager import resolve_submission_target, interrupt
 from .nodes import extract_data
@@ -142,6 +142,7 @@ def submit(run_node=None, success_callback=None, force_queue=None):
         else:
             success_callback(read)
 
+    total_time = time()
     run_node = run_node or nuke.thisNode()
     settings = get_settings(run_node)
 
@@ -196,6 +197,20 @@ def submit(run_node=None, success_callback=None, force_queue=None):
 
     execution_error = [False]
 
+    def set_task_progress(progress, message = ''):
+        if not nuke.GUI:
+            print('{} : {}%'.format(message or task_status['message'], progress))
+
+        if not task:
+            return
+
+        task[0].setProgress(progress)
+        task_status['progress'] = progress
+
+        if message:
+            task[0].setMessage(message)
+            task_status['message'] = message
+
     def on_message(_, message):
         try:
             message = json.loads(message)
@@ -215,18 +230,14 @@ def submit(run_node=None, success_callback=None, force_queue=None):
 
         elif type_data == 'progress':
             progress = int(data['value'] * 100 / float(data['max'] or 0.01))
-            if task:
-                task[0].setProgress(progress)
-                task_status['progress'] = progress
+            set_task_progress(progress)
 
         elif type_data == 'executing':
             node = data.get('node')
 
             if task:
                 if node:
-                    task[0].setMessage(node)
-                    task[0].setProgress(0)
-                    task_status['message'] = node
+                    set_task_progress(0, node)
                 else:
                     del task[0]
 
@@ -245,7 +256,7 @@ def submit(run_node=None, success_callback=None, force_queue=None):
 
             execute_in_main_thread(
                 error_node_style, args=(data.get('node_id'), True, execution_message))
-            execute_in_main_thread(nuke.message, args=(error))
+            execute_in_main_thread(show_message, args=(error))
 
     def on_error(ws, error):
         ws.close()
@@ -256,7 +267,7 @@ def submit(run_node=None, success_callback=None, force_queue=None):
             return
 
         execution_error[0] = True
-        execute_in_main_thread(nuke.message, args=('error: ' + str(error)))
+        execute_in_main_thread(show_message, args=('error: ' + str(error)))
 
     def progress_task_loop():
         cancelled = False
@@ -302,7 +313,7 @@ def submit(run_node=None, success_callback=None, force_queue=None):
                 print(traceback.format_exc())
 
             execute_in_main_thread(
-                nuke.message, args=(traceback.format_exc()))
+                show_message, args=(traceback.format_exc()))
 
     headers = ["{}: {}".format(k, v) for k, v in settings['HTTP_HEADER'].items()]
     ws = websocket.WebSocketApp(url, header=headers, on_message=on_message, on_error=on_error)
@@ -316,14 +327,15 @@ def submit(run_node=None, success_callback=None, force_queue=None):
     error = POST('prompt', body, settings)
 
     if settings['BACKGROUND_SUBMIT'] and not error:
-        nuke.message('Workflow sent to the ComfyUI Queue\n{}/output/{}'.format(
+        show_message('Workflow sent to the ComfyUI Queue\n{}/output/{}'.format(
             settings['COMFYUI_DIR'], os.path.dirname(settings['filename_prefix'] or '')))
 
     if error:
         execution_error[0] = True
         if task:
             del task[0]
-        nuke.message(error)
+        show_message(error)
 
     if not nuke.GUI:
         task_loop.join() if task_loop else None
+        print('\nPrompt executed in {} seconds'.format(round(time() - total_time, 1)))

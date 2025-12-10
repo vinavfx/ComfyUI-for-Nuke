@@ -8,6 +8,7 @@ import re
 import nuke  # type: ignore
 
 from .connection import GET, POST
+from .common import show_message
 
 def resolve_submission_target(settings, force_queue=None):
     url = settings['URL']
@@ -20,7 +21,7 @@ def resolve_submission_target(settings, force_queue=None):
         try:
             urls = json.loads(url)
         except:
-            nuke.message(
+            show_message(
                 '{}\nIt has to be an URL address or a list of URL addresses as JSON !'.format(url))
             return
 
@@ -58,7 +59,7 @@ def resolve_submission_target(settings, force_queue=None):
         pending_client += [p[3]['client_id'] for p in pending]
 
     if not available_url and not lowest_load_url:
-        nuke.message(
+        show_message(
             "{}\nNo ComfyUI servers found running !".format(', '.join(urls)))
         return
 
@@ -107,7 +108,7 @@ def resolve_submission_target(settings, force_queue=None):
             try:
                 comfyui_dirs = json.loads(comfyui_dir)
             except:
-                nuke.message(
+                show_message(
                     '{}\nIt must be a ComfyUI directory or a list of ComfyUI directories in JSON format!'.format(comfyui_dir))
                 return
 
@@ -120,7 +121,7 @@ def resolve_submission_target(settings, force_queue=None):
         if localhost_submit:
             settings['COMFYUI_DIR'] = comfyui_dirs[0]
         elif not settings['COMFYUI_DIR']:
-            nuke.message(
+            show_message(
                 'URL "{}" without assigned ComfyUI directory !'.format(settings['URL']))
             return
 
@@ -147,4 +148,4 @@ def interrupt(settings, client_id):
     if prompt_id:
         error = POST(endpoint, {'delete': [prompt_id]}, settings)
         if error:
-            nuke.message(error)
+            show_message(error)

@@ -15,7 +15,7 @@ from .upload_and_download import upload_images
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
 from .common import (image_inputs, mask_inputs, get_server_comfyui_dir,
-                     get_comfyui_dir, get_name_code)
+                     get_comfyui_dir, get_name_code, show_message)
 
 states = {}
 
@@ -24,13 +24,12 @@ def extract_data(run_node, settings):
     output_node = get_input(run_node, 0)
 
     if not output_node:
-        nuke.message('Run is not connected!')
+        show_message('Run is not connected!')
         return {}, None
 
     output_node_data = get_node_data(output_node)
     if not output_node_data.get('output_node', False):
-        nuke.message(
-            'Connect only to output nodes like SaveImage or SaveEXR !')
+        show_message('Connect only to output nodes like SaveImage or SaveEXR !')
         return {}, None
 
     nodes = get_connected_comfyui_nodes(run_node)
@@ -223,7 +222,7 @@ def create_load_images_and_save(node, tonemap, settings):
     except:
         nuke.delete(write)
         nuke.delete(invert)
-        nuke.message(traceback.format_exc())
+        show_message(traceback.format_exc())
         return {}, False, True
 
     nuke.delete(write)
@@ -401,7 +400,7 @@ def check_node(node):
             continue
 
         if not inode:
-            nuke.message(
+            show_message(
                 node.name() + ' : "{}" input disconnected !'.format(input_name))
             return
 
@@ -410,13 +409,13 @@ def check_node(node):
         if not inode_data:
             if input_name in image_inputs + mask_inputs:
                 if inode.bbox().w() < 10 or inode.bbox().h() < 10:
-                    nuke.message(
+                    show_message(
                         '{}: input "{}" not connected or bbox without information in some frame !'.format(node.name(), input_name))
                     return
                 continue
 
             else:
-                nuke.message('{}: "{}" does not support "{}" !'.format(
+                show_message('{}: "{}" does not support "{}" !'.format(
                     node.name(), input_name, inode.name()))
                 return
 
@@ -426,7 +425,7 @@ def check_node(node):
 
         if '*' not in allowed_outputs and '*' not in inode_outputs:
             if not any(o in allowed_outputs for o in inode_outputs):
-                nuke.message(
+                show_message(
                     node.name() + ' : "{}" connection not supported !'.format(input_name))
                 return
 

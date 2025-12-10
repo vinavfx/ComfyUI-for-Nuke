@@ -15,6 +15,7 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
+from .common import show_message
 
 
 def GET(endpoint, settings, warning=True, timeout=30):
@@ -31,7 +32,7 @@ def GET(endpoint, settings, warning=True, timeout=30):
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
         if warning:
-            nuke.executeInMainThread(nuke.message, args=(
+            nuke.executeInMainThread(show_message, args=(
                 'Error connecting to server {} !'.format(settings['URL']),))
 
 
@@ -55,7 +56,7 @@ def POST(endpoint, data, settings):
             try:
                 error = json.loads(error_str)
             except json.JSONDecodeError:
-                nuke.message('Error parsing JSON from server')
+                show_message('Error parsing JSON from server')
                 return 'ERROR: JSON parsing'
 
             errors = 'ERROR: {}\n\n'.format(error['error']['message'].upper())
@@ -73,7 +74,7 @@ def POST(endpoint, data, settings):
 
             return errors
         except:
-            nuke.message(traceback.format_exc())
+            show_message(traceback.format_exc())
 
     except Exception as e:
         return 'Error: {}'.format(e)

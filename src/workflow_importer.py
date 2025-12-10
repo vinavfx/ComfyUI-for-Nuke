@@ -12,6 +12,7 @@ from .update_menu import create_comfyui_node, normalize_nodename, update_menu
 from .run import error_node_style
 from .nodes import get_node_data
 from .connection import convert_to_utf8
+from .common import show_message
 from ..settings import COMFYUI2NUKE
 from .scripts.knob2input import convert_knobs
 
@@ -32,14 +33,14 @@ def import_workflow():
         return
 
     if not os.path.isfile(workflow_path):
-        nuke.message("Please select a JSON file, not a folder")
+        show_message("Please select a JSON file, not a folder")
         return
 
     data = jread(workflow_path)
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
     if not 'nodes' in data:
-        nuke.message(
+        show_message(
             "Incompatible workflow, perhaps exported from 'Export(API)'")
         return
 
@@ -194,7 +195,7 @@ def import_workflow():
                 try:
                     knob.setValue(value)
                 except:
-                    nuke.message('Could not set the knob "{}" value for this node "{}" !'.format(
+                    show_message('Could not set the knob "{}" value for this node "{}" !'.format(
                         knob.name(), node.name()))
 
         for i, idata in enumerate(attrs.get('inputs', {})):
@@ -218,5 +219,5 @@ def import_workflow():
 
     if not_installed:
         nodes_list = '\n'.join(not_installed)
-        nuke.message(
+        show_message(
             'You need to install these nodes in ComfyUI:\n\n' + nodes_list)

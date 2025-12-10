@@ -12,7 +12,7 @@ import nuke  # type: ignore
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import GET, convert_to_utf8
 from ..settings import COMFYUI2NUKE
-from .common import get_settings
+from .common import get_settings, show_message
 
 comfyui_nodes = {}
 menu_updated = False
@@ -333,7 +333,7 @@ def update():
         nodes[item_name] = value
 
     if not load_exr_exist:
-        nuke.message('ComfyUI-HQ-Image-Save module is required !')
+        show_message('ComfyUI-HQ-Image-Save module is required !')
 
     icon_gray = '{}/icons/comfyui_icon_gray.png'.format(COMFYUI2NUKE)
     progress.setMessage('Refreshing menu items...')
