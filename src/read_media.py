@@ -44,7 +44,7 @@ def get_tonemap(run_node):
     return tonemap_knob.value()
 
 
-def update_filename_prefix(run_node, update=True):
+def update_filename_prefix(run_node, update=True, data={}):
     output_node = get_input(run_node, 0)
     if not output_node:
         return
@@ -64,6 +64,7 @@ def update_filename_prefix(run_node, update=True):
 
     new_prefix = '{}/{}'.format(get_date_code(), prefix)
     filename_prefix_knob.setValue(new_prefix)
+    data[output_node.name()]['inputs']['filename_prefix'] = new_prefix
     return new_prefix
 
 

@@ -170,12 +170,7 @@ def submit(run_node=None, success_callback=None, force_queue=None):
         success_callback_wrapper(read, run_node)
         return
 
-    settings['filename_prefix'] = update_filename_prefix(run_node)
-
-    data, _ = extract_data(run_node, settings)
-    if not data:
-        return
-
+    settings['filename_prefix'] = update_filename_prefix(run_node, data=data)
     state_data = copy.deepcopy(data)
 
     global prompt_counter; prompt_counter += 1
