@@ -64,5 +64,8 @@ def setup():
     comfyui_menu.addCommand(
         'Scripts/exportWorkflow', scripts.export_workflow.export_workflow, icon=icon_gray)
 
+    comfyui_menu.addCommand(
+        'Scripts/executeRuns', execute_runs.execute_runs, 'Ctrl+R', icon=icon_gray)
+
     if UPDATE_MENU_AT_START:
         update_menu.update()

@@ -4,7 +4,7 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import nuke  # type: ignore
-from ..nuke_util.nuke_util import get_output_nodes, get_input
+from ..nuke_util.nuke_util import get_output_nodes
 from .run import submit
 from .read_media import save_image_backup
 from .queue_manager import resolve_submission_target
@@ -56,23 +56,18 @@ def multi_versions(run, versions, success_callback=None):
 
 def execute_runs():
     runs = []
-    this = nuke.thisNode()
-    for i in range(this.inputs()):
-        inode = get_input(this, i)
 
-        if not inode:
-            continue
-
-        if inode.Class() == 'Read':
-            qp_name = inode.name().replace('Read', '')
+    for n in nuke.selectedNodes():
+        if n.Class() == 'Read':
+            qp_name = n.name().replace('Read', '')
             qp = nuke.toNode(qp_name)
             if qp:
                 runs.append(qp)
                 continue
 
-        if not inode.knob('run'):
+        if not n.knob('run'):
             continue
 
-        runs.append(inode)
+        runs.append(n)
 
     multi_runs(runs)
