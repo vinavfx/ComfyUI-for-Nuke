@@ -10,7 +10,6 @@ Group {
  ypos -369
  addUserKnob {20 controls l Controls}
  addUserKnob {22 run l Run t "Send a request to ComfyUI Server" T comfyui.cmd.run() +STARTLINE}
- addUserKnob {22 backup_result l "Backup Result" t "Create a new Read Node from the last result" -STARTLINE T comfyui.read_media.save_image_backup()}
 }
  Input {
   inputs 0

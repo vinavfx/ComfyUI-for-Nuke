@@ -6,12 +6,11 @@
 import nuke  # type: ignore
 from ..nuke_util.nuke_util import get_output_nodes
 from .run import submit
-from .read_media import save_image_backup
 from .queue_manager import resolve_submission_target
 from .common import get_settings
 
 
-def multi_runs(runs, success_callback=None, backup=False, force_queue=None):
+def multi_runs(runs, success_callback=None, force_queue=None):
     if not runs:
         return
 
@@ -26,13 +25,10 @@ def multi_runs(runs, success_callback=None, backup=False, force_queue=None):
             for i, n in get_output_nodes(aux):
                 n.setInput(i, read)
 
-        if backup:
-            save_image_backup(run)
-
         if not runs and success_callback:
             success_callback()
 
-        multi_runs(runs, success_callback, backup, force_queue)
+        multi_runs(runs, success_callback, force_queue)
 
     if not force_queue:
         settings = get_settings(run)
@@ -51,7 +47,7 @@ def multi_versions(run, versions, success_callback=None):
             n.knob('randomize').setValue(True)
 
     runs = [run] * versions
-    multi_runs(runs, success_callback, backup=True)
+    multi_runs(runs, success_callback)
 
 
 def execute_runs():

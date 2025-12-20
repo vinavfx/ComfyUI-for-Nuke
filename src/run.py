@@ -165,7 +165,7 @@ def submit(run_node=None, success_callback=None, force_queue=None):
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
         settings['filename_prefix'] = update_filename_prefix(run_node, False)
         filename = resolve_filename(run_node, data, settings, True)
-        read = create_read(run_node, data, settings, filename)
+        read = create_read(run_node, data, settings, filename, already_exists=True)
 
         success_callback_wrapper(read, run_node)
         return

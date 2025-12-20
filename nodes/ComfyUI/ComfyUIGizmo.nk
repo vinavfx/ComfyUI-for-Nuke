@@ -10,7 +10,6 @@ Group {
  addUserKnob {20 controls l Controls}
  addUserKnob {26 comfyui_gizmo l ComfyUIGizmo +INVISIBLE T "This knob only allows the read and backup to be outside the gizmo !"}
  addUserKnob {41 run l Run T Run.run}
- addUserKnob {41 backup_result l "Backup Result" -STARTLINE T Run.backup_result}
  addUserKnob {22 inferenceEnd +HIDDEN T "read = comfyui.cmd.get_read()" +STARTLINE}
 }
  Input {
@@ -46,7 +45,6 @@ Group {
   ypos -369
   addUserKnob {20 controls l Controls}
   addUserKnob {22 run l Run t "Send a request to ComfyUI Server" T comfyui.cmd.run() +STARTLINE}
-  addUserKnob {22 backup_result l "Backup Result" t "Create a new Read Node from the last result" -STARTLINE T comfyui.read_media.save_image_backup()}
  }
   Input {
    inputs 0

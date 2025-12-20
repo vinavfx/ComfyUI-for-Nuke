@@ -324,9 +324,12 @@ def resolve_filename(run_node, data, settings, already_generated=False):
     return filename
 
 
-def create_read(run_node, data, settings, filename):
+def create_read(run_node, data, settings, filename, already_exists=False):
     if not filename:
         return
+
+    if not already_exists:
+        backup_previous_generation(run_node)
 
     meta = []
     if data:
@@ -376,7 +379,7 @@ def create_read(run_node, data, settings, filename):
     return read
 
 
-def save_image_backup(run_node=None):
+def backup_previous_generation(run_node=None):
     if not run_node:
         run_node = nuke.thisNode()
 
