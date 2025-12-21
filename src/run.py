@@ -144,6 +144,7 @@ def submit(run_node=None, success_callback=None, force_queue=None):
 
     total_time = time()
     run_node = run_node or nuke.thisNode()
+    run_node.begin()
     settings = get_settings(run_node)
 
     if not resolve_submission_target(settings, force_queue):

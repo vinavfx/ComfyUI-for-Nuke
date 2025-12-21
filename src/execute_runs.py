@@ -55,15 +55,17 @@ def execute_runs():
 
     for n in nuke.selectedNodes():
         if n.Class() == 'Read':
-            qp_name = n.name().replace('Read', '')
-            qp = nuke.toNode(qp_name)
-            if qp:
-                runs.append(qp)
+            run_name = n.name().replace('Read', '')
+            run = nuke.toNode(run_name)
+
+            if run and not run in runs:
+                runs.append(run)
                 continue
 
         if not n.knob('run'):
             continue
 
-        runs.append(n)
+        if not n in runs:
+            runs.append(n)
 
     multi_runs(runs)
