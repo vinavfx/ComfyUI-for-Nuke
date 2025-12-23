@@ -7,7 +7,6 @@
 from functools import partial
 import re
 import json
-import threading
 import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
@@ -283,9 +282,6 @@ def update_menu():
 
 
 def update():
-    threading.Thread(target=update_thread).start()
-
-def update_thread():
     global menu_updated
     progress = nuke.ProgressTask('Updating ComfyUI')
     progress.setMessage('Loading data from server...')
@@ -337,8 +333,7 @@ def update_thread():
         nodes[item_name] = value
 
     if not load_exr_exist:
-        nuke.executeInMainThread(show_message, args=(
-            'ComfyUI-HQ-Image-Save module is required !'))
+        show_message('ComfyUI-HQ-Image-Save module is required !')
 
     icon_gray = '{}/icons/comfyui_icon_gray.png'.format(COMFYUI2NUKE)
     progress.setMessage('Refreshing menu items...')
