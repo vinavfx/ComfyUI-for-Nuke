@@ -8,6 +8,7 @@ from ..nuke_util.nuke_util import get_output_nodes
 from .run import submit
 from .queue_manager import resolve_submission_target
 from .common import get_settings
+from .cmd import inference_end
 
 
 def multi_runs(runs, success_callback=None, force_queue=None):
@@ -25,8 +26,10 @@ def multi_runs(runs, success_callback=None, force_queue=None):
             for i, n in get_output_nodes(aux):
                 n.setInput(i, read)
 
-        if not runs and success_callback:
-            success_callback()
+        if not runs:
+            if success_callback:
+                success_callback()
+            inference_end(read, run)
 
         multi_runs(runs, success_callback, force_queue)
 
@@ -65,7 +68,17 @@ def execute_runs():
         if not n.knob('run'):
             continue
 
-        if not n in runs:
-            runs.append(n)
+        if n in runs:
+            continue
+
+        versions = 1
+        if n.knob('versions'):
+            versions = int(n.knob('versions').value())
+
+        for child in n.nodes():
+            if versions > 1 and child.knob('randomize'):
+                child.knob('randomize').setValue(True)
+
+        runs.extend([n] * versions)
 
     multi_runs(runs)
