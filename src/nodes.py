@@ -329,6 +329,9 @@ def extract_node_data(node):
             except:
                 pass
 
+        elif type(knob) == nuke.Multiline_Eval_String_Knob:
+            value = knob.toScript()
+
         if type(value) in [float, int]:
             value = int(value) if int(value) == value else value
 
