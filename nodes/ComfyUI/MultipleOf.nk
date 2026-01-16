@@ -5,8 +5,8 @@ Group {
  name MultipleOf
  tile_color 0xa57aaaff
  selected true
- xpos 701
- ypos -8
+ xpos 215
+ ypos 18
  addUserKnob {20 controls l Controls}
  addUserKnob {3 multiple_of l "Multiple of"}
  multiple_of 8
@@ -16,19 +16,22 @@ Group {
   inputs 0
   name Input
   xpos -40
-  ypos 39
+  ypos 15
  }
- Crop {
-  box {0 0 {"ceil(input0.width / multiple_of) * multiple_of"} {"ceil(input0.height / multiple_of) * multiple_of"}}
-  reformat true
-  crop false
-  name crop
+ Reformat {
+  type "to box"
+  box_width {{"ceil(input0.width / multiple_of) * multiple_of"}}
+  box_height {{"ceil(input0.height / multiple_of) * multiple_of"}}
+  box_fixed true
+  resize none
+  center false
+  name Reformat
   xpos -40
-  ypos 63
+  ypos 39
  }
  Output {
   name Output1
   xpos -40
-  ypos 87
+  ypos 63
  }
 end_group

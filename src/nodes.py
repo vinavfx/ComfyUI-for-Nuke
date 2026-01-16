@@ -196,7 +196,14 @@ def create_load_images_and_save(node, tonemap, settings):
 
     onode = node
     invert = None
-    if not USE_EXR_TO_LOAD_IMAGES:
+    crop = None
+    if USE_EXR_TO_LOAD_IMAGES:
+        crop = nuke.createNode('Crop', inpanel=False)
+        crop.knob('box').setValue([0, 0, node.width(), node.height()])
+        crop.setInput(0, node)
+        crop.setXYpos(node.xpos(), node.ypos())
+        onode = crop
+    else:
         # VHS_LoadImages inverts the alpha
         invert = nuke.createNode('Invert', inpanel=False)
         invert.knob('channels').setValue('alpha')
@@ -227,6 +234,7 @@ def create_load_images_and_save(node, tonemap, settings):
 
     nuke.delete(write)
     nuke.delete(invert)
+    nuke.delete(crop)
 
     state_id = random.randrange(1, 9999)
     current_state['sequence_dir'] = sequence_dir
