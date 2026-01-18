@@ -10,6 +10,30 @@ import nuke  # type: ignore
 from .connection import GET, POST
 from .common import show_message
 
+
+def job_running_message(running_client, pending_client):
+    def ellipsis(s, n):
+        return s if len(s) <= n else s[:n - 3] + "..."
+
+    msg = '<b>Running</b>:\n'
+    for i, client in enumerate(running_client):
+        user, nk, send_id = (client.split(':') + [client, '', 1])[:3]
+        msg += '    {} - <font color=orange>{}</font> : {} : <font color=#6cb56b>{}</font>\n'.format(
+            i + 1, user, ellipsis(nk, 50), send_id)
+
+    if pending_client:
+        msg += '\n<b>Pending</b>:\n'
+        for i, client in enumerate(pending_client):
+            user, nk, send_id = (client.split(':') + [client, '', ''])[:3]
+            msg += '    {} - <font color=orange>{}</font> : {} : <font color=#6cb56b>{}</font>\n'.format(
+                i + 1, user, ellipsis(nk, 50), send_id)
+
+    msg = "{}\n\nJobs running. Queue or run locally?\n<font color=#6cb56b>Yes = Queue / No = localhost".format(
+        msg)
+
+    return msg
+
+
 def resolve_submission_target(settings, force_queue=None):
     url = settings['URL']
     urls = []
@@ -34,6 +58,7 @@ def resolve_submission_target(settings, force_queue=None):
     lowest_load_url = None
     lowest_pending = 99999
     localhost_submit = False
+    localhost = 'http://localhost:8188'
 
     running_client = []
     pending_client = []
@@ -59,40 +84,30 @@ def resolve_submission_target(settings, force_queue=None):
         pending_client += [p[3]['client_id'] for p in pending]
 
     if not available_url and not lowest_load_url:
-        show_message(
-            "{}\nNo ComfyUI servers found running !".format(', '.join(urls)))
-        return
+        settings['URL'] = localhost
+        localhost_submit = True
+
+        if not GET('queue', settings, warning=False, timeout=2):
+            show_message("{}\nNo ComfyUI servers found running !".format(
+                ', '.join(urls + [settings['URL']])))
+            return
 
     elif available_url:
         settings['URL'] = available_url
 
     else:
-        def ellipsis(s, n): return s if len(s) <= n else s[:n-3] + "..."
-        msg = '<b>Running</b>:\n'
-        for i, client in enumerate(running_client):
-            user, nk, send_id = (client.split(':') + [client, '', 1])[:3]
-            msg += '    {} - <font color=orange>{}</font> : {} : <font color=#6cb56b>{}</font>\n'.format(
-                i+1, user, ellipsis(nk, 50), send_id)
-
-        if pending_client:
-            msg += '\n<b>Pending</b>:\n'
-            for i, client in enumerate(pending_client):
-                user, nk, send_id = (client.split(':') + [client, '', ''])[:3]
-                msg += '    {} - <font color=orange>{}</font> : {} : <font color=#6cb56b>{}</font>\n'.format(
-                    i+1, user, ellipsis(nk, 50), send_id)
-
         try:
             if force_queue:
                 if force_queue == 'localhost':
-                    settings['URL'] = 'http://localhost:8188'
+                    settings['URL'] = localhost
                     localhost_submit = True
                 else:
                     settings['URL'] = lowest_load_url
 
-            elif nuke.askWithCancel("{}\n\nJobs running. Queue or run locally?\n<font color=#6cb56b>Yes = Queue / No = localhost".format(msg)):
+            elif nuke.askWithCancel(job_running_message(running_client, pending_client)):
                 settings['URL'] = lowest_load_url
             else:
-                settings['URL'] = 'http://localhost:8188'
+                settings['URL'] = localhost
                 localhost_submit = True
         except:
             return
