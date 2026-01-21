@@ -26,10 +26,10 @@ def multi_runs(runs, success_callback=None, force_queue=None):
             for i, n in get_output_nodes(aux):
                 n.setInput(i, read)
 
+        inference_end(read, run)
         if not runs:
             if success_callback:
                 success_callback()
-            inference_end(read, run)
 
         multi_runs(runs, success_callback, force_queue)
 
