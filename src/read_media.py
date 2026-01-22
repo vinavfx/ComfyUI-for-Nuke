@@ -395,7 +395,7 @@ def backup_previous_generation(run_node=None):
 
     main_node.parent().begin()
 
-    read = nuke.toNode(main_node.name() + 'Read')
+    read = nuke.toNode(main_node.fullName() + 'Read')
     if not read:
         return
 
