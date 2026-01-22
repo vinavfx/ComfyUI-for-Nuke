@@ -15,7 +15,7 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
-from .common import show_message
+from .common import show_message, execute_in_main_thread
 
 
 def GET(endpoint, settings, warning=True, timeout=30):
@@ -32,7 +32,7 @@ def GET(endpoint, settings, warning=True, timeout=30):
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
         if warning:
-            nuke.executeInMainThread(show_message, args=(
+            execute_in_main_thread(show_message, args=(
                 'Error connecting to server {} !'.format(settings['URL']),))
 
 

@@ -10,6 +10,7 @@ from datetime import datetime
 import hashlib
 from ..settings import *
 from ..nuke_util.nuke_util import get_connected_nodes
+import threading
 
 if not getattr(nuke, 'comfyui_running', False):
     nuke.comfyui_running = False
@@ -24,6 +25,16 @@ def show_message(msg):
         nuke.message(msg)
     else:
         print(msg)
+
+
+def execute_in_main_thread(func, args=(), kwargs=None):
+    if kwargs is None:
+        kwargs = {}
+
+    if nuke.GUI and not threading.current_thread().name == 'MainThread':
+        return nuke.executeInMainThread(func, args=args, kwargs=kwargs)
+
+    return func(*args, **kwargs)
 
 
 def update_images_and_mask_inputs(settings):

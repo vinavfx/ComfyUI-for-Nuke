@@ -15,7 +15,7 @@ import threading
 import copy
 
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
-from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings, show_message
+from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings, show_message, execute_in_main_thread
 from .connection import POST
 from .queue_manager import resolve_submission_target, interrupt
 from .nodes import extract_data
@@ -120,16 +120,6 @@ def preview_image_update(node_name, data, settings):
 
     preview_node.knob('postage_stamp').setValue(True)
     preview_node.end()
-
-
-def execute_in_main_thread(func, args=(), kwargs=None):
-    if kwargs is None:
-        kwargs = {}
-
-    if nuke.GUI:
-        return nuke.executeInMainThread(func, args=args, kwargs=kwargs)
-
-    return func(*args, **kwargs)
 
 
 def submit(run_node=None, success_callback=None, force_queue=None):
