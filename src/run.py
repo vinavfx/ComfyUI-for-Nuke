@@ -123,12 +123,14 @@ def preview_image_update(node_name, data, settings):
 
 
 def submit(run_node=None, success_callback=None, force_queue=None):
-    def success_callback_wrapper(read, run_node):
+    def success_callback_wrapper(read, run_node, error=None):
         if not success_callback:
             return
 
-        if success_callback.__code__.co_argcount >= 2:
+        if success_callback.__code__.co_argcount == 2:
             success_callback(read, run_node)
+        elif success_callback.__code__.co_argcount == 3:
+            success_callback(read, run_node, error)
         else:
             success_callback(read)
 
@@ -288,7 +290,7 @@ def submit(run_node=None, success_callback=None, force_queue=None):
     def progress_finished(n, filename):
         try:
             read = create_read(n, data, settings, filename)
-            success_callback_wrapper(read, run_node)
+            success_callback_wrapper(read, run_node, execution_error[0])
 
             if not execution_error[0]:
                 remove_all_error_style(run_node)

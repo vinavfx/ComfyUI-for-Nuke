@@ -21,15 +21,19 @@ def multi_runs(runs, success_callback=None, force_queue=None):
     if run.knob('comfyui_gizmo'):
         run = nuke.toNode(run.fullName() + '.Run')
 
-    def on_success(read):
+    def on_success(read, _, error):
+        if error:
+            if success_callback:
+                success_callback()
+            return
+
         if read:
             for i, n in get_output_nodes(aux):
                 n.setInput(i, read)
 
         inference_end(read, run)
-        if not runs:
-            if success_callback:
-                success_callback()
+        if not runs and success_callback:
+            success_callback()
 
         multi_runs(runs, success_callback, force_queue)
 
