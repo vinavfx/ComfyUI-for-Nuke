@@ -15,7 +15,7 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
-from .common import show_message, execute_in_main_thread
+from .common import show_message, execute_in_main_thread, get_settings
 
 
 def GET(endpoint, settings, warning=True, timeout=30):
@@ -33,7 +33,14 @@ def GET(endpoint, settings, warning=True, timeout=30):
     except:
         if warning:
             execute_in_main_thread(show_message, args=(
-                'Error connecting to server {} !'.format(settings['URL']),))
+                'Error connecting to ComfyUI server {} !'.format(settings['URL']),))
+
+
+def check_connection():
+    if GET('system_stats', get_settings()):
+        return True
+
+    return False
 
 
 def POST(endpoint, data, settings):
