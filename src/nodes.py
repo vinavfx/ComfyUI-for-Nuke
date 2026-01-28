@@ -71,6 +71,8 @@ def extract_data(run_node, settings):
             with nuke.Root():
                 input_node = nuke.toNode(input_fullname) if input_key else None
 
+            run_node.begin()
+
             if not input_node:
                 continue
 

@@ -26,8 +26,12 @@ states = {}
 prompt_counter = 0
 
 
-def error_node_style(node_name, enable, message=''):
-    node = nuke.toNode(node_name)
+def error_node_style(node_name, enable, message='', run_node=None):
+    if run_node:
+        node = run_node.parent().node(node_name)
+    else:
+        node = nuke.toNode(node_name)
+
     if not node:
         return
 
@@ -243,7 +247,7 @@ def submit(run_node=None, success_callback=None, force_queue=None):
                 del task[0]
 
             execute_in_main_thread(
-                error_node_style, args=(data.get('node_id'), True, execution_message))
+                error_node_style, args=(data.get('node_id'), True, execution_message, run_node))
             execute_in_main_thread(show_message, args=(error))
 
     def on_error(ws, error):
