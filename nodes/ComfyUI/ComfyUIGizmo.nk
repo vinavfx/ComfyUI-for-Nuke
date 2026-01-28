@@ -10,6 +10,7 @@ Group {
  addUserKnob {20 controls l Controls}
  addUserKnob {26 comfyui_gizmo l ComfyUIGizmo +INVISIBLE T "This knob only allows the read and backup to be outside the gizmo !"}
  addUserKnob {41 run l Run T Run.run}
+ addUserKnob {22 inferenceStart +HIDDEN T "" +STARTLINE}
  addUserKnob {22 inferenceEnd +HIDDEN T "read = comfyui.cmd.get_read()" +STARTLINE}
 }
  Input {

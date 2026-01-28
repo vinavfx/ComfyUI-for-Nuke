@@ -8,7 +8,7 @@ from ..nuke_util.nuke_util import get_output_nodes
 from .run import submit
 from .queue_manager import resolve_submission_target
 from .common import get_settings
-from .cmd import inference_end
+from .cmd import inference_end, inference_start
 
 
 def multi_runs(runs, success_callback=None, force_queue=None):
@@ -20,6 +20,8 @@ def multi_runs(runs, success_callback=None, force_queue=None):
 
     if run.knob('comfyui_gizmo'):
         run = nuke.toNode(run.fullName() + '.Run')
+
+    inference_start(run)
 
     def on_success(read, _, error):
         if error:

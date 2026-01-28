@@ -20,6 +20,12 @@ def get_read(group=None):
             return n
 
 
+def inference_start(run_node):
+    callback = run_node.parent().knob('inferenceStart')
+    if callback:
+        callback.execute()
+
+
 def inference_end(_, run_node):
     callback = run_node.parent().knob('inferenceEnd')
     if callback:
@@ -27,4 +33,6 @@ def inference_end(_, run_node):
 
 
 def run():
-    submit(nuke.thisNode(), inference_end)
+    run_node = nuke.thisNode()
+    inference_start(run_node)
+    submit(run_node, inference_end)
