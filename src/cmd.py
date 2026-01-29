@@ -29,9 +29,8 @@ def inference_start(run_node):
 
     with gizmo:
         code = callback.value()
-        context = {}
-
-        exec(code, globals(), context)
+        context = globals().copy()
+        exec(code, context)
         return context.get('ret')
 
 
