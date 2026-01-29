@@ -21,9 +21,18 @@ def get_read(group=None):
 
 
 def inference_start(run_node):
-    callback = run_node.parent().knob('inferenceStart')
-    if callback:
-        callback.execute()
+    gizmo = run_node.parent()
+    callback = gizmo.knob('inferenceStart')
+
+    if not callback:
+        return True
+
+    with gizmo:
+        code = callback.value()
+        context = {}
+
+        exec(code, globals(), context)
+        return context.get('ret')
 
 
 def inference_end(_, run_node):
@@ -34,5 +43,7 @@ def inference_end(_, run_node):
 
 def run():
     run_node = nuke.thisNode()
-    inference_start(run_node)
+    if inference_start(run_node) == False:
+        return
+
     submit(run_node, inference_end)
