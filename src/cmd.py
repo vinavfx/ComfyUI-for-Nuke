@@ -30,6 +30,7 @@ def inference_start(run_node):
     with gizmo:
         code = callback.value()
         context = globals().copy()
+        context['ret'] = True
         exec(code, context)
         return context.get('ret')
 
@@ -42,7 +43,7 @@ def inference_end(_, run_node):
 
 def run():
     run_node = nuke.thisNode()
-    if inference_start(run_node) == False:
+    if not inference_start(run_node):
         return
 
     submit(run_node, inference_end)
