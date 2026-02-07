@@ -48,7 +48,8 @@ def multi_runs(runs, success_callback=None, force_queue=None):
 
         force_queue = 'localhost' if 'localhost' in settings['URL'] else 'server'
 
-    submit(run, success_callback=on_success, force_queue=force_queue)
+    with run:
+        submit(run, success_callback=on_success, force_queue=force_queue)
 
 
 def multi_versions(run, versions, success_callback=None):

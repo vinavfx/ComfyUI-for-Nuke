@@ -46,4 +46,5 @@ def run():
     if not inference_start(run_node):
         return
 
-    submit(run_node, inference_end)
+    with run_node:
+        submit(run_node, inference_end)

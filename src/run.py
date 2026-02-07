@@ -53,19 +53,19 @@ def remove_all_error_style(root_node):
 
 
 def update_node(node_name, data, run_node, settings):
-    if 'ShowText' in node_name:
-        show_text_uptate(node_name, data, run_node)
+    with run_node.parent():
+        if 'ShowText' in node_name:
+            show_text_uptate(node_name, data)
 
-    elif 'PreviewImage' in node_name:
-        preview_image_update(node_name, data, settings)
+        elif 'PreviewImage' in node_name:
+            preview_image_update(node_name, data, settings)
 
 
-def show_text_uptate(node_name, data, run_node):
+def show_text_uptate(node_name, data):
     output = data.get('output', {})
     texts = output.get('text', [])
     text = texts[0] if texts else ''
 
-    run_node.parent().begin()
     show_text_node = nuke.toNode(node_name)
 
     if not show_text_node:
@@ -126,7 +126,7 @@ def preview_image_update(node_name, data, settings):
     preview_node.end()
 
 
-def submit(run_node=None, success_callback=None, force_queue=None):
+def submit(run_node, success_callback=None, force_queue=None):
     def success_callback_wrapper(read, run_node, error=None):
         if not success_callback:
             return
@@ -139,8 +139,6 @@ def submit(run_node=None, success_callback=None, force_queue=None):
             success_callback(read)
 
     total_time = time()
-    run_node = run_node or nuke.thisNode()
-    run_node.begin()
     settings = get_settings(run_node)
 
     if not resolve_submission_target(settings, force_queue):
