@@ -267,6 +267,9 @@ def relocate_filename(filename, settings):
 
     task.setProgress(100)
 
+    if os.path.exists(src_dir) and not os.listdir(src_dir):
+        os.rmdir(src_dir)
+
     return os.path.join(dst_dir, os.path.basename(filename))
 
 
