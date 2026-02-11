@@ -25,3 +25,5 @@ def create_all_comfyui_nodes():
     for item in all_items:
         if 'Update all' in item.name():
             continue
+
+        item.invoke()
