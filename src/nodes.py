@@ -10,7 +10,6 @@ import random
 import traceback
 from collections import Counter
 import nuke  # type: ignore
-from ..testing.testing import status_diff
 from .upload_and_download import upload_images
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
@@ -41,6 +40,7 @@ def extract_data(run_node, settings):
     comfyui_nodes = [n.name() for n, _ in nodes]
     data = {}
     input_node_changed = False
+    rendered_nodes = set()
 
     for n, node_data in nodes:
         if not check_node(n):
@@ -81,7 +81,7 @@ def extract_data(run_node, settings):
 
             if not input_node.name() in comfyui_nodes:
                 load_image_data, changed_node, execution_canceled = create_load_images_and_save(
-                    input_node, tonemap, settings)
+                    input_node, tonemap, settings, rendered_nodes)
 
                 if execution_canceled:
                     return {}, None
@@ -94,7 +94,7 @@ def extract_data(run_node, settings):
     return data, input_node_changed
 
 
-def create_load_images_and_save(node, tonemap, settings):
+def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
     global states
     connected_nodes = get_connected_nodes(node, continue_at_up_level=True)
     connected_nodes.append(node)
@@ -161,7 +161,7 @@ def create_load_images_and_save(node, tonemap, settings):
             'class_type': 'VHS_LoadImagesPath'
         }
 
-    if current_state.get('connected_nodes') == prev_state.get('connected_nodes'):
+    if current_state.get('connected_nodes') == prev_state.get('connected_nodes') or node in rendered_nodes:
         sequence_dir = prev_state.get('sequence_dir', 'none')
         filepath = prev_state.get('filepath', 'none')
         same_exr_setting = prev_state.get(
@@ -171,10 +171,6 @@ def create_load_images_and_save(node, tonemap, settings):
             load_image_data['inputs'][filepath_key] = filepath
             load_image_data['inputs']['id'] = prev_state.get('state_id', 0)
             return load_image_data, False, False
-
-    # For debugging
-    #  status_diff(prev_state.get('connected_nodes'),
-                #  current_state.get('connected_nodes'))
 
     dirname = get_name_code('{}{}{}{}'.format(
         get_project_name(), node.fullName(), frame_range[0], frame_range[1]))
@@ -246,6 +242,7 @@ def create_load_images_and_save(node, tonemap, settings):
     current_state['state_id'] = state_id
 
     states[node.fullName()] = current_state
+    rendered_nodes.add(node)
 
     load_image_data['inputs'][filepath_key] = filepath
     load_image_data['inputs']['id'] = state_id
