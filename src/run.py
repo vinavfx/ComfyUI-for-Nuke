@@ -310,8 +310,12 @@ def submit(run_node, success_callback=None, force_queue=None):
 
     task_loop = None
     if not settings['BACKGROUND_SUBMIT']:
-        threading.Thread(target=ws.run_forever).start()
+        ws_thread = threading.Thread(target=ws.run_forever)
+        ws_thread.daemon = True
+        ws_thread.start()
+
         task_loop = threading.Thread(target=progress_task_loop)
+        task_loop.daemon = True
         task_loop.start()
 
     error = POST('prompt', body, settings)
