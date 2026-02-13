@@ -4,6 +4,7 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import nuke  # type: ignore
+import __main__
 
 from .run import submit
 
@@ -29,7 +30,7 @@ def inference_start(run_node):
 
     with gizmo:
         code = callback.value()
-        context = globals().copy()
+        context = __main__.__dict__.copy()
         context['ret'] = True
         exec(code, context)
         return context.get('ret')
