@@ -57,6 +57,8 @@ def convert_knobs(node, data, knobs):
             if not exists_konb:
                 data['inputs'].append(knob_data)
                 _knob = node.knob(knob)
+                if _knob is None:
+                    continue
                 _knob.setName(knob_name + '_hide')
                 _knob.setVisible(False)
                 node.begin()
@@ -73,6 +75,8 @@ def convert_knobs(node, data, knobs):
                               if i.get('name') != knob_name]
 
             _knob = node.knob(knob_name + '_hide')
+            if _knob is None:
+                continue
             _knob.setName(knob)
             _knob.setVisible(True)
             node.knob('label').setValue('')
