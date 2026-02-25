@@ -3,9 +3,7 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
-import os
 import nuke  # type: ignore
-import json
 from datetime import datetime
 import hashlib
 from ..settings import *
@@ -82,15 +80,13 @@ def get_name_code(name, length=15):
 
 def get_settings(run_node=None):
     settings = {
-        'COMFYUI_DIR': COMFYUI_DIR,
         'URL': URL,
-        'COMFYUI_LOCAL': COMFYUI_LOCAL,
         'OUTPUT_DIRECTORY': OUTPUT_DIRECTORY,
+        'INPUT_DIRECTORY': INPUT_DIRECTORY,
+        'COLLECT_DIRECTORY': COLLECT_DIRECTORY,
         'UPDATE_MENU_AT_START': UPDATE_MENU_AT_START,
         'USE_EXR_TO_LOAD_IMAGES': USE_EXR_TO_LOAD_IMAGES,
         'DISPLAY_META_IN_READ_NODE': DISPLAY_META_IN_READ_NODE,
-        'TEMPORAL_DIR': TEMPORAL_DIR,
-        'HTTP_HEADER': {},
         'BACKGROUND_SUBMIT': False
     }
 
@@ -106,46 +102,10 @@ def get_settings(run_node=None):
             if knob:
                 settings[key.upper()] = override_node.knob(key).value()
 
-        override('comfyui_dir')
         override('url')
         override('background_submit')
-        override('output_directory')
+        override('collect_directory')
         override('use_exr_to_load_images')
         override('display_meta_in_read_node')
-        settings['COMFYUI_LOCAL'] = not override_node.knob(
-            'remote_comfyui').value()
-
-        headers_value = override_node.knob(
-            'headers').value().replace("'", '"').strip()
-        if headers_value:
-            try:
-                headers = json.loads(headers_value)
-            except Exception as e:
-                show_message("Error parsing headers: {}".format(e))
-                headers = {}
-            settings['HTTP_HEADER'] = headers
 
     return settings
-
-
-def get_server_comfyui_dir(settings):
-    from .connection import GET
-    info = GET('system_stats', settings)
-    if not info:
-        return '.'
-
-    main_py = info['system']['argv'][0]
-    return os.path.dirname(main_py)
-
-
-def get_comfyui_dir(settings):
-    COMFYUI_DIR = settings['COMFYUI_DIR']
-
-    if not settings['COMFYUI_LOCAL']:
-        return ''
-
-    if os.path.isdir(os.path.join(COMFYUI_DIR, 'comfy')):
-        return COMFYUI_DIR
-
-    show_message('Directory "{}" does not exist'.format(COMFYUI_DIR))
-    return ''

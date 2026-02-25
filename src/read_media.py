@@ -11,7 +11,6 @@ from ..nuke_util.media_util import get_padding, get_name_no_padding
 from ..nuke_util.nuke_util import get_output_nodes
 from .nodes import get_connected_comfyui_nodes, get_input
 from .common import get_date_code
-from .upload_and_download import download_images
 from .update_menu import normalize_nodename
 
 
@@ -213,28 +212,25 @@ def get_frame_range(data):
 
 
 def get_output_path(settings, default_output=False):
-    default_output_dir = os.path.join(settings['COMFYUI_DIR'], 'output')
+    default_output_dir = settings['OUTPUT_DIRECTORY']
 
     if default_output:
         return default_output_dir
 
-    output_dir = settings['OUTPUT_DIRECTORY'].strip()
+    collect_dir = settings['COLLECT_DIRECTORY'].strip()
     untitled = settings['project_name'] == 'Root'
 
-    if os.path.isabs(output_dir) and os.path.isdir(output_dir):
-        return output_dir
+    if os.path.isabs(collect_dir) and os.path.isdir(collect_dir):
+        return collect_dir
 
-    elif output_dir and not untitled:
-        return os.path.join(os.path.dirname(settings['project_name']), output_dir)
+    elif collect_dir and not untitled:
+        return os.path.join(os.path.dirname(settings['project_name']), collect_dir)
 
-    elif settings['COMFYUI_LOCAL'] and not untitled:
-        return default_output_dir
-
-    return os.path.join(settings['TEMPORAL_DIR'], 'output')
+    return default_output_dir
 
 
 def relocate_filename(filename, settings):
-    if not settings['OUTPUT_DIRECTORY'].strip():
+    if not settings['COLLECT_DIRECTORY'].strip():
         return filename
 
     if not filename:
@@ -307,22 +303,12 @@ def get_local_filename(settings, default_output=False):
     return os.path.join(sequence_output, filename)
 
 
-def resolve_filename(run_node, data, settings, already_generated=False):
-    if settings['COMFYUI_LOCAL']:
-        if already_generated:
-            filename = get_local_filename(settings)
-        else:
-            filename = get_local_filename(settings, default_output=True)
-            filename = relocate_filename(filename, settings)
+def resolve_filename(settings, already_generated=False):
+    if already_generated:
+        filename = get_local_filename(settings)
     else:
-        output_dir = get_output_path(settings)
-
-        if not os.path.isdir(output_dir):
-            os.makedirs(output_dir)
-
-        filename = download_images(
-            get_separate_filename(settings), output_dir,
-            get_frame_range(data), settings, run_node)
+        filename = get_local_filename(settings, default_output=True)
+        filename = relocate_filename(filename, settings)
 
     return filename
 

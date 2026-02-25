@@ -24,7 +24,7 @@ def GET(endpoint, settings, warning=True, timeout=30):
         url = 'http://{}'.format(url)
 
     url = '{}/{}'.format(url, endpoint)
-    request = urllib2.Request(url, headers=settings['HTTP_HEADER'])
+    request = urllib2.Request(url)
 
     try:
         response = urllib2.urlopen(request, timeout=timeout)
@@ -45,11 +45,9 @@ def check_connection():
 
 def POST(endpoint, data, settings):
     url = '{}/{}'.format(settings['URL'], endpoint)
-    headers = {'Content-Type': 'application/json'}
-    headers.update(settings['HTTP_HEADER'])
 
     bytes_data = json.dumps(data).encode('utf-8')
-    request = urllib2.Request(url, bytes_data, headers)
+    request = urllib2.Request(url, bytes_data)
 
     try:
         urllib2.urlopen(request)

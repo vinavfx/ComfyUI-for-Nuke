@@ -159,7 +159,7 @@ def submit(run_node, success_callback=None, force_queue=None):
     global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
         settings['filename_prefix'] = update_filename_prefix(run_node, False)
-        filename = resolve_filename(run_node, data, settings, True)
+        filename = resolve_filename(settings, True)
         read = create_read(run_node, data, settings, filename, already_exists=True)
 
         success_callback_wrapper(read, run_node)
@@ -284,7 +284,7 @@ def submit(run_node, success_callback=None, force_queue=None):
         if cancelled:
             return
 
-        filename = resolve_filename(run_node, data, settings)
+        filename = resolve_filename(settings)
 
         execute_in_main_thread(
             progress_finished, args=(run_node, filename))
@@ -305,8 +305,7 @@ def submit(run_node, success_callback=None, force_queue=None):
             execute_in_main_thread(
                 show_message, args=(traceback.format_exc()))
 
-    headers = ["{}: {}".format(k, v) for k, v in settings['HTTP_HEADER'].items()]
-    ws = websocket.WebSocketApp(url, header=headers, on_message=on_message, on_error=on_error)
+    ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
 
     task_loop = None
     if not settings['BACKGROUND_SUBMIT']:

@@ -10,11 +10,9 @@ import random
 import traceback
 from collections import Counter
 import nuke  # type: ignore
-from .upload_and_download import upload_images
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
-from .common import (image_inputs, mask_inputs, get_server_comfyui_dir,
-                     get_comfyui_dir, get_name_code, show_message)
+from .common import (image_inputs, mask_inputs, get_name_code, show_message)
 
 states = {}
 
@@ -178,11 +176,8 @@ def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
     relative_input = os.path.join('input', dirname)
     filepath = os.path.join(get_server_comfyui_dir(settings), relative_input)
 
-    comfyui_input_dir = os.path.join(
-        get_comfyui_dir(settings), relative_input).replace('\\', '/')
-
-    tmp_input_dir = os.path.join(settings['TEMPORAL_DIR'], relative_input)
-    sequence_dir = comfyui_input_dir if settings['COMFYUI_LOCAL'] else tmp_input_dir
+    sequence_dir = os.path.join(
+        settings['INPUT_DIRECTORY'], relative_input).replace('\\', '/')
 
     if os.path.isdir(sequence_dir):
         shutil.rmtree(sequence_dir)
@@ -223,8 +218,6 @@ def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
 
     try:
         nuke.execute(write, node.firstFrame(), node.lastFrame())
-        if not settings['COMFYUI_LOCAL']:
-            upload_images(sequence_dir, settings)
     except:
         nuke.delete(write)
         nuke.delete(invert)
