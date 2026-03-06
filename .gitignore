@@ -8,3 +8,4 @@ _*/
 *.code-workspace
 .vscode
 tasks.todo
+**/*.tmp
