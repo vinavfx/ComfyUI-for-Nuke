@@ -109,3 +109,13 @@ def get_settings(run_node=None):
         override('display_meta_in_read_node')
 
     return settings
+
+
+def get_comfyui_dir(settings):
+    from .connection import GET
+    info = GET('system_stats', settings)
+    if not info:
+        return '.'
+
+    main_py = info['system']['argv'][0]
+    return os.path.dirname(main_py)

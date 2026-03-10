@@ -146,9 +146,6 @@ def submit(run_node, success_callback=None, force_queue=None):
 
     update_images_and_mask_inputs(settings)
 
-    if settings['COMFYUI_LOCAL'] and not get_comfyui_dir(settings):
-        return
-
     exr_filepath_fixed(run_node)
     settings['project_name'] = nuke.root().name()
 

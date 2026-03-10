@@ -57,7 +57,6 @@ def resolve_submission_target(settings, force_queue=None):
     available_url = ''
     lowest_load_url = None
     lowest_pending = 99999
-    localhost_submit = False
     localhost = 'http://localhost:8188'
 
     running_client = []
@@ -85,7 +84,6 @@ def resolve_submission_target(settings, force_queue=None):
 
     if not available_url and not lowest_load_url:
         settings['URL'] = localhost
-        localhost_submit = True
 
         if not GET('queue', settings, warning=False, timeout=2):
             show_message("{}\nNo ComfyUI servers found running !".format(
@@ -100,7 +98,6 @@ def resolve_submission_target(settings, force_queue=None):
             if force_queue:
                 if force_queue == 'localhost':
                     settings['URL'] = localhost
-                    localhost_submit = True
                 else:
                     settings['URL'] = lowest_load_url
 
@@ -108,36 +105,7 @@ def resolve_submission_target(settings, force_queue=None):
                 settings['URL'] = lowest_load_url
             else:
                 settings['URL'] = localhost
-                localhost_submit = True
         except:
-            return
-
-    if settings['COMFYUI_LOCAL']:
-        comfyui_dir = settings['COMFYUI_DIR']
-        comfyui_dirs = []
-
-        pattern = r'^[^\*\[\]]+$'
-        if re.match(pattern, comfyui_dir):
-            comfyui_dirs = [comfyui_dir]
-        else:
-            try:
-                comfyui_dirs = json.loads(comfyui_dir)
-            except:
-                show_message(
-                    '{}\nIt must be a ComfyUI directory or a list of ComfyUI directories in JSON format!'.format(comfyui_dir))
-                return
-
-        if not len(urls) == len(comfyui_dirs):
-            comfyui_dirs = [comfyui_dirs[0]] * len(urls)
-
-        settings['COMFYUI_DIR'] = dict(
-            zip(urls, comfyui_dirs)).get(settings['URL'], '')
-
-        if localhost_submit:
-            settings['COMFYUI_DIR'] = comfyui_dirs[0]
-        elif not settings['COMFYUI_DIR']:
-            show_message(
-                'URL "{}" without assigned ComfyUI directory !'.format(settings['URL']))
             return
 
     if not GET('system_stats', settings):
