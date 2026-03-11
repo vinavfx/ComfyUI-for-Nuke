@@ -15,7 +15,7 @@ import threading
 import copy
 
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
-from .common import get_comfyui_dir, update_images_and_mask_inputs, get_settings, show_message, execute_in_main_thread
+from .common import update_images_and_mask_inputs, get_settings, show_message, execute_in_main_thread
 from .connection import POST
 from .queue_manager import resolve_submission_target, interrupt
 from .nodes import extract_data
@@ -140,6 +140,10 @@ def submit(run_node, success_callback=None, force_queue=None):
 
     total_time = time()
     settings = get_settings(run_node)
+
+    if not settings['INPUT_DIRECTORY'] or settings['OUTPUT_DIRECTORY']:
+        nuke.message('INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!')
+        return
 
     if not resolve_submission_target(settings, force_queue):
         return

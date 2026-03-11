@@ -7,12 +7,12 @@ import os
 import nuke  # type: ignore
 import shutil
 
-from .common import get_comfyui_dir, get_settings
+from .common import get_settings
 
 
 def upload_media():
     settings = get_settings()
-    input_dir = os.path.join(get_comfyui_dir(settings), 'input')
+    input_dir = settings['INPUT_DIRECTORY']
     filepath = nuke.getFilename(
         'Upload Media', "*.jpg *.exr *.png *.mp3 *.wav")
 
