@@ -173,11 +173,8 @@ def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
     dirname = get_name_code('{}{}{}{}'.format(
         get_project_name(), node.fullName(), frame_range[0], frame_range[1]))
 
-    relative_input = os.path.join('input', dirname)
-    filepath = os.path.join(get_server_comfyui_dir(settings), relative_input)
-
-    sequence_dir = os.path.join(
-        settings['INPUT_DIRECTORY'], relative_input).replace('\\', '/')
+    sequence_dir = os.path.join(settings['INPUT_DIRECTORY'], dirname)
+    filepath = sequence_dir
 
     if os.path.isdir(sequence_dir):
         shutil.rmtree(sequence_dir)
