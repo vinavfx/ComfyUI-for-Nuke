@@ -236,16 +236,19 @@ def relocate_filename(filename, settings):
     if not filename:
         return
 
-    task = nuke.ProgressTask('Relocate from ComfyUI')
-    task.setMessage('Relocating: ...')
-    task.setProgress(0)
-
     output_dir = get_output_path(settings)
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
 
     src_dir = os.path.dirname(filename)
     dst_dir = os.path.join(output_dir, os.path.basename(src_dir))
+
+    if src_dir == dst_dir:
+        return filename
+
+    task = nuke.ProgressTask('Relocate from ComfyUI')
+    task.setMessage('Relocating: ...')
+    task.setProgress(0)
 
     if os.path.exists(dst_dir):
         shutil.rmtree(dst_dir)
@@ -269,24 +272,17 @@ def relocate_filename(filename, settings):
     return os.path.join(dst_dir, os.path.basename(filename))
 
 
-def get_separate_filename(settings, default_output=False):
+def get_local_filename(settings, default_output=False):
     filename_prefix = settings.get('filename_prefix')
 
-    if filename_prefix:
-        basename = os.path.basename(filename_prefix)
-        dirname = os.path.dirname(filename_prefix)
+    if not filename_prefix:
+        return
 
-        sequence_output = os.path.join(get_output_path(
-            settings, default_output), dirname)
+    basename = os.path.basename(filename_prefix)
+    dirname = os.path.dirname(filename_prefix)
 
-        return filename_prefix, basename, sequence_output
-
-    else:
-        return None, None, None
-
-
-def get_local_filename(settings, default_output=False):
-    _, basename, sequence_output = get_separate_filename(settings, default_output)
+    sequence_output = os.path.join(get_output_path(
+        settings, default_output), dirname)
 
     if not sequence_output:
         return

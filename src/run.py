@@ -141,7 +141,7 @@ def submit(run_node, success_callback=None, force_queue=None):
     total_time = time()
     settings = get_settings(run_node)
 
-    if not settings['INPUT_DIRECTORY'] or settings['OUTPUT_DIRECTORY']:
+    if not settings['INPUT_DIRECTORY'] or not settings['OUTPUT_DIRECTORY']:
         nuke.message('INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!')
         return
 
@@ -321,8 +321,8 @@ def submit(run_node, success_callback=None, force_queue=None):
     error = POST('prompt', body, settings)
 
     if settings['BACKGROUND_SUBMIT'] and not error:
-        show_message('Workflow sent to the ComfyUI Queue\n{}/output/{}'.format(
-            settings['COMFYUI_DIR'], os.path.dirname(settings['filename_prefix'] or '')))
+        show_message('Workflow sent to the ComfyUI Queue\n{}/{}'.format(
+            settings['OUTPUT_DIRECTORY'], os.path.dirname(settings['filename_prefix'] or '')))
 
     if error:
         execution_error[0] = True
