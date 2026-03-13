@@ -140,6 +140,7 @@ def submit(run_node, success_callback=None, force_queue=None):
 
     total_time = time()
     settings = get_settings(run_node)
+    settings['time'] = total_time
 
     if not settings['INPUT_DIRECTORY'] or not settings['OUTPUT_DIRECTORY']:
         nuke.message('INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!')

@@ -6,6 +6,7 @@
 import os
 import shutil
 import nuke  # type: ignore
+from time import time
 
 from ..nuke_util.media_util import get_padding, get_name_no_padding
 from ..nuke_util.nuke_util import get_output_nodes
@@ -89,42 +90,30 @@ def get_gizmo_group(run_node):
             return gizmo
 
 
-def extract_meta(data):
-    noise_seed = seed = steps = denoise = guidance = causvid = strength = -1
-    scheduler = sampler_name = lora = lora2 = lora3 = cnet = ''
+def extract_meta(data, settings):
+    seed = steps = denoise = -1
+    lora = lora2 = lora3 = ''
 
     for name, node in data.items():
-        class_type = node['class_type']
         inputs = node['inputs']
 
-        if noise_seed == -1:
-            noise_seed = inputs.get('noise_seed', -1)
+        if seed == -1:
+            if 'seed' in name.lower():
+                seed = inputs.get('value', -1)
+
+        if seed == -1:
+            seed = inputs.get('noise_seed', -1)
+            seed = seed if type(seed) == int else -1
 
         if seed == -1:
             seed = inputs.get('seed', -1)
-
-        if not sampler_name:
-            sampler_name = inputs.get('sampler_name', '')
+            seed = seed if type(seed) == int else -1
 
         if steps == -1:
             steps = inputs.get('steps', -1)
 
         if denoise == -1:
             denoise = inputs.get('denoise', -1)
-
-        if not scheduler:
-            scheduler = inputs.get('scheduler', '')
-
-        if guidance == -1:
-            guidance = inputs.get('guidance', -1)
-
-        if causvid == -1:
-            lora_name = inputs.get('lora_name', '')
-            if 'CausVid' in lora_name:
-                causvid = inputs.get('strength_model', 0)
-
-        if class_type == 'WanVaceToVideo':
-            strength = inputs.get('strength')
 
         if name in ('extra_lora1', 'extra_lora2', 'extra_lora3'):
             lora_name = inputs.get('lora_name', '').split(
@@ -139,42 +128,16 @@ def extract_meta(data):
             elif name == 'extra_lora3':
                 lora3 = formatted
 
-        if class_type == 'ControlNetApplyAdvanced':
-            cnet_strength = inputs.get('strength', 0)
-            cnet_end = inputs.get('end_percent', 0)
-            cnet = '{} : {}'.format(cnet_strength, cnet_end)
-
     meta = []
 
     if not seed == -1:
         meta.append(('seed', seed))
 
-    if not noise_seed == -1:
-        meta.append(('noise_seed', noise_seed))
-
     if not steps == -1:
         meta.append(('steps', steps))
 
-    if sampler_name:
-        meta.append(('sampler_name', sampler_name))
-
-    if scheduler:
-        meta.append(('scheduler', scheduler))
-
     if not denoise == -1:
         meta.append(('denoise', denoise))
-
-    if not guidance == -1:
-        meta.append(('guidance', guidance))
-
-    if not strength == -1:
-        meta.append(('strength', strength))
-
-    if not causvid == -1:
-        meta.append(('causvid', causvid))
-
-    if cnet:
-        meta.append(('CNet', cnet))
 
     if lora:
         meta.append(('lora', lora))
@@ -184,6 +147,9 @@ def extract_meta(data):
 
     if lora3:
         meta.append(('lora3', lora3))
+
+    itime = "%02d:%02d" % divmod(int(time() - settings['time']), 60)
+    meta.append(('time', itime))
 
     return meta
 
@@ -318,7 +284,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
 
     meta = []
     if data:
-        meta = extract_meta(data)
+        meta = extract_meta(data, settings)
 
     main_node = get_gizmo_group(run_node)
     if not main_node:
