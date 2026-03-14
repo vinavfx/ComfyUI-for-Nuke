@@ -189,14 +189,16 @@ def extract_meta(data):
     return meta
 
 
-def glb2obj(filename):
+def glb2obj(filename, fullname):
     import trimesh  # type: ignore
 
     mesh = trimesh.load(filename)
     obj = filename[:-3] + 'obj'
     mesh.export(obj)
 
-    read = nuke.createNode('ReadGeo', inpanel=False)
+    read = nuke.toNode(fullname)
+    if not read:
+        read = nuke.createNode('ReadGeo', inpanel=False)
     read.knob('file').setValue(obj)
     read.setInput(0, None)
 
@@ -360,7 +362,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
         set_correct_colorspace(read)
 
     elif ext in ['glb']:
-        read = glb2obj(filename)
+        read = glb2obj(filename, fullname)
 
     else:
         return
@@ -402,8 +404,13 @@ def backup_previous_generation(run_node=None):
     if not read:
         return
 
-    filename = '{} {}-{}'.format(read.knob('file').value(),
-                                 read.knob('first').value(), read.knob('last').value())
+    is_glb = read.Class() == 'ReadGeo'
+
+    if is_glb:
+        filename = read.knob('file').value()
+    else:
+        filename = '{} {}-{}'.format(read.knob('file').value(),
+                                     read.knob('first').value(), read.knob('last').value())
 
     basename = get_name_no_padding(filename).replace(' ', '_')
     rand = os.path.basename(os.path.dirname(filename)).strip()
@@ -411,16 +418,21 @@ def backup_previous_generation(run_node=None):
     name = normalize_nodename(name)
 
     if not nuke.toNode(name):
-        new_read = nuke.createNode('Read', inpanel=False)
+        if is_glb:
+            new_read = nuke.createNode('ReadGeo', inpanel=False)
+            new_read.knob('file').setValue(filename)
+        else:
+            new_read = nuke.createNode('Read', inpanel=False)
+            new_read.knob('file').fromUserText(filename)
+            new_read.knob('frame_mode').setValue(read.knob('frame_mode').value())
+            new_read.knob('frame').setValue(read.knob('frame').value())
+            set_correct_colorspace(new_read)
+
         new_read.setName(name)
-        new_read.knob('file').fromUserText(filename)
         new_read.knob('label').setValue(read.knob('label').value())
-        new_read.knob('frame_mode').setValue(read.knob('frame_mode').value())
-        new_read.knob('frame').setValue(read.knob('frame').value())
-        set_correct_colorspace(new_read)
 
     reads = sorted(
-        [n for n in nuke.allNodes('Read') if n.name().split('Backup')[0] == main_node.name()],
+        [n for n in nuke.allNodes() if n.name().split('Backup')[0] == main_node.name() and n.Class() in ('Read', 'ReadGeo')],
         key=lambda n: n.name(),
         reverse=True
     )
