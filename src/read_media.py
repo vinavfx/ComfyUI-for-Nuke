@@ -343,6 +343,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
     if not filename:
         return
 
+    [n.setSelected(False) for n in nuke.selectedNodes()]
     if not already_exists:
         backup_previous_generation(run_node)
 
