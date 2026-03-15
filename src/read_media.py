@@ -49,7 +49,15 @@ def update_filename_prefix(run_node, update=True, data={}):
     if not output_node:
         return
 
-    filename_prefix_knob = output_node.knob('filename_prefix_')
+    filename_prefix_knob = None
+    filename_knob_name = ''
+
+    for knob_name in ['filename_prefix', 'file_path']:
+        filename_prefix_knob = output_node.knob(knob_name + '_')
+        if filename_prefix_knob:
+            filename_knob_name = knob_name
+            break
+
     if not filename_prefix_knob:
         return
 
@@ -64,7 +72,7 @@ def update_filename_prefix(run_node, update=True, data={}):
 
     new_prefix = '{}/{}'.format(get_date_code(), prefix)
     filename_prefix_knob.setValue(new_prefix)
-    data[output_node.name()]['inputs']['filename_prefix'] = new_prefix
+    data[output_node.name()]['inputs'][filename_knob_name] = new_prefix
     return new_prefix
 
 
@@ -154,17 +162,19 @@ def extract_meta(data, settings):
     return meta
 
 
-def glb2obj(filename, fullname):
-    import trimesh  # type: ignore
-
-    mesh = trimesh.load(filename)
-    obj = filename[:-3] + 'obj'
-    mesh.export(obj)
+def glb2obj(filename, fullname, ext):
+    if ext == 'glb':
+        import trimesh  # type: ignore
+        mesh = trimesh.load(filename)
+        new_filename = filename[:-3] + 'obj'
+        mesh.export(new_filename)
+    else:
+        new_filename = filename
 
     read = nuke.toNode(fullname)
     if not read:
         read = nuke.createNode('ReadGeo', inpanel=False)
-    read.knob('file').setValue(obj)
+    read.knob('file').setValue(new_filename)
     read.setInput(0, None)
 
     return read
@@ -309,8 +319,8 @@ def create_read(run_node, data, settings, filename, already_exists=False):
 
         set_correct_colorspace(read)
 
-    elif ext in ['glb']:
-        read = glb2obj(filename, fullname)
+    elif ext in ['glb', 'obj']:
+        read = glb2obj(filename, fullname, ext)
 
     else:
         return
@@ -352,9 +362,9 @@ def backup_previous_generation(run_node=None):
     if not read:
         return
 
-    is_glb = read.Class() == 'ReadGeo'
+    is_geo = read.Class() == 'ReadGeo'
 
-    if is_glb:
+    if is_geo:
         filename = read.knob('file').value()
     else:
         filename = '{} {}-{}'.format(read.knob('file').value(),
@@ -366,7 +376,7 @@ def backup_previous_generation(run_node=None):
     name = normalize_nodename(name)
 
     if not nuke.toNode(name):
-        if is_glb:
+        if is_geo:
             new_read = nuke.createNode('ReadGeo', inpanel=False)
             new_read.knob('file').setValue(filename)
         else:
