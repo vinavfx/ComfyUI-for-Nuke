@@ -191,7 +191,7 @@ def create_node(data, inpanel=True):
             n.addKnob(upload_knob)
 
         if category == 'loaders' and 'name' in knob_name:
-            refresh_models_knob = nuke.PyScript_Knob('refresh_models', '🔄')
+            refresh_models_knob = nuke.PyScript_Knob('refresh_models', 'Refresh Models')
             refresh_models_knob.setValue(
                 'comfyui.update_menu.refresh_models(nuke.thisNode(), "{}", "{}")'. format(knob_name, data['name']))
             n.addKnob(refresh_models_knob)
