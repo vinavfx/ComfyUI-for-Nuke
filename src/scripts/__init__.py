@@ -1,5 +1,6 @@
 from . import (
     knob2input,
     force_output_connection,
-    export_workflow
+    export_workflow,
+    reload_node
 )

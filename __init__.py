@@ -56,16 +56,19 @@ def setup():
                 create_node, path_nk), '', icon_gray)
 
     comfyui_menu.addCommand(
-        'Scripts/knob2input', scripts.knob2input.knob_to_input, icon=icon_gray)
+        'Scripts/Knob to Input', scripts.knob2input.knob_to_input, icon=icon_gray)
 
     comfyui_menu.addCommand(
-        'Scripts/forceOutput', scripts.force_output_connection.force_output, icon=icon_gray)
+        'Scripts/Force Output', scripts.force_output_connection.force_output, icon=icon_gray)
 
     comfyui_menu.addCommand(
-        'Scripts/exportWorkflow', scripts.export_workflow.export_workflow, icon=icon_gray)
+        'Scripts/Export Workflow', scripts.export_workflow.export_workflow, icon=icon_gray)
 
     comfyui_menu.addCommand(
-        'Scripts/executeRuns', execute_runs.execute_runs, 'Ctrl+R', icon=icon_gray)
+        'Scripts/Execute Runs', execute_runs.execute_runs, 'Ctrl+R', icon=icon_gray)
+
+    comfyui_menu.addCommand(
+        'Scripts/Reload Node', scripts.reload_node.reload_node, icon=icon_gray)
 
     if UPDATE_MENU_AT_START:
         update_menu.update()
