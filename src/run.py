@@ -126,7 +126,7 @@ def preview_image_update(node_name, data, settings):
     preview_node.end()
 
 
-def submit(run_node, success_callback=None, force_queue=None):
+def submit(run_node, success_callback=None):
     def success_callback_wrapper(read, run_node, error=None):
         if not success_callback:
             return
@@ -146,7 +146,7 @@ def submit(run_node, success_callback=None, force_queue=None):
         nuke.message('INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!')
         return
 
-    if not resolve_submission_target(settings, force_queue):
+    if not resolve_submission_target(settings):
         return
 
     update_images_and_mask_inputs(settings)

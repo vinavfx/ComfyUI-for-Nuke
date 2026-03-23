@@ -6,12 +6,10 @@
 import nuke  # type: ignore
 from ..nuke_util.nuke_util import get_output_nodes
 from .run import submit
-from .queue_manager import resolve_submission_target
-from .common import get_settings
 from .cmd import inference_end, inference_start
 
 
-def multi_runs(runs, success_callback=None, force_queue=None):
+def multi_runs(runs, success_callback=None):
     if not runs:
         return
 
@@ -38,18 +36,10 @@ def multi_runs(runs, success_callback=None, force_queue=None):
         if not runs and success_callback:
             success_callback()
 
-        multi_runs(runs, success_callback, force_queue)
-
-    if not force_queue:
-        settings = get_settings(run)
-        settings = resolve_submission_target(settings)
-        if not settings:
-            return
-
-        force_queue = 'localhost' if 'localhost' in settings['URL'] else 'server'
+        multi_runs(runs, success_callback)
 
     with run:
-        submit(run, success_callback=on_success, force_queue=force_queue)
+        submit(run, success_callback=on_success)
 
 
 def multi_versions(run, versions, success_callback=None):
