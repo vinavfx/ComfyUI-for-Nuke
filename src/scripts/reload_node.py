@@ -27,7 +27,7 @@ def reload_node():
 
         with node.parent():
             new_node = create_comfyui_node(class_type, False)
-            transfer_knobs(node, new_node)
+            transfer_knobs(node, new_node, transfer_all=True)
 
             if new_node:
                 new_node.setName(name)
