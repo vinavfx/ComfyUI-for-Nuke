@@ -338,7 +338,8 @@ def create_read(run_node, data, settings, filename, already_exists=False):
             label += '<font color="green" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
                 key, value)
 
-    read.knob('label').setValue(label)
+    if not already_exists:
+        read.knob('label').setValue(label)
 
     comfyui_gizmo = run_node.parent() if run_node.parent().knob(
         'comfyui_gizmo') else run_node
