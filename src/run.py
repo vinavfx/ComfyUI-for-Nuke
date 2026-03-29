@@ -126,7 +126,7 @@ def preview_image_update(node_name, data, settings):
     preview_node.end()
 
 
-def submit(run_node, success_callback=None):
+def submit(run_node, success_callback=None, settings=None):
     def success_callback_wrapper(read, run_node, error=None):
         if not success_callback:
             return
@@ -138,7 +138,9 @@ def submit(run_node, success_callback=None):
         else:
             success_callback(read)
 
-    settings = get_settings(run_node)
+    if not settings:
+        settings = get_settings(run_node)
+
     settings['pre_inference_time'] = time()
 
     if not settings['INPUT_DIRECTORY'] or not settings['OUTPUT_DIRECTORY']:

@@ -33,6 +33,8 @@ def job_running_message(running_client, pending_client):
     if not msg:
         msg = 'No inference is executed!'
 
+    msg = "<span style='white-space: pre;'>{}</span>".format(msg)
+
     return msg
 
 
