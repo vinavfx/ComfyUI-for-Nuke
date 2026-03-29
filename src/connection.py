@@ -20,6 +20,8 @@ from .common import show_message, execute_in_main_thread, get_settings
 
 def GET(endpoint, settings, warning=True, timeout=30):
     url = settings['URL']
+    url = json.loads(url)[0] if url.startswith('[') else url
+
     if not '://' in url:
         url = 'http://{}'.format(url)
 
