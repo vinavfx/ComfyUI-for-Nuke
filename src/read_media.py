@@ -298,7 +298,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
         backup_previous_generation(run_node)
 
     meta = []
-    if data:
+    if data and not already_exists:
         meta = extract_meta(data, settings)
 
     main_node = get_gizmo_group(run_node)
