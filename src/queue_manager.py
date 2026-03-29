@@ -5,12 +5,44 @@
 # -----------------------------------------------------------
 import json
 import re
+import nuke  # type: ignore
 
 from .connection import GET, POST
-from .common import show_message
+from .common import show_message, get_settings
 
 
-def resolve_submission_target(settings):
+def job_running_message(running_client, pending_client):
+    def ellipsis(s, n):
+        return s if len(s) <= n else s[:n - 3] + "..."
+
+    msg = ''
+    if running_client:
+        msg = '<b>Running</b>:\n'
+        for i, client in enumerate(running_client):
+            user, nk, send_id = (client.split(':') + [client, '', 1])[:3]
+            msg += '    {} - <font color=orange>{}</font> : {} : <font color=#6cb56b>{}</font>\n'.format(
+                i + 1, user, ellipsis(nk, 50), send_id)
+
+    if pending_client:
+        msg += '\n<b>Pending</b>:\n'
+        for i, client in enumerate(pending_client):
+            user, nk, send_id = (client.split(':') + [client, '', ''])[:3]
+            msg += '    {} - <font color=orange>{}</font> : {} : <font color=#6cb56b>{}</font>\n'.format(
+                i + 1, user, ellipsis(nk, 50), send_id)
+
+    if not msg:
+        msg = 'No inference is executed!'
+
+    return msg
+
+
+def show_queue():
+    settings = get_settings()
+    _, _, _, running_client, pending_client = scan_urls(settings)
+    nuke.message(job_running_message(running_client, pending_client))
+
+
+def scan_urls(settings):
     url = settings['URL']
     urls = []
 
@@ -23,7 +55,7 @@ def resolve_submission_target(settings):
         except:
             show_message(
                 '{}\nIt has to be an URL address or a list of URL addresses as JSON !'.format(url))
-            return
+            return [None] * 5
 
     urls = [
         url if '://' in url else 'http://{}'.format(url)
@@ -33,6 +65,9 @@ def resolve_submission_target(settings):
     available_url = ''
     lowest_load_url = None
     lowest_pending = 99999
+
+    running_client = []
+    pending_client = []
 
     for url in urls:
         settings['URL'] = url
@@ -50,6 +85,17 @@ def resolve_submission_target(settings):
 
         if not available_url and not running:
             available_url = url
+
+        running_client += [r[3]['client_id'] for r in running]
+        pending_client += [p[3]['client_id'] for p in pending]
+
+    return urls, available_url, lowest_load_url, running_client, pending_client
+
+
+def resolve_submission_target(settings):
+    urls, available_url, lowest_load_url, _, _ = scan_urls(settings)
+    if not urls:
+        return
 
     if not available_url and not lowest_load_url:
         show_message("No ComfyUI servers found running !\n\n{}".format('\n'.join(urls)))

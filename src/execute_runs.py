@@ -80,3 +80,7 @@ def execute_runs():
         runs.extend([n] * versions)
 
     multi_runs(runs)
+
+
+def execute_runs_plus():
+    execute_runs()

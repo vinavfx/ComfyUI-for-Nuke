@@ -68,6 +68,12 @@ def setup():
         'Scripts/Execute Runs', execute_runs.execute_runs, 'Ctrl+R', icon=icon_gray)
 
     comfyui_menu.addCommand(
+        'Scripts/Execute Runs +', execute_runs.execute_runs_plus, 'Ctrl+Alt+R', icon=icon_gray)
+
+    comfyui_menu.addCommand(
+        'Scripts/Show Queue', queue_manager.show_queue, icon=icon_gray)
+
+    comfyui_menu.addCommand(
         'Scripts/Reload Node', scripts.reload_node.reload_node, icon=icon_gray)
 
     if UPDATE_MENU_AT_START:
