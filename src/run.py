@@ -138,9 +138,8 @@ def submit(run_node, success_callback=None):
         else:
             success_callback(read)
 
-    total_time = time()
     settings = get_settings(run_node)
-    settings['time'] = total_time
+    settings['pre_inference_time'] = time()
 
     if not settings['INPUT_DIRECTORY'] or not settings['OUTPUT_DIRECTORY']:
         nuke.message('INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!')
@@ -186,8 +185,9 @@ def submit(run_node, success_callback=None):
                    'progress': 0, 'message': 'Waiting in Queue ...'}
     task = [nuke.ProgressTask(task_status['title'])]
     task[0].setMessage(task_status['message'])
-
     execution_error = [False]
+
+    settings['pre_inference_time'] = time() - settings['pre_inference_time']
 
     def set_task_progress(progress, message = ''):
         if not nuke.GUI:
@@ -214,6 +214,9 @@ def submit(run_node, success_callback=None):
 
         if not data:
             return
+
+        elif type_data == 'execution_start':
+            settings['inference_time'] = time()
 
         elif type_data == 'executed':
             node = data.get('node')
@@ -333,4 +336,4 @@ def submit(run_node, success_callback=None):
 
     if not nuke.GUI:
         task_loop.join() if task_loop else None
-        print('\nPrompt executed in {} seconds'.format(round(time() - total_time, 1)))
+        print('\nPrompt executed in {} seconds'.format(round(time() - settings['inference_time'], 1)))

@@ -156,7 +156,9 @@ def extract_meta(data, settings):
     if lora3:
         meta.append(('lora3', lora3))
 
-    itime = "%02d:%02d" % divmod(int(time() - settings['time']), 60)
+
+    total_time = settings['pre_inference_time'] + (time() - settings['inference_time'])
+    itime = "%02d:%02d" % divmod(int(total_time), 60)
     meta.append(('time', itime))
 
     return meta
