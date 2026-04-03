@@ -5,7 +5,7 @@
 # -----------------------------------------------------------
 import nuke  # type: ignore
 import json
-from ..nuke_util.nuke_util import get_output_nodes
+from ..nuke_util.nuke_util import get_output_nodes, selected_node
 from .run import submit
 from .cmd import inference_end, inference_start
 from .common import get_settings
@@ -79,10 +79,17 @@ def execute_runs(settings=None):
 
         runs.extend(prepare_multiversions(n))
 
+    if not runs:
+        nuke.message('Select at least 1 Run node!')
+        return
+
     multi_runs(runs, settings=settings)
 
 
 def execute_runs_plus():
+    if not selected_node():
+        return
+
     settings = get_settings()
     urls = json.loads(settings['URL'])
 
