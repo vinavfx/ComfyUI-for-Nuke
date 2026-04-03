@@ -13,45 +13,50 @@ from .queue_manager import scan_urls, job_running_message
 
 
 def multi_runs(runs, success_callback=None, settings=None):
-    if not runs:
-        return
+    for i, run in enumerate(runs):
+        if run.knob('comfyui_gizmo'):
+            run = nuke.toNode(run.fullName() + '.Run')
 
-    run = runs.pop(0)
-    aux = run
+        if not inference_start(run):
+            continue
 
-    if run.knob('comfyui_gizmo'):
-        run = nuke.toNode(run.fullName() + '.Run')
+        def on_success(read, _, error):
+            if error:
+                if success_callback:
+                    success_callback()
+                return
 
-    if not inference_start(run):
-        return
+            if read:
+                for inp, n in get_output_nodes(run):
+                    n.setInput(inp, read)
 
-    def on_success(read, _, error):
-        if error:
-            if success_callback:
+            inference_end(read, run)
+
+            if len(runs) == i + 1 and success_callback:
                 success_callback()
-            return
 
-        if read:
-            for i, n in get_output_nodes(aux):
-                n.setInput(i, read)
-
-        inference_end(read, run)
-        if not runs and success_callback:
-            success_callback()
-
-        multi_runs(runs, success_callback, settings)
-
-    with run:
-        submit(run, success_callback=on_success, settings=settings)
+        with run:
+            submit(run, success_callback=on_success, settings=settings)
+        run.end()
 
 
-def multi_versions(run, versions, success_callback=None):
-    for n in run.nodes():
-        if versions > 1 and n.knob('randomize'):
-            n.knob('randomize').setValue(True)
+def multi_versions(run=None, success_callback=None):
+    if not run:
+        run = nuke.thisNode()
 
-    runs = [run] * versions
-    multi_runs(runs, success_callback)
+    multi_runs(prepare_multiversions(run), success_callback)
+
+
+def prepare_multiversions(node):
+    versions = 1
+    if node.knob('versions'):
+        versions = int(node.knob('versions').value())
+
+    for child in node.nodes():
+        if versions > 1 and child.knob('randomize'):
+            child.knob('randomize').setValue(True)
+
+    return [node] * versions
 
 
 def execute_runs(settings=None):
@@ -72,15 +77,7 @@ def execute_runs(settings=None):
         if n in runs:
             continue
 
-        versions = 1
-        if n.knob('versions'):
-            versions = int(n.knob('versions').value())
-
-        for child in n.nodes():
-            if versions > 1 and child.knob('randomize'):
-                child.knob('randomize').setValue(True)
-
-        runs.extend([n] * versions)
+        runs.extend(prepare_multiversions(n))
 
     multi_runs(runs, settings=settings)
 
