@@ -17,7 +17,7 @@ def multi_runs(runs, success_callback=None, settings=None):
         if run.knob('comfyui_gizmo'):
             run = nuke.toNode(run.fullName() + '.Run')
 
-        if not inference_start(run):
+        if not inference_start(run, i):
             continue
 
         def on_success(read, _, error):

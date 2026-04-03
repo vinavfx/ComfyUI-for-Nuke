@@ -21,7 +21,7 @@ def get_read(group=None):
             return n
 
 
-def inference_start(run_node):
+def inference_start(run_node, iteration=0):
     gizmo = run_node.parent()
     callback = gizmo.knob('inferenceStart')
 
@@ -32,6 +32,7 @@ def inference_start(run_node):
         code = callback.value()
         context = __main__.__dict__.copy()
         context['ret'] = True
+        context['iter'] = iteration
         exec(code, context)
         return context.get('ret')
 
