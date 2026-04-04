@@ -92,24 +92,43 @@ def extract_data(run_node, settings):
     return data, input_node_changed
 
 
-def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
-    global states
+def state_node(node):
     connected_nodes = get_connected_nodes(node, continue_at_up_level=True)
+    connected_nodes = [n for n in connected_nodes if not n.Class() == 'Dot']
     connected_nodes.append(node)
     state = ''
 
-    for n in connected_nodes:
-        n.setSelected(False)
-        node_state = ''
+    ct = nuke.nodes.CurveTool(
+        inputs=[node], operation='Avg Intensities', channels='rgba')
+    ct['ROI'].setValue([0, 0, node.width(), node.height()])
+    nuke.execute(ct, node.firstFrame(), node.firstFrame())
+    rgba = ct['intensitydata'].value()
+    nuke.delete(ct)
 
-        # knobs that may vary
-        knobs_ignore = ['old_message', 'old_expression_markers']
+    attrs = [
+        rgba,
+        len(connected_nodes),
+        node.firstFrame(),
+        node.lastFrame(),
+        node.width(),
+        node.height(),
+        node.bbox().x(),
+        node.bbox().y(),
+        node.bbox().w(),
+        node.bbox().h(),
+    ]
+
+    state += ','.join([str(i) for i in attrs])
+    knobs_analyze = ['disable']
+
+    for n in connected_nodes:
+        knobs_state = ''
 
         for k in n.knobs().values():
             if not k.visible() or not k.enabled():
                 continue
 
-            if k.name() in knobs_ignore:
+            if not k.name() in knobs_analyze:
                 continue
 
             if k.hasExpression() or k.isAnimated():
@@ -120,12 +139,16 @@ def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
             else:
                 value = k.toScript()
 
-            node_state += '{} '.format(value)
+            knobs_state += '{} '.format(value)
 
-        node_state = node_state.replace(
-            str(n.xpos()), '').replace(str(n.ypos()), '')
+        state += knobs_state
 
-        state += node_state
+    return state
+
+
+def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
+    global states
+    state = state_node(node)
 
     current_state = {'connected_nodes': state.strip(), 'state_id': 0}
     prev_state = states.get(node.fullName(), {})
