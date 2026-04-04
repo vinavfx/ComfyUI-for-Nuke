@@ -102,7 +102,7 @@ def state_node(node):
         inputs=[node], operation='Avg Intensities', channels='rgba')
     ct['ROI'].setValue([0, 0, node.width(), node.height()])
     nuke.execute(ct, node.firstFrame(), node.firstFrame())
-    rgba = ct['intensitydata'].value()
+    rgba = [round(v, 5) for v in ct['intensitydata'].value()]
     nuke.delete(ct)
 
     attrs = [
