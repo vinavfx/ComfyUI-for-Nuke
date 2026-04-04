@@ -142,6 +142,8 @@ def submit(run_node, success_callback=None, settings=None):
         settings = get_settings(run_node)
 
     settings['pre_inference_time'] = time()
+    # previene que exista el key cuando no se ejecuta en execution_start
+    settings['inference_time'] = time()
 
     if not settings['INPUT_DIRECTORY'] or not settings['OUTPUT_DIRECTORY']:
         nuke.message('INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!')
@@ -306,11 +308,8 @@ def submit(run_node, success_callback=None, settings=None):
                 states[run_node.fullName()] = state_data
 
         except:
-            if not nuke.GUI:
-                print(traceback.format_exc())
-
-            execute_in_main_thread(
-                show_message, args=(traceback.format_exc()))
+            print(traceback.format_exc())
+            show_message(traceback.format_exc())
 
     ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
 
