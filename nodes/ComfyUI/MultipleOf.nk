@@ -1,15 +1,16 @@
 set cut_paste_input [stack 0]
-version 12.0 v8
+version 14.0 v8
 push $cut_paste_input
 Group {
  name MultipleOf
  tile_color 0xa57aaaff
  selected true
- xpos 215
- ypos 18
+ xpos -540
+ ypos 538
  addUserKnob {20 controls l Controls}
  addUserKnob {3 multiple_of l "Multiple of"}
  multiple_of 8
+ addUserKnob {41 black_outside l "black outside" -STARTLINE T Reformat.black_outside}
  addUserKnob {22 restore_format l "restore format" T "this = nuke.thisNode()\nthis.parent().begin()\n\n\[n.setSelected(False) for n in nuke.selectedNodes()]\n\nrestore_node = nuke.createNode('Reformat', inpanel=False)\nrestore_node.setName('RestoreFormat')\nrestore_node.knob('resize').setValue('none')\nrestore_node.knob('center').setValue(False)\nrestore_node.knob('type').setValue('to box')\nrestore_node.knob('box_fixed').setValue(True)\nrestore_node.setXYpos(this.xpos() + 120, this.ypos())\n\nrestore_node.knob('box_width').setExpression('\{\}.Input.width'.format(this.fullName()))\nrestore_node.knob('box_height').setExpression('\{\}.Input.height'.format(this.fullName()))" +STARTLINE}
 }
  Input {
