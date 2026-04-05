@@ -106,7 +106,7 @@ def execute_runs_plus():
     p = nuke.Panel('Run')
     p.addEnumerationPulldown(keys[0], ' '.join(urls))
     p.addNotepad('Queue', queue)
-    p.addBooleanCheckBox(keys[1], False)
+    p.addBooleanCheckBox(keys[1], True)
     p.addBooleanCheckBox(keys[2], True)
     p.addBooleanCheckBox(keys[3], False)
     p.addButton('Cancel')

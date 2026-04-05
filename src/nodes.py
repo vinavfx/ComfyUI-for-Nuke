@@ -203,7 +203,7 @@ def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
         shutil.rmtree(sequence_dir)
 
     os.makedirs(sequence_dir)
-    ext = 'exr' if USE_EXR_TO_LOAD_IMAGES else 'png'
+    ext = 'exr' if USE_EXR_TO_LOAD_IMAGES else 'tiff'
     filename = '{}/{}_#####.{}'.format(sequence_dir, dirname, ext)
 
     [n.setSelected(False) for n in nuke.selectedNodes()]

@@ -18,6 +18,7 @@ addUserKnob {1 url l URL t "Add a single URL like 192.168.1.1:8188, or a list of
 url 127.0.0.1:8188
 addUserKnob {26 ""}
 addUserKnob {6 use_exr_to_load_images l "Use EXR to laod images" t "If enabled, EXR images will be loaded using the ComfyUI-HQ-Image-Save add-on; otherwise, PNGs will be loaded using the sequence loader from the ComfyUI-VideoHelperSuite add-on." +STARTLINE}
+use_exr_to_load_images true
 addUserKnob {6 display_meta_in_read_node l "Display metadata in Read Node" t "Will display the generation metadata in the Read node — seed, cfg, steps, etc." +STARTLINE}
 display_meta_in_read_node true
 addUserKnob {6 background_submit l "Backgroundi Submit" t "Sending to the queue without showing the Nuke progress bar will not create the Read Node nor relocate the output directory; you will have to manually search the ComfyUI output folder." +STARTLINE}
