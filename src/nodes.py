@@ -119,7 +119,7 @@ def state_node(node):
     ]
 
     state += ','.join([str(i) for i in attrs])
-    knobs_analyze = ['disable']
+    knobs_analyze = ['disable', 'name']
 
     for n in connected_nodes:
         knobs_state = ''
