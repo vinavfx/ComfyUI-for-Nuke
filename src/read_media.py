@@ -306,6 +306,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
         read.knob('file').fromUserText(filename)
         read.knob('frame_mode').setValue('start at')
         read.knob('frame').setValue(str(get_frame_range(data)[0]))
+        read.knob('auto_alpha').setValue(True)
 
         set_correct_colorspace(read)
 
@@ -375,6 +376,7 @@ def backup_previous_generation(run_node=None):
             new_read.knob('file').fromUserText(filename)
             new_read.knob('frame_mode').setValue(read.knob('frame_mode').value())
             new_read.knob('frame').setValue(read.knob('frame').value())
+            new_read.knob('auto_alpha').setValue(True)
             set_correct_colorspace(new_read)
 
         new_read.setName(name)
