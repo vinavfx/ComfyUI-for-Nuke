@@ -31,19 +31,6 @@ def exr_filepath_fixed(run_node):
         filepath_knob.setText(filepath)
 
 
-def get_tonemap(run_node):
-    save_node = get_input(run_node, 0)
-
-    if not save_node:
-        return 'sRGB'
-
-    tonemap_knob = save_node.knob('tonemap_')
-    if not tonemap_knob:
-        return 'sRGB'
-
-    return tonemap_knob.value()
-
-
 def update_filename_prefix(run_node, update=True, data={}):
     output_node = get_input(run_node, 0)
     if not output_node:

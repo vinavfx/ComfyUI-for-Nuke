@@ -32,9 +32,6 @@ def extract_data(run_node, settings):
     nodes = get_connected_comfyui_nodes(run_node)
     nuke.root().knob('proxy').setValue(False)
 
-    from .read_media import get_tonemap
-    tonemap = get_tonemap(run_node)
-
     comfyui_nodes = [n.name() for n, _ in nodes]
     data = {}
     input_node_changed = False
@@ -79,7 +76,7 @@ def extract_data(run_node, settings):
 
             if not input_node.name() in comfyui_nodes:
                 load_image_data, changed_node, execution_canceled = create_load_images_and_save(
-                    input_node, tonemap, settings, rendered_nodes)
+                    input_node, settings, rendered_nodes)
 
                 if execution_canceled:
                     return {}, None
@@ -146,7 +143,7 @@ def state_node(node):
     return state
 
 
-def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
+def create_load_images_and_save(node, settings, rendered_nodes):
     global states
     state = state_node(node)
 
@@ -162,7 +159,7 @@ def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
             'frame_range': frame_range,
             'inputs': {
                 'filepath': '',
-                'tonemap': tonemap,
+                'tonemap': 'linear',
                 'image_load_cap': 0,
                 'select_every_nth': 1,
                 'skip_first_images': 0
@@ -232,9 +229,19 @@ def create_load_images_and_save(node, tonemap, settings, rendered_nodes):
     write.setSelected(False)
     write.setInput(0, onode)
     write.knob('file').setValue(filename)
-    write.knob('raw').setValue(USE_EXR_TO_LOAD_IMAGES)
     write.knob('file_type').setValue(ext)
     write.knob('channels').setValue('rgba')
+
+    if USE_EXR_TO_LOAD_IMAGES:
+        if nuke.Root()['colorManagement'].value() == 'OCIO':
+            ocio_view = write['ocioView'].values()
+            if 'Un-tone-mapped' in ocio_view:
+                write['transformType'].setValue('display')
+                write['ocioView'].setValue('Un-tone-mapped')
+            else:
+                write['colorspace'].setValue('matte_paint')
+        else:
+            write['colorspace'].setValue('sRGB')
 
     try:
         nuke.execute(write, node.firstFrame(), node.lastFrame())
