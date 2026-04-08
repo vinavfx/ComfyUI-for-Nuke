@@ -204,6 +204,8 @@ def submit(run_node, success_callback=None, settings=None):
         task_status['progress'] = progress
 
         if message:
+            if 'Loop' in message:
+                message = '{} - {}'.format(message.count("Loop") + 1, message.split('.')[-1])
             task[0].setMessage(message)
             task_status['message'] = message
 
