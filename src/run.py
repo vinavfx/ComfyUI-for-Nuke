@@ -209,8 +209,14 @@ def submit(run_node, success_callback=None, settings=None):
             task[0].setMessage(message)
             task_status['message'] = message
 
-    def on_message(_, message):
+    def on_message(ws, message):
         try:
+            message_size = len(message)
+            if message_size > 1024 * 200:
+                set_task_progress(50, 'Waiting to finish...' )
+                ws.close()
+                return
+
             message = json.loads(message)
         except:
             return
