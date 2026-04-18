@@ -17,7 +17,7 @@ import copy
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
 from .common import update_images_and_mask_inputs, get_settings, show_message, execute_in_main_thread
 from .connection import POST
-from .queue_manager import resolve_submission_target, interrupt
+from .queue_manager import resolve_submission_target, interrupt, get_prompt_id
 from .nodes import extract_data
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, resolve_filename
 
@@ -272,6 +272,9 @@ def submit(run_node, success_callback=None, settings=None):
 
     def progress_task_loop():
         cancelled = False
+        captured_prompt = False
+        check_count = 0
+
         while task:
             if task[0].isCancelled():
                 if nuke.executeInMainThreadWithResult(lambda: nuke.ask(
@@ -283,7 +286,16 @@ def submit(run_node, success_callback=None, settings=None):
                     task[0].setProgress(task_status['progress'])
                     task[0].setMessage(task_status['message'])
 
-            sleep(.1)
+            if check_count >= 10:
+                # It prevents the websocket from getting stuck, especially in loops.
+                if get_prompt_id(settings, client_id):
+                    captured_prompt = True
+                elif captured_prompt:
+                    break
+                check_count = 0
+
+            sleep(0.1)
+            check_count += 1
 
         interrupt(settings, client_id)
 
