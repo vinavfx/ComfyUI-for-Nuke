@@ -127,7 +127,7 @@ def preview_image_update(node_name, data, settings):
 
 
 def submit(run_node, success_callback=None, settings=None):
-    def success_callback_wrapper(read, run_node, error=None):
+    def success_callback_wrapper(read=None, run_node=None, error=None):
         if not success_callback:
             return
 
@@ -159,6 +159,7 @@ def submit(run_node, success_callback=None, settings=None):
 
     data, input_node_changed = extract_data(run_node, settings)
     if not data:
+        success_callback_wrapper(error='data')
         return
 
     global states

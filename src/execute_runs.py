@@ -13,7 +13,11 @@ from .queue_manager import scan_urls, job_running_message
 
 
 def multi_runs(runs, success_callback=None, settings=None):
+    stop = [False]
     for i, run in enumerate(runs):
+        if stop[0]:
+            break
+
         if run.knob('comfyui_gizmo'):
             run = nuke.toNode(run.fullName() + '.Run')
 
@@ -22,6 +26,7 @@ def multi_runs(runs, success_callback=None, settings=None):
 
         def on_success(read, _, error):
             if error:
+                stop[0] = True
                 if success_callback:
                     success_callback()
                 return
