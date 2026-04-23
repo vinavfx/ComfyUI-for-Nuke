@@ -115,27 +115,35 @@ def resolve_submission_target(settings):
     return settings
 
 
+def find_prompt_id(queue_list, client_id):
+    return next((r[1] for r in queue_list if r[3].get('client_id') == client_id), '')
+
+
 def get_prompt_id(settings, client_id):
     queue = GET('queue', settings)
     if not queue:
         return
 
-    def find_prompt_id(queue_list):
-        return next((r[1] for r in queue_list if r[3].get('client_id') == client_id), '')
-
-    prompt_id = find_prompt_id(queue['queue_running'])
+    prompt_id = find_prompt_id(queue['queue_running'], client_id)
 
     if not prompt_id:
-        prompt_id = find_prompt_id(queue['queue_pending'])
+        prompt_id = find_prompt_id(queue['queue_pending'], client_id)
 
     return prompt_id
 
 
 def interrupt(settings, client_id):
-    prompt_id = get_prompt_id(settings, client_id)
-    if not prompt_id:
+    queue = GET('queue', settings)
+    if not queue:
         return
 
-    error = POST('interrupt', {'delete': [prompt_id]}, settings)
-    if error:
-        show_message(error)
+    prompt_id = find_prompt_id(queue['queue_running'], client_id)
+    endpoint = 'interrupt' if prompt_id else 'queue'
+
+    if not prompt_id:
+        prompt_id = find_prompt_id(queue['queue_pending'], client_id)
+
+    if prompt_id:
+        error = POST(endpoint, {'delete': [prompt_id]}, settings)
+        if error:
+            show_message(error)
