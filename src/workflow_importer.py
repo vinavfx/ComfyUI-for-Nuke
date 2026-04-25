@@ -14,7 +14,7 @@ from .nodes import get_node_data
 from .connection import convert_to_utf8
 from .common import show_message
 from ..settings import COMFYUI2NUKE
-from .scripts.knob2input import convert_knobs
+from .scripts.knob2input import convert_knobs, get_swapped_knobs
 
 
 def center_nodes(nodes):
@@ -58,17 +58,21 @@ def import_workflow():
 
         node = create_comfyui_node(attrs['type'], inpanel=False)
 
-        knobs_to_inputs = []
+        swapped_knobs = {}
         knobs_to_inputs_names = []
+
         for input_item in attrs.get('inputs', []):
             if 'widget' in input_item and 'name' in input_item['widget']:
                 name = input_item['widget']['name']
                 knobs_to_inputs_names.append(name)
-                knobs_to_inputs.append(
-                    [True, name + '_', name, input_item['type'].lower()])
 
-        if node and knobs_to_inputs:
-            convert_knobs(node, get_node_data(node), knobs_to_inputs)
+                swapped_knobs[name] = {
+                    'class': input_item['type'].lower(),
+                    'swapped_knob': True
+                }
+
+        if node and swapped_knobs:
+            convert_knobs(node, get_node_data(node), swapped_knobs)
 
         if attrs['type'] in ['Note', 'MarkdownNote']:
             node = nuke.createNode('StickyNote', inpanel=False)
