@@ -1,7 +1,8 @@
 import nuke  # type: ignore
 from ...nuke_util.nuke_util import selected_node, get_output_nodes, get_input_nodes, transfer_knobs
 from ..update_menu import create_comfyui_node, update_menu
-from ..nodes import get_node_data
+from ..nodes import get_node_data, save_node_data
+from .knob2input import convert_knobs, get_swapped_knobs
 
 
 def reload_node():
@@ -23,10 +24,22 @@ def reload_node():
         node.setName('_aux_')
         class_type = data['class_type']
 
+        swapped_knobs, _ = get_swapped_knobs(node)
+        force_outputs = {n['name']: n['force_output']
+                         for n in data['inputs'] if 'force_output' in n}
+
         update_menu()
 
         with node.parent():
             new_node = create_comfyui_node(class_type, False)
+            convert_knobs(new_node, get_node_data(new_node), swapped_knobs)
+
+            new_data = get_node_data(new_node)
+            for n in new_data['inputs']:
+                if n['name'] in force_outputs:
+                    n['force_output'] = force_outputs[n['name']]
+            save_node_data(new_node, data)
+
             transfer_knobs(node, new_node, transfer_all=True)
 
             if new_node:
