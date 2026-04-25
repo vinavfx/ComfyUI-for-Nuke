@@ -15,6 +15,9 @@ def reload_node():
     nodes[0].parent().begin()
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
+    updated_nodes = []
+    not_updated_nodes = []
+
     for node in nodes:
         data = get_node_data(node)
         if not data:
@@ -32,6 +35,14 @@ def reload_node():
 
         with node.parent():
             new_node = create_comfyui_node(class_type, False)
+
+            if new_node:
+                updated_nodes.append(name)
+            else:
+                not_updated_nodes.append(class_type)
+                node.setName(name)
+                continue
+
             convert_knobs(new_node, get_node_data(new_node), swapped_knobs)
 
             new_data = get_node_data(new_node)
@@ -55,3 +66,17 @@ def reload_node():
                 new_node.setXYpos(node.xpos(), node.ypos())
 
             nuke.delete(node)
+
+    if updated_nodes or not_updated_nodes:
+        msg = ''
+        if updated_nodes:
+            msg = '{} reloaded nodes:\n'.format(len(updated_nodes))
+            msg += '\n'.join(updated_nodes)
+
+        if not_updated_nodes:
+            msg += '\n\n{} nodes not installed:\n'.format(len(not_updated_nodes))
+            msg += '\n'.join(not_updated_nodes)
+
+        nuke.message(msg)
+    else:
+        nuke.message('Select a ComfyUI node!')
