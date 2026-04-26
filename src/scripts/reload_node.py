@@ -18,6 +18,9 @@ def reload_node():
     updated_nodes = []
     not_updated_nodes = []
 
+    if not update_menu():
+        return
+
     for node in nodes:
         data = get_node_data(node)
         if not data:
@@ -30,8 +33,6 @@ def reload_node():
         swapped_knobs, _ = get_swapped_knobs(node)
         force_outputs = {n['name']: n['force_output']
                          for n in data['inputs'] if 'force_output' in n}
-
-        update_menu()
 
         with node.parent():
             new_node = create_comfyui_node(class_type, False)
