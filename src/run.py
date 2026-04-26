@@ -186,29 +186,29 @@ def submit(run_node, success_callback=None, settings=None):
 
     url = "{}/ws?clientId={}".format(settings['URL'].replace('http', 'ws'), client_id)
 
-    task_status = {'title': 'Inferencing',
+    pbar_status = {'title': 'Inferencing',
                    'progress': 0, 'message': 'Waiting in Queue ...'}
-    task = [nuke.ProgressTask(task_status['title'])]
-    task[0].setMessage(task_status['message'])
+    pbar = [nuke.ProgressTask(pbar_status['title'])]
+    pbar[0].setMessage(pbar_status['message'])
     execution_error = [False]
 
     settings['pre_inference_time'] = time() - settings['pre_inference_time']
 
     def set_task_progress(progress, message = ''):
         if not nuke.GUI:
-            print('{} : {}%'.format(message or task_status['message'], progress))
+            print('{} : {}%'.format(message or pbar_status['message'], progress))
 
-        if not task:
+        if not pbar:
             return
 
-        task[0].setProgress(progress)
-        task_status['progress'] = progress
+        pbar[0].setProgress(progress)
+        pbar_status['progress'] = progress
 
         if message:
             if 'Loop' in message:
                 message = '{} - {}'.format(message.count("Loop") + 1, message.split('.')[-1])
-            task[0].setMessage(message)
-            task_status['message'] = message
+            pbar[0].setMessage(message)
+            pbar_status['message'] = message
 
     def on_message(ws, message):
         try:
@@ -243,11 +243,11 @@ def submit(run_node, success_callback=None, settings=None):
         elif type_data == 'executing':
             node = data.get('node')
 
-            if task:
+            if pbar:
                 if node:
                     set_task_progress(0, node)
                 else:
-                    del task[0]
+                    del pbar[0]
 
         elif type_data == 'execution_error':
             execution_message = data.get('exception_message')
@@ -259,8 +259,8 @@ def submit(run_node, success_callback=None, settings=None):
 
             execution_error[0] = True
 
-            if task:
-                del task[0]
+            if pbar:
+                del pbar[0]
 
             execute_in_main_thread(
                 error_node_style, args=(data.get('node_id'), True, execution_message, run_node))
@@ -268,8 +268,8 @@ def submit(run_node, success_callback=None, settings=None):
 
     def on_error(ws, error):
         ws.close()
-        if task:
-            del task[0]
+        if pbar:
+            del pbar[0]
 
         if 'connected' in str(error):
             return
@@ -282,16 +282,16 @@ def submit(run_node, success_callback=None, settings=None):
         captured_prompt = False
         check_count = 0
 
-        while task:
-            if task[0].isCancelled():
+        while pbar:
+            if pbar[0].isCancelled():
                 if nuke.executeInMainThreadWithResult(lambda: nuke.ask(
                         'Are you sure? This will stop the ComfyUI inference')):
                     cancelled = True
                     break
-                elif task:
-                    task[0] = nuke.ProgressTask(task_status['title'])
-                    task[0].setProgress(task_status['progress'])
-                    task[0].setMessage(task_status['message'])
+                elif pbar:
+                    pbar[0] = nuke.ProgressTask(pbar_status['title'])
+                    pbar[0].setProgress(pbar_status['progress'])
+                    pbar[0].setMessage(pbar_status['message'])
 
             if check_count >= 10:
                 # It prevents the websocket from getting stuck, especially in loops.
@@ -306,8 +306,8 @@ def submit(run_node, success_callback=None, settings=None):
 
         interrupt(settings, client_id)
 
-        if task:
-            del task[0]
+        if pbar:
+            del pbar[0]
 
         ws.close()
 
@@ -352,8 +352,8 @@ def submit(run_node, success_callback=None, settings=None):
 
     if error:
         execution_error[0] = True
-        if task:
-            del task[0]
+        if pbar:
+            del pbar[0]
         show_message(error)
 
     if not nuke.GUI:

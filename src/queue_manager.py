@@ -44,6 +44,8 @@ def show_queue():
     nuke.message(job_running_message(running_client, pending_client))
 
 
+blocked_urls = []
+
 def scan_urls(settings):
     url = settings['URL']
     urls = []
@@ -70,13 +72,20 @@ def scan_urls(settings):
 
     running_client = []
     pending_client = []
+    online_urls = []
 
     for url in urls:
+        if url in blocked_urls:
+            continue
+
         settings['URL'] = url
         queue = GET('queue', settings, warning=False, timeout=3)
 
         if not queue:
+            blocked_urls.append(url)
             continue
+
+        online_urls.append(url)
 
         running = queue['queue_running']
         pending = queue['queue_pending']
@@ -90,6 +99,9 @@ def scan_urls(settings):
 
         running_client += [r[3]['client_id'] for r in running]
         pending_client += [p[3]['client_id'] for p in pending]
+
+    if not online_urls:
+        blocked_urls.clear()
 
     return urls, available_url, lowest_load_url, running_client, pending_client
 

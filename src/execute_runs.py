@@ -9,7 +9,7 @@ from ..nuke_util.nuke_util import get_output_nodes, selected_node
 from .run import submit
 from .cmd import inference_end, inference_start
 from .common import get_settings
-from .queue_manager import scan_urls, job_running_message
+from .queue_manager import scan_urls, job_running_message, blocked_urls
 
 
 def multi_runs(runs, success_callback=None, settings=None):
@@ -105,7 +105,8 @@ def execute_runs_plus():
         'URL',
         'Use EXR to laod images',
         'Display metadata in Read Node',
-        'Backgroundi Submit'
+        'Backgroundi Submit',
+        'Force scan URLs'
     ]
 
     p = nuke.Panel('Run')
@@ -114,6 +115,7 @@ def execute_runs_plus():
     p.addBooleanCheckBox(keys[1], True)
     p.addBooleanCheckBox(keys[2], True)
     p.addBooleanCheckBox(keys[3], False)
+    p.addBooleanCheckBox(keys[4], False)
     p.addButton('Cancel')
     p.addButton('Run')
 
@@ -124,5 +126,8 @@ def execute_runs_plus():
     settings['USE_EXR_TO_LOAD_IMAGES'] = p.value(keys[1])
     settings['DISPLAY_META_IN_READ_NODE'] = p.value(keys[2])
     settings['BACKGROUND_SUBMIT'] = p.value(keys[3])
+
+    if p.value(keys[4]):
+        blocked_urls.clear()
 
     execute_runs(settings)
