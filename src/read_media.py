@@ -7,6 +7,7 @@ import os
 import shutil
 import nuke  # type: ignore
 from time import time
+import traceback
 
 from ..nuke_util.media_util import get_padding, get_name_no_padding
 from ..nuke_util.nuke_util import get_output_nodes
@@ -334,8 +335,11 @@ def create_read(run_node, data, settings, filename, already_exists=False):
     comfyui_gizmo = run_node.parent() if run_node.parent().knob(
         'comfyui_gizmo') else run_node
 
-    for i, onode in get_output_nodes(comfyui_gizmo):
-        onode.setInput(i, read)
+    try:
+        for i, onode in get_output_nodes(comfyui_gizmo):
+            onode.setInput(i, read)
+    except:
+        print(traceback.format_exc())
 
     return read
 
