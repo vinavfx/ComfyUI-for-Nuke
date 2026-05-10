@@ -50,7 +50,7 @@ def reload_node():
             for n in new_data['inputs']:
                 if n['name'] in force_outputs:
                     n['force_output'] = force_outputs[n['name']]
-            save_node_data(new_node, data)
+            save_node_data(new_node, new_data)
 
             transfer_knobs(node, new_node, transfer_all=True)
 
