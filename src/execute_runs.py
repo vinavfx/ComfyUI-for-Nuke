@@ -5,7 +5,7 @@
 # -----------------------------------------------------------
 import nuke  # type: ignore
 import json
-from ..nuke_util.nuke_util import get_output_nodes, selected_node
+from ..nuke_util.nuke_util import selected_node
 from .run import submit
 from .cmd import inference_end, inference_start
 from .common import get_settings
@@ -13,6 +13,10 @@ from .queue_manager import scan_urls, job_running_message, blocked_urls
 
 
 def multi_runs(runs, success_callback=None, settings=None):
+    if len(runs) > 10:
+        if not nuke.ask('Are you sure you want to queue {} tasks?'.format(len(runs))):
+            return
+
     stop = [False]
     for i, run in enumerate(runs):
         if stop[0]:
