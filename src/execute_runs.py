@@ -31,10 +31,6 @@ def multi_runs(runs, success_callback=None, settings=None):
                     success_callback()
                 return
 
-            if read:
-                for inp, n in get_output_nodes(run):
-                    n.setInput(inp, read)
-
             inference_end(read, run)
 
             if len(runs) == i + 1 and success_callback:
