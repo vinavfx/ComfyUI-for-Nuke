@@ -205,60 +205,64 @@ def create_load_images_and_save(node, settings, rendered_nodes):
 
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
-    onode = node
-    invert = None
-    crop = None
-    clamp = None
+    invert = nuke.createNode('Invert', inpanel=False)
+    invert.knob('channels').setValue('alpha')
+    invert.setInput(0, node)
+    invert.setXYpos(node.xpos(), node.ypos())
 
+    # VHS_LoadImages inverts the alpha
     if USE_EXR_TO_LOAD_IMAGES:
-        crop = nuke.createNode('Crop', inpanel=False)
-        crop.knob('box').setValue([0, 0, node.width(), node.height()])
-        crop.setInput(0, node)
-        crop.setXYpos(node.xpos(), node.ypos())
-        clamp = nuke.createNode('Clamp', inpanel=False)
-        clamp.setInput(0, crop)
-        onode = clamp
-    else:
-        # VHS_LoadImages inverts the alpha
-        invert = nuke.createNode('Invert', inpanel=False)
-        invert.knob('channels').setValue('alpha')
-        invert.setInput(0, node)
-        invert.setXYpos(node.xpos(), node.ypos())
-        onode = invert
+        invert['disable'].setValue(True)
+
+    crop = nuke.createNode('Crop', inpanel=False)
+    crop.knob('box').setValue([0, 0, node.width(), node.height()])
+    crop.setInput(0, invert)
+    crop.setXYpos(node.xpos(), node.ypos())
+
+    clamp = nuke.createNode('Clamp', inpanel=False)
+    clamp.setInput(0, crop)
+
+    ocio_display = nuke.createNode('OCIODisplay', inpanel=False)
+    ocio_display['disable'].setValue(True)
+    ocio_display.setInput(0, clamp)
 
     write = nuke.createNode('Write', inpanel=False)
     write.knob('hide_input').setValue(True)
     write.setName(node.name() + '_write')
     write.setXYpos(node.xpos(), node.ypos())
     write.setSelected(False)
-    write.setInput(0, onode)
+    write.setInput(0, ocio_display)
     write.knob('file').setValue(filename)
     write.knob('file_type').setValue(ext)
     write.knob('channels').setValue('rgba')
 
     if USE_EXR_TO_LOAD_IMAGES:
         if nuke.Root()['colorManagement'].value() == 'OCIO':
-            ocio_view = write['ocioView'].values()
+            ocio_view = ocio_display['view'].values()
+
             if 'Un-tone-mapped' in ocio_view:
-                write['transformType'].setValue('display')
-                write['ocioView'].setValue('Un-tone-mapped')
+                ocio_display['disable'].setValue(False)
+                ocio_display['view'].setValue('Un-tone-mapped')
             else:
                 write['colorspace'].setValue('matte_paint')
         else:
             write['colorspace'].setValue('sRGB')
 
+    def clean():
+        nuke.delete(write)
+        nuke.delete(invert)
+        nuke.delete(crop)
+        nuke.delete(clamp)
+        nuke.delete(ocio_display)
+
     try:
         nuke.execute(write, node.firstFrame(), node.lastFrame())
     except:
-        nuke.delete(write)
-        nuke.delete(invert)
+        clean()
         show_message(traceback.format_exc())
         return {}, False, True
 
-    nuke.delete(write)
-    nuke.delete(invert)
-    nuke.delete(crop)
-    nuke.delete(clamp)
+    clean()
 
     state_id = random.randrange(1, 9999)
     current_state['sequence_dir'] = sequence_dir
