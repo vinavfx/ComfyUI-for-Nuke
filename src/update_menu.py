@@ -8,6 +8,8 @@ from functools import partial
 import re
 import json
 import nuke  # type: ignore
+import threading
+from functools import partial
 
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import GET, convert_to_utf8
@@ -281,18 +283,11 @@ def update_menu():
     return update()
 
 
-def update():
+def build_menu(info, progress):
     global menu_updated
-    progress = nuke.ProgressTask('Updating ComfyUI')
-    progress.setMessage('Loading data from server...')
-    progress.setProgress(0)
-
-    info = GET('object_info', get_settings())
-    if not info:
-        return
-
     menu_updated = True
 
+    progress.setMessage('Refreshing menu items...')
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI')
 
     for item in comfyui_menu.items():
@@ -336,7 +331,6 @@ def update():
         show_message('ComfyUI-HQ-Image-Save module is required !')
 
     icon_gray = '{}/icons/comfyui_icon_gray.png'.format(COMFYUI2NUKE)
-    progress.setMessage('Refreshing menu items...')
 
     for i, (fullname, value) in enumerate(sorted(nodes.items())):
         progress.setProgress(int(i * 100 / len(nodes)))
@@ -350,7 +344,7 @@ def update():
                 'optional': list(input_data.get('optional', {}))
             }
 
-        value = json.loads(json.dumps(value))  # OrderedDict to Dict
+        value = json.loads(json.dumps(value))
         value_utf8 = convert_to_utf8(value)
 
         comfyui_nodes[value['name']] = value_utf8
@@ -358,4 +352,23 @@ def update():
             create_node, value_utf8), '', icon_gray)
 
     del progress
+
+
+def update():
+    def fetch_in_background():
+        progress = nuke.ProgressTask('Updating ComfyUI')
+        progress.setMessage('Loading data from server...')
+        progress.setProgress(0)
+
+        info = GET('object_info', get_settings())
+
+        if info:
+            nuke.executeInMainThread(partial(build_menu, info, progress))
+        else:
+            del progress
+
+    thread = threading.Thread(target=fetch_in_background)
+    thread.daemon = True
+    thread.start()
+
     return True
