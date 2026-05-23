@@ -29,7 +29,7 @@ def api_to_workflow(api):
     for name, body in api.items():
         attrs = body.get('nuke_attrs', {})
         xpos = attrs.get('xpos', 0)
-        ypos = attrs.get('ypos', 0)
+        ypos = attrs.get('ypos', 0) * 1.4
         tile_color = attrs.get('tile_color', 0)
 
         hex_color = f"#{int((tile_color >> 24) & 0xFF):02x}{int((tile_color >> 16) & 0xFF):02x}{int((tile_color >> 8) & 0xFF):02x}" if tile_color else None
@@ -60,6 +60,10 @@ def api_to_workflow(api):
             "properties": {"NodeData": {"title": name}},
             "widgets_values": w_vals
         }
+
+        if 'save' in node_data['type'].lower():
+            node_data['flags'] = {"collapsed": False}
+
         if hex_color:
             node_data["color"] = node_data["bgcolor"] = hex_color
 

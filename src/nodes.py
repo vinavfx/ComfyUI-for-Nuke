@@ -81,6 +81,13 @@ def extract_data(run_node, settings):
                 if execution_canceled:
                     return {}, None
 
+                # nuke_attrs used in "copy_workflow"
+                load_image_data['nuke_attrs'] = {
+                    'xpos': input_node.xpos(),
+                    'ypos': input_node.ypos(),
+                    'tile_color': input_node['tile_color'].value()
+                }
+
                 input_node_changed = True if changed_node else input_node_changed
                 data[input_node.name()] = load_image_data
 
