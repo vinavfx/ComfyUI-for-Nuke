@@ -65,6 +65,9 @@ def setup():
         'Scripts/Export Workflow', scripts.export_workflow.export_workflow, icon=icon_gray)
 
     comfyui_menu.addCommand(
+        'Scripts/Copy Workflow', scripts.export_workflow.copy_workflow, icon=icon_gray)
+
+    comfyui_menu.addCommand(
         'Scripts/Execute Runs', execute_runs.execute_runs, 'Ctrl+R', icon=icon_gray)
 
     comfyui_menu.addCommand(

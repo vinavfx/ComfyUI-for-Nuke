@@ -84,6 +84,12 @@ def extract_data(run_node, settings):
                 input_node_changed = True if changed_node else input_node_changed
                 data[input_node.name()] = load_image_data
 
+        # nuke_attrs used in "copy_workflow"
+        node_data['nuke_attrs'] = {
+            'xpos': n.xpos(),
+            'ypos': n.ypos(),
+            'tile_color': n['tile_color'].value()
+        }
         data[n.name()] = node_data
 
     return data, input_node_changed
@@ -161,8 +167,8 @@ def create_load_images_and_save(node, settings, rendered_nodes):
                 'filepath': '',
                 'tonemap': 'linear',
                 'image_load_cap': 0,
-                'select_every_nth': 1,
-                'skip_first_images': 0
+                'skip_first_images': 0,
+                'select_every_nth': 1
             },
             'class_type': 'LoadEXR'
         }
@@ -172,9 +178,9 @@ def create_load_images_and_save(node, settings, rendered_nodes):
             'frame_range': frame_range,
             'inputs': {
                 'directory': '',
+                'image_load_cap': 0,
                 'skip_first_images': 0,
-                'select_every_nth': 1,
-                'image_load_cap': 0
+                'select_every_nth': 1
             },
             'class_type': 'VHS_LoadImagesPath'
         }
