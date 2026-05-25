@@ -325,7 +325,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
     if meta and settings['DISPLAY_META_IN_READ_NODE']:
         label = '<center>'
         for key, value in meta:
-            label += '<font color="green" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
+            label += '<font color="black" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
                 key, value)
 
     if not already_exists:
