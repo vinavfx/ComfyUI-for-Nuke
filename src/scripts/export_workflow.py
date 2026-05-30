@@ -30,9 +30,9 @@ def api_to_workflow(api):
         attrs = body.get('nuke_attrs', {})
         xpos = attrs.get('xpos', 0)
         ypos = attrs.get('ypos', 0) * 1.4
-        tile_color = attrs.get('tile_color', 0)
+        tile_color = attrs.get('tile_color')
 
-        hex_color = f"#{int((tile_color >> 24) & 0xFF):02x}{int((tile_color >> 16) & 0xFF):02x}{int((tile_color >> 8) & 0xFF):02x}" if tile_color else None
+        hex_color = f"#{int((tile_color >> 24) & 0xFF):02x}{int((tile_color >> 16) & 0xFF):02x}{int((tile_color >> 8) & 0xFF):02x}" if tile_color else '#4d4d4d'
 
         n_id = id_map[name]
         ins, w_vals = [], []
@@ -85,9 +85,11 @@ def copy_workflow():
         return
 
     workflow, settings = data
+    root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    xclip = os.path.join(root, 'bin/xclip')
 
-    os.system("echo '{}' | xclip -selection clipboard".format(
-        api_to_workflow(workflow)))
+    os.system("echo '{}' | {} -selection clipboard".format(
+        api_to_workflow(workflow), xclip))
 
     url = json.loads(settings['URL'])[0]
 
