@@ -60,6 +60,9 @@ def update_node(node_name, data, run_node, settings):
         elif 'PreviewImage' in node_name:
             preview_image_update(node_name, data, settings)
 
+        elif 'PyScript' in node_name:
+            print(data['output']['stdout'][0])
+
 
 def show_text_uptate(node_name, data):
     output = data.get('output', {})
