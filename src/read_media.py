@@ -377,6 +377,7 @@ def backup_previous_generation(run_node=None):
             new_read.knob('frame_mode').setValue(read.knob('frame_mode').value())
             new_read.knob('frame').setValue(read.knob('frame').value())
             new_read.knob('auto_alpha').setValue(True)
+            new_read.knob('premultiplied').setValue(read.knob('premultiplied').value())
             set_correct_colorspace(new_read)
 
         new_read.setName(name)
