@@ -16,7 +16,7 @@ def get_swapped_knobs(node):
 
     swapped_knobs = {}
 
-    for nuke_knob_name in data['knobs_order']:
+    for nuke_knob_name in data.get('knobs_order', []):
         if not nuke_knob_name in data.get('knobs_class', {}):
             continue
 
