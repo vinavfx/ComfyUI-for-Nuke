@@ -14,7 +14,7 @@ from functools import partial
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import GET, convert_to_utf8
 from ..settings import COMFYUI2NUKE
-from .common import get_settings, show_message
+from .common import get_settings, show_message, jsondumps
 
 comfyui_nodes = {}
 menu_updated = False
@@ -114,8 +114,6 @@ def create_node(data, inpanel=True):
         if not type(info) == dict:
             continue
 
-        tooltip = info.get('tooltip', '')
-        placeholder = info.get('placeholder', '')
         force_input = info.get('forceInput', False)
         default_value = info.get('default', 0)
 
@@ -129,7 +127,6 @@ def create_node(data, inpanel=True):
             knob = nuke.Int_Knob(knob_name, key)
             default_value = default_value if default_value < 1e9 else 1e9
             knob.setValue(int(default_value))
-            knob.setTooltip(tooltip)
 
         elif _class == 'FLOAT':
             min_value = info.get('min', 0)
@@ -138,11 +135,9 @@ def create_node(data, inpanel=True):
             knob = nuke.Double_Knob(knob_name, key)
             knob.setRange(min_value, max_value)
             knob.setValue(default_value)
-            knob.setTooltip(tooltip)
 
         elif _class == 'STRING' and key in ['filepath', 'file', 'directory']:
             knob = nuke.File_Knob(knob_name, key)
-            knob.setTooltip(tooltip)
 
         elif _class == 'STRING':
             multiline = info.get('multiline', False)
@@ -154,13 +149,11 @@ def create_node(data, inpanel=True):
 
             default_string = info.get('default', '')
             knob.setText(str(default_string))
-            knob.setTooltip(tooltip + placeholder)
 
         elif _class in ['BOOLEAN', [True, False], [[True, False]]]:
             knob = nuke.Boolean_Knob(knob_name, key)
             knob.setFlag(nuke.STARTLINE)
             knob.setValue(default_value)
-            knob.setTooltip(tooltip)
 
         elif type(_class) == list or _class == 'COMBO':
             if _class == 'COMBO':
@@ -171,7 +164,6 @@ def create_node(data, inpanel=True):
             knob = nuke.Enumeration_Knob(
                 knob_name, key, [str(i) for i in options])
 
-            knob.setTooltip(tooltip)
             default_item = str(info.get('default', None))
 
             if not default_item == 'None':
@@ -239,7 +231,7 @@ def create_node(data, inpanel=True):
         else:
             outputs.append(output.lower())
 
-    data_knob.setValue(json.dumps({
+    data_knob.setValue(jsondumps({
         'knobs_order': knobs_order,
         'knobs_class': knobs_class,
         'class_type': data['name'],
@@ -247,7 +239,7 @@ def create_node(data, inpanel=True):
         'output_node': data.get('output_node', False),
         'inputs': _inputs,
         'outputs': outputs,
-    }, indent=4).replace('"', "'"))
+    }))
 
     n.addKnob(data_knob)
 

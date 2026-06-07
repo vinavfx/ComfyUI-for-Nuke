@@ -5,7 +5,10 @@
 # -----------------------------------------------------------
 import nuke  # type: ignore
 from datetime import datetime
+import json
 import hashlib
+import bz2
+import base64
 from ..settings import *
 from ..nuke_util.nuke_util import get_connected_nodes
 import threading
@@ -63,6 +66,21 @@ def update_images_and_mask_inputs(settings):
             if class_type in ['*', 'MASK']:
                 if not name in mask_inputs:
                     mask_inputs.append(name)
+
+
+def jsondumps(data):
+    json_bytes = json.dumps(data, separators=(',', ':')).encode('utf-8')
+    compressed_bytes = bz2.compress(json_bytes, compresslevel=9)
+    return base64.b85encode(compressed_bytes).decode('utf-8')
+
+
+def jsonloads(data):
+    try:
+        compressed_bytes = base64.b85decode(data.encode('utf-8'))
+        json_bytes = bz2.decompress(compressed_bytes)
+        return json.loads(json_bytes.decode('utf-8'))
+    except:
+        return {}
 
 
 def get_date_code():

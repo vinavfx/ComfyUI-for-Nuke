@@ -17,6 +17,8 @@ def force_output(node=None):
         return
 
     data = get_node_data(node)
+    if not data:
+        return
 
     p = nuke.Panel('Force Output ({})'.format(node.name()))
     items = []

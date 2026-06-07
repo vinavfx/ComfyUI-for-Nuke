@@ -12,7 +12,7 @@ from collections import Counter
 import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
-from .common import (image_inputs, mask_inputs, get_name_code, show_message)
+from .common import (image_inputs, mask_inputs, get_name_code, show_message, jsondumps, jsonloads)
 
 states = {}
 
@@ -344,6 +344,11 @@ def get_node_data(node):
     if not data_knob:
         return {}
 
+    data = jsonloads(data_knob.value())
+    if data:
+        return data
+
+    # Codigo para nodos viejos, borrar mas adelante!
     value = data_knob.value()
     if not 'class_type' in value:
         return {}
@@ -353,8 +358,9 @@ def get_node_data(node):
     return json.loads(data)
 
 
+
 def save_node_data(node, data):
-    node.knob('data').setValue(json.dumps(data, indent=4))
+    node.knob('data').setValue(jsondumps(data))
 
 
 def extract_node_data(node):
