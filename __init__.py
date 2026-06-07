@@ -77,6 +77,9 @@ def setup():
         'Scripts/Show Queue', queue_manager.show_queue, icon=icon_gray)
 
     comfyui_menu.addCommand(
+        'Scripts/Show Data', scripts.show_data, icon=icon_gray)
+
+    comfyui_menu.addCommand(
         'Scripts/Reload Node', scripts.reload_node.reload_node, icon=icon_gray)
 
     if UPDATE_MENU_AT_START:
