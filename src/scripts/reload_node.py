@@ -15,11 +15,15 @@ def reload_node():
     nodes[0].parent().begin()
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
+    if update_menu(lambda: reload_node_action(nodes)):
+        return
+
+    reload_node_action(nodes)
+
+
+def reload_node_action(nodes):
     updated_nodes = []
     not_updated_nodes = []
-
-    if not update_menu():
-        return
 
     for node in nodes:
         data = get_node_data(node)
@@ -75,7 +79,8 @@ def reload_node():
             msg += '\n'.join(updated_nodes)
 
         if not_updated_nodes:
-            msg += '\n\n{} nodes not installed:\n'.format(len(not_updated_nodes))
+            msg += '\n\n{} nodes not installed:\n'.format(
+                len(not_updated_nodes))
             msg += '\n'.join(not_updated_nodes)
 
         nuke.message(msg)

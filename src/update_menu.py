@@ -47,17 +47,19 @@ def create_comfyui_node(node_type, inpanel=True):
 
 
 def refresh_models(node, knob_name, class_type):
-    update()
-    nodes = get_nodes()
+    def refresh():
+        nodes = get_nodes()
 
-    knob = node.knob(knob_name)
-    _knob = nodes[class_type]['input']['required'][knob_name[:-1]]
-    models = _knob[0]
+        knob = node.knob(knob_name)
+        _knob = nodes[class_type]['input']['required'][knob_name[:-1]]
+        models = _knob[0]
 
-    if models == 'COMBO':
-        models = _knob[1].get('options', [])
+        if models == 'COMBO':
+            models = _knob[1].get('options', [])
 
-    knob.setValues(models)
+        knob.setValues(models)
+
+    update(refresh)
 
 
 def create_node(data, inpanel=True):
@@ -268,14 +270,14 @@ def create_node(data, inpanel=True):
     return n
 
 
-def update_menu():
+def update_menu(callback=None):
     if menu_updated:
-        return True
+        return
 
-    return update()
+    return update(callback)
 
 
-def build_menu(info, progress):
+def build_menu(info, progress, callback=None):
     global menu_updated
     menu_updated = True
 
@@ -345,8 +347,11 @@ def build_menu(info, progress):
 
     del progress
 
+    if callback:
+        callback()
 
-def update():
+
+def update(callback=None):
     def fetch_in_background():
         progress = nuke.ProgressTask('Updating ComfyUI')
         progress.setMessage('Loading data from server...')
@@ -355,7 +360,7 @@ def update():
         info = GET('object_info', get_settings())
 
         if info:
-            nuke.executeInMainThread(partial(build_menu, info, progress))
+            nuke.executeInMainThread(partial(build_menu, info, progress, callback))
         else:
             del progress
 
