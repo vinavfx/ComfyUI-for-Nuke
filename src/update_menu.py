@@ -194,8 +194,6 @@ def create_node(data, inpanel=True):
 
         if 'seed' in key or (data['name'] == 'PrimitiveInt' and key == 'value'):
             randomize_knob = nuke.Boolean_Knob('randomize')
-            randomize_knob.setTooltip(
-                'Allows the linked Run to automatically change the seed by randomizing the number.')
             randomize_knob.setValue(False)
             n.addKnob(randomize_knob)
 
