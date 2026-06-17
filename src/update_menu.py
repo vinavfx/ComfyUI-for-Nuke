@@ -57,7 +57,9 @@ def refresh_models(node, knob_name, class_type):
         if models == 'COMBO':
             models = _knob[1].get('options', [])
 
+        value = knob.value()
         knob.setValues(models)
+        knob.setValue(value)
 
     update(refresh)
 
