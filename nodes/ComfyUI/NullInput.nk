@@ -1,20 +1,19 @@
-Gizmo {
+Group {
  name NullInput
  tile_color 0x772830ff
  xpos 691
  ypos 261
  addUserKnob {20 User l Null}
- addUserKnob {26 null_input l "" }
+ addUserKnob {26 null_input l "null" +INVISIBLE}
 }
  Input {
   inputs 0
   name Input
-  selected true
   xpos 0
  }
  Output {
   name Output1
   xpos 0
-  ypos 300
+  ypos 50
  }
 end_group

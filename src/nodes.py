@@ -547,7 +547,7 @@ def is_switch_any(node):
 
 
 def is_null_input(node):
-    if not node.Class() == 'Gizmo':
+    if not node.Class() == 'Group':
         return
 
     if not node.knob('null_input'):
