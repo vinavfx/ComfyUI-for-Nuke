@@ -322,7 +322,7 @@ def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
             if not root_node.knob('which').value() == i:
                 continue
 
-        if is_null_input(root_node):
+        if is_null_input(root_node) and not is_disabled(root_node):
             continue
 
         if inode in visited:
