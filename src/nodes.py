@@ -74,6 +74,9 @@ def extract_data(run_node, settings):
             if is_switch_any(input_node):
                 continue
 
+            if is_null_input(input_node):
+                continue
+
             if not input_node.name() in comfyui_nodes:
                 load_image_data, changed_node, execution_canceled = create_load_images_and_save(
                     input_node, settings, rendered_nodes)
@@ -319,6 +322,9 @@ def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
             if not root_node.knob('which').value() == i:
                 continue
 
+        if is_null_input(root_node):
+            continue
+
         if inode in visited:
             continue
 
@@ -540,6 +546,16 @@ def is_switch_any(node):
     return True
 
 
+def is_null_input(node):
+    if not node.Class() == 'Gizmo':
+        return
+
+    if not node.knob('null_input'):
+        return
+
+    return True
+
+
 def get_input(node, i, ignore_disabled=True):
     if not node:
         return
@@ -570,5 +586,8 @@ def get_input(node, i, ignore_disabled=True):
                 continue
             else:
                 return
+
+        if is_null_input(inode):
+            return
 
         return inode
