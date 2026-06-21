@@ -105,7 +105,7 @@ def execute_runs_plus():
         'URL',
         'Use EXR to laod images',
         'Display metadata in Read Node',
-        'Backgroundi Submit',
+        'Background Submit',
         'Force scan URLs'
     ]
 

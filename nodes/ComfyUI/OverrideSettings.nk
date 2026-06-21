@@ -21,7 +21,7 @@ addUserKnob {6 use_exr_to_load_images l "Use EXR to laod images" t "If enabled, 
 use_exr_to_load_images true
 addUserKnob {6 display_meta_in_read_node l "Display metadata in Read Node" t "Will display the generation metadata in the Read node — seed, cfg, steps, etc." +STARTLINE}
 display_meta_in_read_node true
-addUserKnob {6 background_submit l "Backgroundi Submit" t "Sending to the queue without showing the Nuke progress bar will not create the Read Node nor relocate the output directory; you will have to manually search the ComfyUI output folder." +STARTLINE}
+addUserKnob {6 background_submit l "Background Submit" t "Sending to the queue without showing the Nuke progress bar will not create the Read Node nor relocate the output directory; you will have to manually search the ComfyUI output folder." +STARTLINE}
 addUserKnob {26 ""}
 addUserKnob {1 collect_directory l "Collect Directory" t "Directory where the inference images will be saved. If the path is relative, it will be relative to the Nuke .nk project."}
 collect_directory inferences
