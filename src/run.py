@@ -152,11 +152,33 @@ def submit(run_node, success_callback=None, settings=None):
         nuke.message('INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!')
         return
 
+    pbar_status = {'title': 'Inferencing', 'progress': 0, 'message': ''}
+    pbar = [nuke.ProgressTask(pbar_status['title'])]
+
+    def set_task_progress(progress, message = ''):
+        if not nuke.GUI:
+            print('{} : {}%'.format(message or pbar_status['message'], progress))
+
+        if not pbar:
+            return
+
+        pbar[0].setProgress(progress)
+        pbar_status['progress'] = progress
+
+        if message:
+            if 'Loop' in message:
+                message = '{} - {}'.format(message.count("Loop") + 1, message.split('.')[-1])
+            pbar[0].setMessage(message)
+            pbar_status['message'] = message
+
+    set_task_progress(0, 'Scanning ComfyUI servers...')
+
     if not resolve_submission_target(settings):
         return
 
-    update_images_and_mask_inputs(settings)
+    set_task_progress(0, 'Rendering Nuke images...')
 
+    update_images_and_mask_inputs(settings)
     exr_filepath_fixed(run_node)
     settings['project_name'] = nuke.root().name()
 
@@ -188,30 +210,10 @@ def submit(run_node, success_callback=None, settings=None):
     }
 
     url = "{}/ws?clientId={}".format(settings['URL'].replace('http', 'ws'), client_id)
-
-    pbar_status = {'title': 'Inferencing',
-                   'progress': 0, 'message': 'Waiting in Queue ...'}
-    pbar = [nuke.ProgressTask(pbar_status['title'])]
-    pbar[0].setMessage(pbar_status['message'])
     execution_error = [False]
-
     settings['pre_inference_time'] = time() - settings['pre_inference_time']
 
-    def set_task_progress(progress, message = ''):
-        if not nuke.GUI:
-            print('{} : {}%'.format(message or pbar_status['message'], progress))
-
-        if not pbar:
-            return
-
-        pbar[0].setProgress(progress)
-        pbar_status['progress'] = progress
-
-        if message:
-            if 'Loop' in message:
-                message = '{} - {}'.format(message.count("Loop") + 1, message.split('.')[-1])
-            pbar[0].setMessage(message)
-            pbar_status['message'] = message
+    set_task_progress(0, 'Waiting in Queue ...')
 
     def on_message(ws, message):
         try:
