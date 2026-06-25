@@ -3,7 +3,7 @@ version 12.0 v8
 push $cut_paste_input
 Group {
 inputs 0
-name OverrideSettings1
+name OverwriteSettings
 onCreate "this = nuke.thisNode()\n\nif not this.knob('created').value():\n    this.knob('url').setValue(comfyui.settings.URL)\n    this.knob('comfyui_dir').setValue(comfyui.settings.COMFYUI_DIR)\n    this.knob('use_exr_to_load_images').setValue(comfyui.settings.USE_EXR_TO_LOAD_IMAGES)\n    this.knob('display_meta_in_read_node').setValue(comfyui.settings.DISPLAY_META_IN_READ_NODE)\n    this.knob('remote_comfyui').setValue(not comfyui.settings.COMFYUI_LOCAL)\n    this.knob('output_directory').setValue(comfyui.settings.OUTPUT_DIRECTORY)\n\n    this.knob('created').setValue(True)"
 knobChanged "if nuke.thisKnob().name() == 'remote_comfyui':\n    nuke.thisNode().knob('comfyui_dir').setEnabled(not nuke.thisKnob().value())"
 tile_color 0x609e38ff
