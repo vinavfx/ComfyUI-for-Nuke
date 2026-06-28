@@ -112,6 +112,9 @@ def execute_runs_plus():
     p.addButton('Cancel')
     p.addButton('Run')
 
+    if not 'No inference' in queue:
+        p.setWidth(470)
+
     if not p.show():
         return
 
