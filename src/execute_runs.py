@@ -70,14 +70,6 @@ def execute_runs(settings=None):
     runs = []
 
     for n in nuke.selectedNodes():
-        if n.Class() == 'Read':
-            run_name = n.name().replace('Read', '')
-            run = nuke.toNode(run_name)
-
-            if run and not run in runs:
-                runs.append(run)
-                continue
-
         if not n.knob('run'):
             continue
 
