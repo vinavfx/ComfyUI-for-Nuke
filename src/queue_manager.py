@@ -3,11 +3,9 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
-import json
-import re
 import nuke  # type: ignore
 
-from .connection import GET, POST
+from .connection import GET, POST, format_URLs
 from .common import show_message, get_settings
 
 
@@ -46,25 +44,14 @@ def show_queue():
 
 blocked_urls = []
 
+
 def scan_urls(settings):
-    url = settings['URL']
-    urls = []
+    urls = format_URLs(settings['URL'])
 
-    pattern = r'^(https?://)?([a-zA-Z0-9.-]+|\d{1,3}(\.\d{1,3}){3})(:\d{1,5})?$'
-    if re.match(pattern, url):
-        urls = [url]
-    else:
-        try:
-            urls = json.loads(url)
-        except:
-            show_message(
-                '{}\nIt has to be an URL address or a list of URL addresses as JSON !'.format(url))
-            return [None] * 5
-
-    urls = [
-        url if '://' in url else 'http://{}'.format(url)
-        for url in urls
-    ]
+    if not urls:
+        show_message(
+            '{}\nIt has to be an URL address or a list of URL addresses as JSON !'.format(settings['URL']))
+        return [None] * 5
 
     available_url = ''
     lowest_load_url = None

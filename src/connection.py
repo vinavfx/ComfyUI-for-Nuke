@@ -7,7 +7,7 @@ import sys
 import json
 import traceback
 from collections import OrderedDict
-
+import re
 
 if sys.version_info.major == 2:
     import urllib2 as urllib2  # type: ignore
@@ -18,12 +18,31 @@ import nuke  # type: ignore
 from .common import show_message, execute_in_main_thread, get_settings
 
 
-def GET(endpoint, settings, warning=True, timeout=30):
-    url = settings['URL']
-    url = json.loads(url)[0] if url.startswith('[') else url
+def format_URLs(url):
+    urls = []
+    pattern = r'^(https?://)?([a-zA-Z0-9.-]+|\d{1,3}(\.\d{1,3}){3})(:\d{1,5})?$'
 
-    if not '://' in url:
-        url = 'http://{}'.format(url)
+    if re.match(pattern, url):
+        urls = [url]
+    else:
+        try:
+            urls = json.loads(url)
+        except:
+            pass
+
+    result = []
+    for u in urls:
+        if '://' not in u:
+            u = 'http://{}'.format(u)
+        if re.search(r':\d+$', u) is None:
+            u += ':8188'
+        result.append(u)
+
+    return result
+
+
+def GET(endpoint, settings, warning=True, timeout=30):
+    url = format_URLs(settings['URL'])[0]
 
     url = '{}/{}'.format(url, endpoint)
     request = urllib2.Request(url)
