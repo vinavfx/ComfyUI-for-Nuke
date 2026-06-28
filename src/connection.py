@@ -18,6 +18,15 @@ import nuke  # type: ignore
 from .common import show_message, execute_in_main_thread, get_settings
 
 
+def get_ip_from_url(url):
+    if '://' in url:
+        _, rest = url.split('://', 1)
+    else:
+        rest = url
+
+    return rest.split(':')[0].split('/')[0]
+
+
 def format_URLs(url):
     urls = []
     pattern = r'^(https?://)?([a-zA-Z0-9.-]+|\d{1,3}(\.\d{1,3}){3})(:\d{1,5})?$'
