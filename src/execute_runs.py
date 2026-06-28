@@ -3,6 +3,7 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
+import copy
 import nuke  # type: ignore
 import json
 from ..nuke_util.nuke_util import selected_node
@@ -41,7 +42,8 @@ def multi_runs(runs, success_callback=None, settings=None):
                 success_callback()
 
         with run:
-            submit(run, success_callback=on_success, settings=settings)
+            submit(run, success_callback=on_success,
+                   settings=copy.deepcopy(settings) if settings else None)
         run.end()
 
 
@@ -92,7 +94,7 @@ def execute_runs(settings=None):
 
 
 def execute_runs_plus():
-    if not selected_node():
+    if not selected_node(False):
         return
 
     settings = get_settings()
