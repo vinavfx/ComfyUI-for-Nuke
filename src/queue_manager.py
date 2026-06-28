@@ -11,7 +11,7 @@ from .connection import GET, POST
 from .common import show_message, get_settings
 
 
-def job_running_message(running_client, pending_client, ip='localhost'):
+def job_running_message(running_client, pending_client):
     def ellipsis(s, n):
         return s if len(s) <= n else s[:n - 3] + "..."
 
@@ -20,13 +20,13 @@ def job_running_message(running_client, pending_client, ip='localhost'):
 
     if running_client:
         msg = '<b>Running</b>:\n'
-        for i, client in enumerate(running_client):
+        for i, (ip, client) in enumerate(running_client):
             user, nk, send_id = (client.split(':') + [client, '', 1])[:3]
             msg += msgline.format(i + 1, user, ip, ellipsis(nk, 40), send_id)
 
     if pending_client:
         msg += '\n<b>Pending</b>:\n'
-        for i, client in enumerate(pending_client):
+        for i, (ip, client) in enumerate(pending_client):
             user, nk, send_id = (client.split(':') + [client, '', ''])[:3]
             msg += msgline.format(i + 1, user, ip, ellipsis(nk, 40), send_id)
 
@@ -97,8 +97,8 @@ def scan_urls(settings):
         if not available_url and not running:
             available_url = url
 
-        running_client += [r[3]['client_id'] for r in running]
-        pending_client += [p[3]['client_id'] for p in pending]
+        running_client += [(url, r[3]['client_id']) for r in running]
+        pending_client += [(url, p[3]['client_id']) for p in pending]
 
     if not online_urls:
         blocked_urls.clear()
