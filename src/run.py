@@ -175,7 +175,7 @@ def submit(run_node, success_callback=None, settings=None):
             if 'Loop' in message:
                 message = '{} - {}'.format(message.count("Loop") + 1, message.split('.')[-1])
 
-            message = '{}: {}'.format(ip, message) if ip else message
+            message = '{} - {} '.format(message, ip) if ip else message
             pbar[0].setMessage(message)
             pbar_status['message'] = message
 
