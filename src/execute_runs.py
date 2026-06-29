@@ -45,6 +45,8 @@ def multi_runs(runs, success_callback=None, settings=None):
             submit(run, success_callback=on_success,
                    settings=copy.deepcopy(settings) if settings else None)
 
+        run.end()
+
 
 def multi_versions(run=None, success_callback=None):
     if not run:
