@@ -98,7 +98,10 @@ def POST(endpoint, data, settings):
             node_errors = error['node_errors'] if error['node_errors'] else {}
 
             for name, value in node_errors.items():
-                nuke.toNode(name).setSelected(True)
+                node = nuke.thisNode().parent().node(name)
+                if node:
+                    node.setSelected(True)
+
                 errors += '{}:\n'.format(name)
 
                 for err in value['errors']:
