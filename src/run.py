@@ -16,7 +16,7 @@ import copy
 
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
 from .common import update_images_and_mask_inputs, get_settings, show_message, execute_in_main_thread
-from .connection import POST
+from .connection import POST, get_ip_from_url
 from .queue_manager import resolve_submission_target, interrupt, get_prompt_id
 from .nodes import extract_data
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, resolve_filename
@@ -155,12 +155,16 @@ def submit(run_node, success_callback=None, settings=None):
     pbar_status = {'title': 'Inferencing', 'progress': 0, 'message': ''}
     pbar = [nuke.ProgressTask(pbar_status['title'])]
 
-    def set_task_progress(progress, message = ''):
+    def set_task_progress(progress, message = '', title = ''):
         if not nuke.GUI:
             print('{} : {}%'.format(message or pbar_status['message'], progress))
 
         if not pbar:
             return
+
+        if title:
+            pbar[0] = None
+            pbar[0] = nuke.ProgressTask(title)
 
         pbar[0].setProgress(progress)
         pbar_status['progress'] = progress
@@ -176,7 +180,9 @@ def submit(run_node, success_callback=None, settings=None):
     if not resolve_submission_target(settings):
         return
 
-    set_task_progress(0, 'Rendering Nuke images...')
+    ip_title = '' if '127' in settings['URL'] else 'Inferencing: ' + \
+        get_ip_from_url(settings['URL'])
+    set_task_progress(0, 'Rendering Nuke images...', ip_title)
 
     update_images_and_mask_inputs(settings)
     exr_filepath_fixed(run_node)
