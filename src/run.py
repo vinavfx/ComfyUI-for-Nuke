@@ -370,3 +370,5 @@ def submit(run_node, success_callback=None, settings=None):
     if not nuke.GUI:
         task_loop.join() if task_loop else None
         print('\nPrompt executed in {} seconds'.format(round(time() - settings['inference_time'], 1)))
+
+    return settings

@@ -42,7 +42,7 @@ def multi_runs(runs, success_callback=None, settings=None):
                 success_callback()
 
         with run:
-            submit(run, success_callback=on_success,
+            settings = submit(run, success_callback=on_success,
                    settings=copy.deepcopy(settings) if settings else None)
 
         run.end()
