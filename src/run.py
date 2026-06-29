@@ -155,34 +155,36 @@ def submit(run_node, success_callback=None, settings=None):
     pbar_status = {'title': 'Inferencing', 'progress': 0, 'message': ''}
     pbar = [nuke.ProgressTask(pbar_status['title'])]
 
-    def set_task_progress(progress, message = '', title = ''):
+    def set_task_progress(progress, message = '', include_ip = True):
         if not nuke.GUI:
             print('{} : {}%'.format(message or pbar_status['message'], progress))
 
         if not pbar:
             return
 
-        if title:
-            pbar[0] = None
-            pbar[0] = nuke.ProgressTask(title)
-
         pbar[0].setProgress(progress)
         pbar_status['progress'] = progress
+
+        if include_ip:
+            ip = '' if '127' in settings['URL'] else get_ip_from_url(
+                settings['URL'])
+        else:
+            ip = ''
 
         if message:
             if 'Loop' in message:
                 message = '{} - {}'.format(message.count("Loop") + 1, message.split('.')[-1])
+
+            message = '{}: {}'.format(ip, message) if ip else message
             pbar[0].setMessage(message)
             pbar_status['message'] = message
 
-    set_task_progress(0, 'Scanning ComfyUI servers...')
+    set_task_progress(0, 'Scanning ComfyUI servers...', False)
 
     if not resolve_submission_target(settings):
         return
 
-    ip_title = '' if '127' in settings['URL'] else 'Inferencing: ' + \
-        get_ip_from_url(settings['URL'])
-    set_task_progress(0, 'Rendering Nuke images...', ip_title)
+    set_task_progress(0, 'Rendering Nuke images...')
 
     update_images_and_mask_inputs(settings)
     exr_filepath_fixed(run_node)
