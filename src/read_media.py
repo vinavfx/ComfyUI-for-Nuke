@@ -276,6 +276,25 @@ def resolve_filename(settings, already_generated=False):
     return filename
 
 
+def create_empty_read(run_node, data, settings):
+    filename = os.path.join(
+        settings['OUTPUT_DIRECTORY'], settings['filename_prefix'])
+
+    filename += '_#####_.png'
+    read = create_read(run_node, data, settings, filename)
+
+    if not read:
+        return
+
+    first_frame, last_frame = get_frame_range(data)
+    read['on_error'].setValue('black')
+    read['first'].setValue(1)
+    read['last'].setValue(last_frame - first_frame + 1)
+    read['origlast'].setValue(last_frame - first_frame + 1)
+
+    return read
+
+
 def create_read(run_node, data, settings, filename, already_exists=False):
     if not filename:
         return

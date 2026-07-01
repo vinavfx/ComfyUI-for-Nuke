@@ -38,10 +38,15 @@ def job_running_message(running_client, pending_client):
     return msg
 
 
-def show_queue():
+def show_queue(nuke_message=True):
     settings = get_settings()
     _, _, _, running_client, pending_client = scan_urls(settings)
-    nuke.message(job_running_message(running_client, pending_client))
+
+    queue = job_running_message(running_client, pending_client)
+    if nuke_message:
+        nuke.message(queue)
+
+    return queue
 
 
 blocked_urls = []

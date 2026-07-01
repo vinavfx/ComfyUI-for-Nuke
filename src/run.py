@@ -17,9 +17,9 @@ import copy
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
 from .common import update_images_and_mask_inputs, get_settings, show_message, execute_in_main_thread
 from .connection import POST, get_ip_from_url
-from .queue_manager import resolve_submission_target, interrupt, get_prompt_id
+from .queue_manager import resolve_submission_target, interrupt, get_prompt_id, show_queue
 from .nodes import extract_data
-from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, resolve_filename
+from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, resolve_filename, create_empty_read
 
 
 states = {}
@@ -360,8 +360,10 @@ def submit(run_node, success_callback=None, settings=None):
     error = POST('prompt', body, settings)
 
     if settings['BACKGROUND_SUBMIT'] and not error:
-        show_message('Workflow sent to the ComfyUI Queue\n{}/{}'.format(
-            settings['OUTPUT_DIRECTORY'], os.path.dirname(settings['filename_prefix'] or '')))
+        read = create_empty_read(run_node, data, settings)
+        success_callback_wrapper(read, run_node, execution_error[0])
+        show_message(
+            'Workflow sent to the ComfyUI Queue:\n\n{}'.format(show_queue(False)))
 
     if error:
         execution_error[0] = True
