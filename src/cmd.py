@@ -38,6 +38,9 @@ def inference_start(run_node, iteration=0):
 
 
 def inference_end(_, run_node):
+    if not run_node:
+        return
+
     callback = run_node.parent().knob('inferenceEnd')
     if callback:
         callback.execute()
