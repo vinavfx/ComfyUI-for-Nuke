@@ -63,7 +63,10 @@ def extract_data(run_node, settings):
             if not input_fullname.startswith('root.'):
                 input_fullname = 'root.' + input_fullname
 
-            input_node = nuke.toNode(input_fullname) if input_key else None
+            with nuke.Root():
+                input_node = nuke.toNode(input_fullname) if input_key else None
+
+            run_node.begin()
 
             if not input_node:
                 continue
