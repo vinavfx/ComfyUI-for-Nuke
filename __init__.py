@@ -71,7 +71,7 @@ def setup():
         'Scripts/Execute Runs', execute_runs.execute_runs, 'Ctrl+R', icon=icon_gray)
 
     comfyui_menu.addCommand(
-        'Scripts/Execute Runs +', execute_runs.execute_runs_plus, 'Ctrl+Alt+R', icon=icon_gray)
+        'Scripts/Execute Runs +', execute_runs.execute_runs_plus, 'Ctrl+Shift+R', icon=icon_gray)
 
     comfyui_menu.addCommand(
         'Scripts/Show Queue', queue_manager.show_queue, icon=icon_gray)
