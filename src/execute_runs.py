@@ -13,7 +13,7 @@ from .common import get_settings
 from .queue_manager import scan_urls, job_running_message, blocked_urls
 
 
-def multi_runs(runs, success_callback=None, settings=None):
+def multi_runs(runs, success_callback=None, settings=None, distribute_load=False):
     if len(runs) > 10:
         if not nuke.ask('Are you sure you want to queue {} tasks?'.format(len(runs))):
             return
@@ -45,6 +45,9 @@ def multi_runs(runs, success_callback=None, settings=None):
             settings = submit(run, success_callback=on_success,
                    settings=copy.deepcopy(settings) if settings else None)
 
+        if distribute_load:
+            settings = None
+
         run.end()
 
 
@@ -67,7 +70,7 @@ def prepare_multiversions(node):
     return [node] * versions
 
 
-def execute_runs(settings=None):
+def execute_runs(settings=None, distribute_load=False):
     runs = []
 
     for n in nuke.selectedNodes():
@@ -83,7 +86,7 @@ def execute_runs(settings=None):
         nuke.message('Select at least 1 Run node!')
         return
 
-    multi_runs(runs, settings=settings)
+    multi_runs(runs, settings=settings, distribute_load=distribute_load)
 
 
 def execute_runs_plus():
@@ -91,8 +94,10 @@ def execute_runs_plus():
         return
 
     settings = get_settings()
-    urls = json.loads(settings['URL'])
-    urls.insert(0, '-')
+    settings_with_all_ips = settings
+
+    urls = ['-', '{%s}' % 'Distribute on all IPs']
+    urls.extend(json.loads(settings['URL']))
 
     _, _, _, running_client, pending_client = scan_urls(settings)
     queue = job_running_message(running_client, pending_client)
@@ -122,7 +127,11 @@ def execute_runs_plus():
         return
 
     url = p.value(keys[0])
-    if not url == '-':
+    distribute_load = 'Distribute' in url
+
+    if distribute_load:
+        settings = settings_with_all_ips
+    elif not url == '-':
         settings['URL'] = url
 
     settings['USE_EXR_TO_LOAD_IMAGES'] = p.value(keys[1])
@@ -132,4 +141,4 @@ def execute_runs_plus():
     if p.value(keys[4]):
         blocked_urls.clear()
 
-    execute_runs(settings)
+    execute_runs(settings, distribute_load)
