@@ -92,6 +92,7 @@ def execute_runs_plus():
 
     settings = get_settings()
     urls = json.loads(settings['URL'])
+    urls.insert(0, '-')
 
     _, _, _, running_client, pending_client = scan_urls(settings)
     queue = job_running_message(running_client, pending_client)
@@ -120,7 +121,10 @@ def execute_runs_plus():
     if not p.show():
         return
 
-    settings['URL'] = p.value(keys[0])
+    url = p.value(keys[0])
+    if not url == '-':
+        settings['URL'] = url
+
     settings['USE_EXR_TO_LOAD_IMAGES'] = p.value(keys[1])
     settings['DISPLAY_META_IN_READ_NODE'] = p.value(keys[2])
     settings['BACKGROUND_SUBMIT'] = p.value(keys[3])
