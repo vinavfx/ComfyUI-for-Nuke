@@ -94,7 +94,7 @@ def execute_runs_plus():
         return
 
     settings = get_settings()
-    settings_with_all_ips = settings
+    all_urls = settings['URL']
 
     urls = ['-', '{%s}' % 'Distribute on all IPs']
     urls.extend(json.loads(settings['URL']))
@@ -129,9 +129,9 @@ def execute_runs_plus():
     url = p.value(keys[0])
     distribute_load = 'Distribute' in url
 
-    if distribute_load:
-        settings = settings_with_all_ips
-    elif not url == '-':
+    if url == '-' or distribute_load:
+        settings['URL'] = all_urls
+    else:
         settings['URL'] = url
 
     settings['USE_EXR_TO_LOAD_IMAGES'] = p.value(keys[1])
