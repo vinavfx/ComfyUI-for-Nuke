@@ -9,8 +9,15 @@ import json
 from ..nuke_util.nuke_util import selected_node
 from .run import submit
 from .cmd import inference_end, inference_start
-from .common import get_settings
+from .common import get_settings, override_settings
 from .queue_manager import scan_urls, job_running_message, blocked_urls
+
+
+def get_run(run):
+    if run.knob('comfyui_gizmo'):
+        return nuke.toNode(run.fullName() + '.Run')
+
+    return run
 
 
 def multi_runs(runs, success_callback=None, settings=None, distribute_load=False):
@@ -23,8 +30,7 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
         if stop[0]:
             break
 
-        if run.knob('comfyui_gizmo'):
-            run = nuke.toNode(run.fullName() + '.Run')
+        run = get_run(run)
 
         if not inference_start(run, i):
             continue
@@ -90,7 +96,8 @@ def execute_runs(settings=None, distribute_load=False):
 
 
 def execute_runs_plus():
-    if not selected_node(False):
+    nodes = selected_node(False)
+    if not nodes:
         return
 
     settings = get_settings()
@@ -121,7 +128,7 @@ def execute_runs_plus():
     p.addButton('Run')
 
     if not 'No inference' in queue:
-        p.setWidth(470)
+        p.setWidth(500)
 
     if not p.show():
         return
@@ -129,7 +136,9 @@ def execute_runs_plus():
     url = p.value(keys[0])
     distribute_load = 'Distribute' in url
 
-    if url == '-' or distribute_load:
+    if url == '-':
+        override_settings(get_run(nodes[0]), settings)
+    elif distribute_load:
         settings['URL'] = all_urls
     else:
         settings['URL'] = url

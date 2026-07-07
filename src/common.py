@@ -96,18 +96,7 @@ def get_name_code(name, length=15):
     return code
 
 
-def get_settings(run_node=None):
-    settings = {
-        'URL': URL,
-        'OUTPUT_DIRECTORY': OUTPUT_DIRECTORY,
-        'INPUT_DIRECTORY': INPUT_DIRECTORY,
-        'COLLECT_DIRECTORY': COLLECT_DIRECTORY,
-        'UPDATE_MENU_AT_START': UPDATE_MENU_AT_START,
-        'USE_EXR_TO_LOAD_IMAGES': USE_EXR_TO_LOAD_IMAGES,
-        'DISPLAY_META_IN_READ_NODE': DISPLAY_META_IN_READ_NODE,
-        'BACKGROUND_SUBMIT': False
-    }
-
+def override_settings(run_node, settings):
     override_node = None
     for n in get_connected_nodes(run_node, ignore_disabled=True, continue_at_up_level=True):
         if n.knob('override_settings'):
@@ -126,4 +115,18 @@ def get_settings(run_node=None):
         override('use_exr_to_load_images')
         override('display_meta_in_read_node')
 
+
+def get_settings(run_node=None):
+    settings = {
+        'URL': URL,
+        'OUTPUT_DIRECTORY': OUTPUT_DIRECTORY,
+        'INPUT_DIRECTORY': INPUT_DIRECTORY,
+        'COLLECT_DIRECTORY': COLLECT_DIRECTORY,
+        'UPDATE_MENU_AT_START': UPDATE_MENU_AT_START,
+        'USE_EXR_TO_LOAD_IMAGES': USE_EXR_TO_LOAD_IMAGES,
+        'DISPLAY_META_IN_READ_NODE': DISPLAY_META_IN_READ_NODE,
+        'BACKGROUND_SUBMIT': False
+    }
+
+    override_settings(run_node, settings)
     return settings
