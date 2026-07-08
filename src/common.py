@@ -16,8 +16,8 @@ import threading
 if not getattr(nuke, 'comfyui_running', False):
     nuke.comfyui_running = False
 
-image_inputs = ['image', 'frames', 'pixels', 'images', 'src_images']
-mask_inputs = ['mask', 'attn_mask', 'mask_optional']
+image_inputs = []
+mask_inputs = []
 updated_inputs = False
 
 
@@ -44,8 +44,6 @@ def update_images_and_mask_inputs(settings):
     if updated_inputs:
         return
 
-    updated_inputs = True
-
     from .connection import GET
     info = GET('object_info', settings)
     if not info:
@@ -66,6 +64,9 @@ def update_images_and_mask_inputs(settings):
             if class_type in ['*', 'MASK']:
                 if not name in mask_inputs:
                     mask_inputs.append(name)
+
+    if len(image_inputs) > 50:
+        updated_inputs = True
 
 
 def jsondumps(data):
