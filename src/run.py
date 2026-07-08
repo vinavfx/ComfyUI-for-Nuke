@@ -184,11 +184,11 @@ def submit(run_node, success_callback=None, settings=None):
     if not resolve_submission_target(settings):
         return
 
-    set_task_progress(0, 'Rendering Nuke images...')
-
     update_images_and_mask_inputs(settings)
     exr_filepath_fixed(run_node)
     settings['project_name'] = nuke.root().name()
+
+    set_task_progress(0, 'Rendering Nuke images...')
 
     data, input_node_changed = extract_data(run_node, settings)
     if not data:
