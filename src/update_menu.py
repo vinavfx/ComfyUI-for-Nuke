@@ -15,6 +15,7 @@ from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import GET, convert_to_utf8
 from ..settings import COMFYUI2NUKE
 from .common import get_settings, show_message, jsondumps
+from .queue_manager import resolve_submission_target
 
 comfyui_nodes = {}
 menu_updated = False
@@ -357,7 +358,9 @@ def update(callback=None):
         progress.setMessage('Loading data from server...')
         progress.setProgress(0)
 
-        info = GET('object_info', get_settings())
+        settings = get_settings()
+        resolve_submission_target(settings)
+        info = GET('object_info', settings)
 
         if info:
             nuke.executeInMainThread(partial(build_menu, info, progress, callback))
