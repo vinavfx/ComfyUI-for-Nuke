@@ -360,7 +360,7 @@ def update(callback=None):
 
         settings = get_settings()
         resolve_submission_target(settings)
-        info = GET('object_info', settings)
+        info = GET('object_info', settings, False)
 
         if info:
             nuke.executeInMainThread(partial(build_menu, info, progress, callback))

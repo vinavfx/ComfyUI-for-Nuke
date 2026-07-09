@@ -277,7 +277,7 @@ def submit(run_node, success_callback=None, settings=None):
 
             execute_in_main_thread(
                 error_node_style, args=(data.get('node_id'), True, execution_message, run_node))
-            execute_in_main_thread(show_message, args=(error))
+            show_message(error)
 
     def on_error(ws, error):
         ws.close()
@@ -288,7 +288,7 @@ def submit(run_node, success_callback=None, settings=None):
             return
 
         execution_error[0] = True
-        execute_in_main_thread(show_message, args=('error: ' + str(error)))
+        show_message('error: ' + str(error))
 
     def progress_task_loop():
         cancelled = False

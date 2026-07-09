@@ -15,7 +15,7 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
-from .common import show_message, execute_in_main_thread, get_settings
+from .common import show_message, get_settings
 
 
 def get_ip_from_url(url):
@@ -62,8 +62,7 @@ def GET(endpoint, settings, warning=True, timeout=30):
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
         if warning:
-            execute_in_main_thread(show_message, args=(
-                'Error connecting to ComfyUI server {} !'.format(settings['URL']),))
+            show_message(f"Error connecting to ComfyUI server {settings['URL']} !")
 
 
 def check_connection():
