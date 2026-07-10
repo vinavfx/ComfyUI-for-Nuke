@@ -5,19 +5,20 @@
 # -----------------------------------------------------------
 import re
 import json
+import time
 import queue
 import threading
+import urllib.request as urllib_request
+
 import nuke  # type: ignore
 from .. import settings
 from ..nuke_util.panels import panel_widget
 from ..nuke_util import panels
 from ..nuke_util.pyside import (QVBoxLayout, QTextEdit, QWidget, QTimer,
-                                QIcon, QHBoxLayout, QPushButton, QCheckBox, Qt,
+                                QHBoxLayout, QPushButton, Qt,
                                 QComboBox, QFont, QTextCursor, QTextCharFormat,
                                 QColor)
 from .connection import format_URLs
-
-import urllib.request as urllib2
 
 panels.init('comfyui.console.console_panel', 'ComfyUI Console')
 
@@ -28,23 +29,35 @@ def show_console():
 
 
 class LogPoller:
+    '''
+    Sondea el endpoint de logs de ComfyUI en un hilo aparte y entrega
+    los mensajes nuevos a través de una queue thread-safe.
+    '''
+    POLL_INTERVAL = 1  # segundos
+
     def __init__(self, url='127.0.0.1:8188'):
         self.url = format_URLs(url)[0]
-        self._running = False
+        self._queue = queue.Queue()
+        self._stop_event = threading.Event()
         self._thread = None
         self._last_timestamp = None
-        self._queue = queue.Queue()
-        self.on_message = None
+
+    @property
+    def is_running(self):
+        return self._thread is not None and self._thread.is_alive()
 
     def start(self):
-        if self._running:
+        if self.is_running:
             return
-        self._running = True
+        self._stop_event.clear()
         self._thread = threading.Thread(target=self._poll_loop, daemon=True)
         self._thread.start()
 
     def stop(self):
-        self._running = False
+        self._stop_event.set()
+        if self._thread:
+            self._thread.join(timeout=self.POLL_INTERVAL + 1)
+        self._thread = None
 
     def get_messages(self):
         messages = []
@@ -56,30 +69,27 @@ class LogPoller:
         return messages
 
     def _poll_loop(self):
-        while self._running:
+        while not self._stop_event.is_set():
             try:
                 self._fetch_logs()
             except Exception:
                 pass
-            import time
-            time.sleep(1)
+            self._stop_event.wait(self.POLL_INTERVAL)
 
     def _fetch_logs(self):
         url = '{}/internal/logs/raw'.format(self.url)
-        req = urllib2.Request(url)
-        response = urllib2.urlopen(req, timeout=5)
+        response = urllib_request.urlopen(url, timeout=5)
         data = json.loads(response.read().decode())
 
-        entries = data.get('entries', [])
-        for entry in entries:
-            ts = entry.get('t', '')
-            msg = entry.get('m', '')
+        for entry in data.get('entries', []):
+            timestamp = entry.get('t', '')
+            message = entry.get('m', '')
 
-            if self._last_timestamp and ts <= self._last_timestamp:
+            if self._last_timestamp and timestamp <= self._last_timestamp:
                 continue
 
-            self._last_timestamp = ts
-            self._queue.put(msg)
+            self._last_timestamp = timestamp
+            self._queue.put(message)
 
 
 class console_panel(panel_widget):
@@ -92,58 +102,58 @@ class console_panel(panel_widget):
         self.setLayout(layout)
 
         self.output_widget = output_widget(self)
-        self.toolbar = toolbar_widget(self)
+        self.toolbar = toolbar_widget(self.output_widget)
         layout.addWidget(self.toolbar)
         layout.addWidget(self.output_widget)
 
 
 class toolbar_widget(QWidget):
-    def __init__(self, parent):
-        QWidget.__init__(self, parent)
-        self.parent = parent
+    '''
+    output_widget: instancia de output_widget que este toolbar controla.
+    '''
+    def __init__(self, output_widget):
+        QWidget.__init__(self, output_widget.parent)
+        self.output_widget = output_widget
+
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(5)
         self.setLayout(layout)
 
-        urls = ["-", "127.0.0.1", "192.168.1.1"]
         self.urls_box = QComboBox()
-        self.urls_box.addItems(urls)
+        self.urls_box.addItems(['-', '127.0.0.1', '192.168.1.1'])
         self.urls_box.currentIndexChanged.connect(self._on_url_changed)
 
         self.log_button = QPushButton('Logs')
         self.log_button.setCheckable(True)
         self.log_button.clicked.connect(self._toggle_logs)
 
-        monitor_button = QPushButton('Monitor')
-
         layout.addWidget(self.urls_box)
         layout.addStretch()
         layout.addWidget(self.log_button)
-        layout.addWidget(monitor_button)
 
-    def _on_url_changed(self, index):
+    def _on_url_changed(self, _index):
+        self.output_widget.stop_log()
+        self.log_button.setChecked(False)
+        self.log_button.setText('Logs')
+
         url = self.urls_box.currentText()
-        output = self.parent.output_widget
         if url == '-':
-            output.stop_log()
-            output.clear()
-        else:
-            output.stop_log()
-            output.start_log(url)
+            self.output_widget.clear()
 
-    def _toggle_logs(self):
-        output = self.parent.output_widget
-        if self.log_button.isChecked():
-            url = self.urls_box.currentText()
-            if url == '-':
-                self.log_button.setChecked(False)
-                return
+    def _toggle_logs(self, checked):
+        url = self.urls_box.currentText()
+
+        if checked and url == '-':
+            self.log_button.setChecked(False)
+            return
+
+        if checked:
+            self.output_widget.start_log(url)
             self.log_button.setText('Stop Logs')
-            output.start_log(url)
         else:
+            self.output_widget.stop_log()
             self.log_button.setText('Logs')
-            output.stop_log()
 
 
 class output_widget(QTextEdit):
@@ -161,6 +171,7 @@ class output_widget(QTextEdit):
         QTextEdit.__init__(self, parent)
         self.parent = parent
         self.setReadOnly(True)
+        self.document().setMaximumBlockCount(self.MAX_LINES)
         self._poller = None
 
         font = QFont('DejaVu Sans Mono')
@@ -169,7 +180,7 @@ class output_widget(QTextEdit):
         self.setFont(font)
 
         self.setStyleSheet(
-            "QTextEdit { background-color: #1e1e1e; color: #c8c8c8; }"
+            'QTextEdit { background-color: #1e1e1e; color: #c8c8c8; }'
         )
 
         self._poll_timer = QTimer(self)
@@ -177,12 +188,10 @@ class output_widget(QTextEdit):
         self._poll_timer.timeout.connect(self._flush_to_ui)
 
     def start_log(self, url=None):
-        if self._poller and self._poller._running:
+        if self._poller and self._poller.is_running:
             return
 
-        if not url:
-            url = settings.URL
-        self._poller = LogPoller(url)
+        self._poller = LogPoller(url or settings.URL)
         self._poller.start()
         self._poll_timer.start()
 
@@ -207,18 +216,11 @@ class output_widget(QTextEdit):
             if not msg.endswith('\n'):
                 cursor.insertText('\n')
 
-        lines = self.document().blockCount()
-        if lines > self.MAX_LINES:
-            cursor.movePosition(QTextCursor.Start)
-            cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor,
-                                lines - self.MAX_LINES)
-            cursor.removeSelectedText()
-
         QTimer.singleShot(0, self._scroll_to_bottom)
 
     def _scroll_to_bottom(self):
-        sb = self.verticalScrollBar()
-        sb.setValue(sb.maximum())
+        scrollbar = self.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
 
     def _insert_ansi_text(self, cursor, text):
         parts = self.ANSI_RE.split(text)
@@ -230,30 +232,19 @@ class output_widget(QTextEdit):
                     fmt = QTextCharFormat()
                     fmt.setForeground(QColor(*color))
                     cursor.insertText(part, fmt)
-            else:
-                codes = part.split(';')
-                for code in codes:
-                    if code in self.ANSI_COLORS:
-                        color = self.ANSI_COLORS[code]
-                    elif code == '0':
-                        color = self.DEFAULT_COLOR
+                continue
 
-    def showEvent(self, event):
-        super(output_widget, self).showEvent(event)
+            for code in part.split(';'):
+                if code in self.ANSI_COLORS:
+                    color = self.ANSI_COLORS[code]
+                elif code == '0':
+                    color = self.DEFAULT_COLOR
 
     def hideEvent(self, event):
         super(output_widget, self).hideEvent(event)
         self.stop_log()
 
     def keyPressEvent(self, event):
-        ctrl = event.modifiers() == Qt.ControlModifier
-        key = event.key()
-
-        if ctrl and key == Qt.Key_Return:
-            self.parent.execute_script()
-        elif ctrl and key == Qt.Key_Backspace:
+        if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Backspace:
             self.clear()
-        elif key == Qt.Key_Escape:
-            self.parent.exit_node()
-
         QTextEdit.keyPressEvent(self, event)
