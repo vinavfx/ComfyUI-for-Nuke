@@ -209,6 +209,9 @@ class output_widget(QTextEdit):
         if not messages:
             return
 
+        scrollbar = self.verticalScrollBar()
+        was_at_bottom = scrollbar.value() >= scrollbar.maximum() - 4
+
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.End)
         for msg in messages:
@@ -216,9 +219,17 @@ class output_widget(QTextEdit):
             if not msg.endswith('\n'):
                 cursor.insertText('\n')
 
-        QTimer.singleShot(0, self._scroll_to_bottom)
+        # Mueve el cursor real del widget al final para que
+        # ensureCursorVisible funcione de forma confiable, incluso
+        # cuando setMaximumBlockCount recorta bloques por arriba.
+        self.setTextCursor(cursor)
+
+        if was_at_bottom:
+            QTimer.singleShot(0, self._scroll_to_bottom)
 
     def _scroll_to_bottom(self):
+        self.moveCursor(QTextCursor.End)
+        self.ensureCursorVisible()
         scrollbar = self.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
