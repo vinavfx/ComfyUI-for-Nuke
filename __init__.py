@@ -20,7 +20,7 @@ def init_scan_thread():
 
 
 def setup():
-    threading.Thread(target=init_scan_thread).start()
+    threading.Thread(target=init_scan_thread, daemon=True).start()
 
     icon = '{}/icons/comfyui_icon.png'.format(COMFYUI2NUKE)
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI', icon=icon)
