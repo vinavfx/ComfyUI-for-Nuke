@@ -163,9 +163,9 @@ class output_widget(QTextEdit):
         self.setReadOnly(True)
         self._poller = None
 
-        font = QFont('Courier')
+        font = QFont('DejaVu Sans Mono')
         font.setStyleHint(QFont.Monospace)
-        font.setPixelSize(font.pixelSize()+ 15)
+        font.setPixelSize(font.pixelSize() + 14)
         self.setFont(font)
 
         self.setStyleSheet(
@@ -207,14 +207,18 @@ class output_widget(QTextEdit):
             if not msg.endswith('\n'):
                 cursor.insertText('\n')
 
-        self.verticalScrollBar().setValue(self.verticalScrollBar().maximum())
-
         lines = self.document().blockCount()
         if lines > self.MAX_LINES:
             cursor.movePosition(QTextCursor.Start)
             cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor,
                                 lines - self.MAX_LINES)
             cursor.removeSelectedText()
+
+        QTimer.singleShot(0, self._scroll_to_bottom)
+
+    def _scroll_to_bottom(self):
+        sb = self.verticalScrollBar()
+        sb.setValue(sb.maximum())
 
     def _insert_ansi_text(self, cursor, text):
         parts = self.ANSI_RE.split(text)
