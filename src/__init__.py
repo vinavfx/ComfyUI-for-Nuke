@@ -10,5 +10,6 @@ from . import (
     execute_runs,
     scripts,
     queue_manager,
-    cmd
+    cmd,
+    console
 )

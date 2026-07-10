@@ -33,6 +33,7 @@ def setup():
     workflow_icon = '{}/icons/workflow.png'.format(COMFYUI2NUKE)
     gizmos_icon = '{}/icons/gizmos.png'.format(COMFYUI2NUKE)
     scripts_icon = '{}/icons/scripts.png'.format(COMFYUI2NUKE)
+    console_icon = '{}/icons/console.png'.format(COMFYUI2NUKE)
 
     comfyui_menu.addCommand(
         'Update all ComfyUI', update_menu.update, '', refresh_icon)
@@ -91,6 +92,9 @@ def setup():
 
     comfyui_menu.addCommand(
         'Scripts/Reload Node', scripts.reload_node.reload_node, icon=icon_gray)
+
+    comfyui_menu.addCommand(
+        'Console', console.show_console, icon=console_icon)
 
     if UPDATE_MENU_AT_START:
         update_menu.update()
