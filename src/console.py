@@ -557,4 +557,10 @@ class output_widget(QTextEdit):
             self.clear()
             if self.poller:
                 self.resume_log_from_latest(self.poller.url)
+            return
+
+        if event.key() == Qt.Key_Space:
+            event.ignore()
+            return
+
         QTextEdit.keyPressEvent(self, event)
