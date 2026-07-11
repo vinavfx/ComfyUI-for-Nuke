@@ -52,22 +52,22 @@ def ansi(code, text):
     return '\x1b[{}m{}\x1b[0m'.format(code, text)
 
 
-MEMORY_KEYS = {'ram_total', 'ram_free', 'vram_total', 'vram_free',
-                'torch_vram_total', 'torch_vram_free'}
-
-
-def bytes_to_gb(value):
-    if isinstance(value, (int, float)):
-        return '{} GB'.format(round(value / (1024 ** 3), 2))
-    return value
-
-
 def transform_memory_values(data):
+    memory_keys = {'ram_total', 'ram_free', 'vram_total', 'vram_free',
+                   'torch_vram_total', 'torch_vram_free'}
+
+    def bytes_to_gb(value):
+        if isinstance(value, (int, float)):
+            return '{} GB'.format(round(value / (1024 ** 3), 2))
+        return value
+
     if isinstance(data, dict):
-        return {k: bytes_to_gb(v) if k in MEMORY_KEYS else transform_memory_values(v)
+        return {k: bytes_to_gb(v) if k in memory_keys else transform_memory_values(v)
                 for k, v in data.items()}
+
     if isinstance(data, list):
         return [transform_memory_values(item) for item in data]
+
     return data
 
 
@@ -297,12 +297,19 @@ class toolbar_widget(QWidget):
         self.endpoint_box.addItems([LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT])
         self.endpoint_box.currentIndexChanged.connect(self.on_endpoint_changed)
 
-        self.log_button = self.make_icon_button(
-            'list.png', 'Start and Stop', name=' Start', checkable=True)
+        self.log_button = QPushButton('Start')
+        self.log_button.setCheckable(True)
+        self.log_button.setToolTip('Start and Stop')
+        icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'start.png')
+        self.log_button.setIcon(QIcon(icon_path))
+        self.log_button.setIconSize(QSize(16, 16))
         self.log_button.clicked.connect(self.toggle_polling)
 
-        self.clean_button = self.make_icon_button(
-            'clear_console.png', 'Clear Output')
+        self.clean_button = QPushButton()
+        self.clean_button.setToolTip('Clear Output')
+        icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'clear_console.png')
+        self.clean_button.setIcon(QIcon(icon_path))
+        self.clean_button.setIconSize(QSize(16, 16))
         self.clean_button.clicked.connect(self.clean_output)
 
         layout.addWidget(self.urls_box)
@@ -311,28 +318,26 @@ class toolbar_widget(QWidget):
         layout.addWidget(self.log_button)
         layout.addWidget(self.clean_button)
 
-    @staticmethod
-    def make_icon_button(icon_name, tooltip, name='', checkable=False):
-        button = QPushButton(name)
-        button.setCheckable(checkable)
-        button.setToolTip(tooltip)
-        icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', icon_name)
-        button.setIcon(QIcon(icon_path))
-        button.setIconSize(QSize(16, 16))
-        return button
-
     @property
     def current_endpoint(self):
         return self.endpoint_box.currentText()
 
+    def set_button_running(self, running):
+        if running:
+            icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'stop.png')
+            self.log_button.setText(' Stop')
+        else:
+            icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'start.png')
+            self.log_button.setText('Start')
+        self.log_button.setIcon(QIcon(icon_path))
+        self.log_button.setChecked(running)
+
     def start_logs_ui(self, url):
         self.output_widget.start_log(url)
-        self.log_button.setChecked(True)
-        self.log_button.setText(' Stop')
+        self.set_button_running(True)
 
     def reset_log_button_ui(self):
-        self.log_button.setChecked(False)
-        self.log_button.setText(' Start')
+        self.set_button_running(False)
 
     def on_url_changed(self, _):
         self.output_widget.stop_all()
@@ -348,8 +353,7 @@ class toolbar_widget(QWidget):
             self.start_logs_ui(url)
         else:
             self.output_widget.start_stats(url)
-            self.log_button.setChecked(True)
-            self.log_button.setText(' Stop')
+            self.set_button_running(True)
 
     def on_endpoint_changed(self, _):
         self.output_widget.stop_all()
@@ -366,14 +370,13 @@ class toolbar_widget(QWidget):
             self.start_logs_ui(url)
         else:
             self.output_widget.start_stats(url)
-            self.log_button.setChecked(True)
-            self.log_button.setText(' Stop')
+            self.set_button_running(True)
 
     def toggle_polling(self, checked):
         url = self.urls_box.currentText()
 
         if checked and url == '-':
-            self.log_button.setChecked(False)
+            self.set_button_running(False)
             return
 
         is_logs = self.current_endpoint == LOGS_ENDPOINT
@@ -382,10 +385,10 @@ class toolbar_widget(QWidget):
                 self.start_logs_ui(url)
             else:
                 self.output_widget.start_stats(url)
-                self.log_button.setText(' Stop')
+                self.set_button_running(True)
         else:
             self.output_widget.stop_all()
-            self.log_button.setText(' Start')
+            self.set_button_running(False)
 
     def clean_output(self):
         self.output_widget.clear()
