@@ -91,12 +91,14 @@ def format_json_ansi(data, indent=0):
 class LogPoller:
     POLL_INTERVAL = 1
 
-    def __init__(self, url='127.0.0.1:8188'):
+    def __init__(self, url='127.0.0.1:8188', error_callback=None):
         self.url = format_URLs(url)[0]
         self.queue = queue.Queue()
         self.stop_event = threading.Event()
         self.thread = None
         self.last_timestamp = None
+        self.error_callback = error_callback
+        self.last_error = None
 
     @property
     def is_running(self):
@@ -128,8 +130,13 @@ class LogPoller:
         while not self.stop_event.is_set():
             try:
                 self.fetch_logs()
-            except Exception:
-                pass
+                self.last_error = None
+            except Exception as e:
+                error_msg = str(e)
+                if self.last_error != error_msg:
+                    self.last_error = error_msg
+                    if self.error_callback:
+                        self.error_callback(error_msg)
             self.stop_event.wait(self.POLL_INTERVAL)
 
     def fetch_log_data(self):
@@ -320,12 +327,16 @@ class output_widget(QTextEdit):
         if self.poller and self.poller.is_running:
             return
 
-        self.poller = LogPoller(url or settings.URL)
+        self.poller = LogPoller(url or settings.URL, error_callback=self.on_poller_error)
         if last_timestamp is not None:
             self.poller.last_timestamp = last_timestamp
 
         self.poller.start()
         self.poll_timer.start()
+
+    def on_poller_error(self, message):
+        self.poller.queue.put('__CLEAR__')
+        self.poller.queue.put(ansi('31', 'Error: {}'.format(message)))
 
     def stop_log(self):
         if self.poller:
@@ -365,6 +376,11 @@ class output_widget(QTextEdit):
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.End)
         for msg in messages:
+            if msg == '__CLEAR__':
+                self.clear()
+                cursor = self.textCursor()
+                cursor.movePosition(QTextCursor.End)
+                continue
             self.insert_ansi_text(cursor, msg)
             if not msg.endswith('\n'):
                 cursor.insertText('\n')
