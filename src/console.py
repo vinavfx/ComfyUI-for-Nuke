@@ -86,6 +86,18 @@ class LogPoller:
             self.last_timestamp = timestamp
             self.queue.put(message)
 
+    def get_latest_timestamp(self):
+        try:
+            url = '{}/internal/logs/raw'.format(self.url)
+            response = urllib_request.urlopen(url, timeout=5)
+            data = json.loads(response.read().decode())
+            entries = data.get('entries', [])
+            if entries:
+                return entries[-1].get('t', '')
+        except Exception:
+            pass
+        return None
+
 
 class console_panel(panel_widget):
     def __init__(self, parent=None):
@@ -120,9 +132,13 @@ class toolbar_widget(QWidget):
         self.log_button.setCheckable(True)
         self.log_button.clicked.connect(self.toggle_logs)
 
+        self.clean_button = QPushButton('Clean Output Console')
+        self.clean_button.clicked.connect(self.clean_output)
+
         layout.addWidget(self.urls_box)
         layout.addStretch()
         layout.addWidget(self.log_button)
+        layout.addWidget(self.clean_button)
 
     def on_url_changed(self, _):
         self.output_widget.stop_log()
@@ -150,6 +166,9 @@ class toolbar_widget(QWidget):
         else:
             self.output_widget.stop_log()
             self.log_button.setText('Logs')
+
+    def clean_output(self):
+        self.output_widget.clear()
 
 
 class output_widget(QTextEdit):
@@ -188,6 +207,15 @@ class output_widget(QTextEdit):
             return
 
         self.poller = LogPoller(url or settings.URL)
+        self.poller.start()
+        self.poll_timer.start()
+
+    def start_log_from(self, url, last_timestamp):
+        if self.poller and self.poller.is_running:
+            return
+
+        self.poller = LogPoller(url or settings.URL)
+        self.poller.last_timestamp = last_timestamp
         self.poller.start()
         self.poll_timer.start()
 
@@ -252,9 +280,17 @@ class output_widget(QTextEdit):
         super(output_widget, self).showEvent(event)
         parent = self.parent
         if hasattr(parent, 'toolbar') and parent.toolbar.log_button.isChecked():
-            self.start_log()
+            url = parent.toolbar.urls_box.currentText()
+            temp_poller = LogPoller(url)
+            latest_ts = temp_poller.get_latest_timestamp()
+            self.start_log_from(url, latest_ts)
 
     def keyPressEvent(self, event):
         if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Backspace:
             self.clear()
+            if self.poller:
+                latest_ts = self.poller.get_latest_timestamp()
+                url = self.poller.url
+                self.stop_log()
+                self.start_log_from(url, latest_ts)
         QTextEdit.keyPressEvent(self, event)
