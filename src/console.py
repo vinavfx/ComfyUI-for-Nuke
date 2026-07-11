@@ -32,13 +32,18 @@ CLEAR_SENTINEL = '__CLEAR__'
 
 
 def show_console():
-    console = nukescripts.restorePanel('comfyui_console')
+    console_pane = nukescripts.restorePanel('comfyui_console')
     pane = nuke.getPaneFor('Properties.1')
     if pane:
-        console.addToPane(pane)
+        console_pane.addToPane(pane)
+
+    console = nuke.panels['comfyui_console']()
+
+    if console.toolbar.urls_box.currentIndex()  == 0:
+        console.toolbar.urls_box.setCurrentIndex(1)
 
 
-def fetch_json(url, timeout=5):
+def fetch_json(url, timeout=2):
     response = urllib_request.urlopen(url, timeout=timeout)
     return json.loads(response.read().decode())
 
