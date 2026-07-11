@@ -3,6 +3,7 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
+import os
 import re
 import json
 import queue
@@ -15,16 +16,65 @@ from ..nuke_util import panels
 from ..nuke_util.pyside import (QVBoxLayout, QTextEdit, QWidget, QTimer,
                                 QHBoxLayout, QPushButton, Qt,
                                 QComboBox, QFont, QTextCursor, QTextCharFormat,
-                                QColor)
+                                QColor, QIcon, QSize)
 from .. import settings
 from .connection import format_URLs
+from .common import get_settings
 
 panels.init('comfyui.console.console_panel', 'ComfyUI Console')
+
+LOGS_ENDPOINT = 'Logs'
+SYSTEM_STATS_ENDPOINT = 'System Stats'
 
 
 def show_console():
     widget = nuke.panels['comfyui_console']()
     widget.show()
+
+
+def format_json_ansi(data, indent=0):
+    pad = '  ' * indent
+    pad_in = '  ' * (indent + 1)
+
+    if isinstance(data, dict):
+        if not data:
+            return '{}'
+
+        items = list(data.items())
+        lines = ['{']
+        for i, (key, value) in enumerate(items):
+            comma = ',' if i < len(items) - 1 else ''
+            key_str = '\x1b[36m"{}"\x1b[0m'.format(key)
+            value_str = format_json_ansi(value, indent + 1)
+            lines.append('{}{}: {}{}'.format(pad_in, key_str, value_str, comma))
+        lines.append(pad + '}')
+        return '\n'.join(lines)
+
+    if isinstance(data, list):
+        if not data:
+            return '[]'
+
+        lines = ['[']
+        for i, value in enumerate(data):
+            comma = ',' if i < len(data) - 1 else ''
+            value_str = format_json_ansi(value, indent + 1)
+            lines.append('{}{}{}'.format(pad_in, value_str, comma))
+        lines.append(pad + ']')
+        return '\n'.join(lines)
+
+    if isinstance(data, bool):
+        return '\x1b[35m{}\x1b[0m'.format('true' if data else 'false')
+
+    if data is None:
+        return '\x1b[35mnull\x1b[0m'
+
+    if isinstance(data, (int, float)):
+        return '\x1b[33m{}\x1b[0m'.format(data)
+
+    if isinstance(data, str):
+        return '\x1b[32m"{}"\x1b[0m'.format(data)
+
+    return str(data)
 
 
 class LogPoller:
@@ -125,20 +175,35 @@ class toolbar_widget(QWidget):
         self.setLayout(layout)
 
         self.urls_box = QComboBox()
-        self.urls_box.addItems(['-', '127.0.0.1', '192.168.1.1'])
+        self.urls_box.addItems(['-'] + format_URLs(get_settings()['URL'], protocol=False))
         self.urls_box.currentIndexChanged.connect(self.on_url_changed)
 
-        self.log_button = QPushButton('Logs')
+        self.endpoint_box = QComboBox()
+        self.endpoint_box.addItems([LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT])
+        self.endpoint_box.currentIndexChanged.connect(self.on_endpoint_changed)
+
+        self.log_button = QPushButton('')
         self.log_button.setCheckable(True)
         self.log_button.clicked.connect(self.toggle_logs)
+        log_icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'list.png')
+        self.log_button.setIcon(QIcon(log_icon_path))
+        self.log_button.setIconSize(QSize(16, 16))
 
-        self.clean_button = QPushButton('Clean Output Console')
+        self.clean_button = QPushButton('')
         self.clean_button.clicked.connect(self.clean_output)
+        clean_icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'clear_console.png')
+        self.clean_button.setIcon(QIcon(clean_icon_path))
+        self.clean_button.setIconSize(QSize(16, 16))
 
         layout.addWidget(self.urls_box)
+        layout.addWidget(self.endpoint_box)
         layout.addStretch()
         layout.addWidget(self.log_button)
         layout.addWidget(self.clean_button)
+
+    @property
+    def current_endpoint(self):
+        return self.endpoint_box.currentText()
 
     def on_url_changed(self, _):
         self.output_widget.stop_log()
@@ -146,14 +211,47 @@ class toolbar_widget(QWidget):
         url = self.urls_box.currentText()
         if url == '-':
             self.log_button.setChecked(False)
-            self.log_button.setText('Logs')
+            self.log_button.setText('')
             self.output_widget.clear()
-        else:
+            return
+
+        if self.current_endpoint == LOGS_ENDPOINT:
             self.output_widget.start_log(url)
             self.log_button.setChecked(True)
             self.log_button.setText('Stop Logs')
+        else:
+            self.output_widget.show_system_stats(url)
+
+    def on_endpoint_changed(self, _):
+        self.output_widget.stop_log()
+        self.output_widget.clear()
+
+        url = self.urls_box.currentText()
+
+        if self.current_endpoint == LOGS_ENDPOINT:
+            self.log_button.setEnabled(True)
+
+            if url != '-':
+                self.output_widget.start_log(url)
+                self.log_button.setChecked(True)
+                self.log_button.setText('Stop Logs')
+            else:
+                self.log_button.setChecked(False)
+                self.log_button.setText('')
+        else:
+            # system stats is fetched once, no polling/button needed
+            self.log_button.setChecked(False)
+            self.log_button.setText('')
+            self.log_button.setEnabled(False)
+
+            if url != '-':
+                self.output_widget.show_system_stats(url)
 
     def toggle_logs(self, checked):
+        if self.current_endpoint != LOGS_ENDPOINT:
+            self.log_button.setChecked(False)
+            return
+
         url = self.urls_box.currentText()
 
         if checked and url == '-':
@@ -165,7 +263,7 @@ class toolbar_widget(QWidget):
             self.log_button.setText('Stop Logs')
         else:
             self.output_widget.stop_log()
-            self.log_button.setText('Logs')
+            self.log_button.setText('')
 
     def clean_output(self):
         self.output_widget.clear()
@@ -225,6 +323,29 @@ class output_widget(QTextEdit):
             self.poller = None
         self.poll_timer.stop()
 
+    def show_system_stats(self, url):
+        '''
+        Fetches /system_stats once (no polling, since it doesn't change
+        on its own) and prints it formatted and colored
+        '''
+        self.stop_log()
+        self.clear()
+
+        base_url = format_URLs(url)[0]
+
+        try:
+            full_url = '{}/system_stats'.format(base_url)
+            response = urllib_request.urlopen(full_url, timeout=5)
+            data = json.loads(response.read().decode())
+            text = format_json_ansi(data)
+        except Exception as error:
+            text = '\x1b[31mError fetching system stats: {}\x1b[0m'.format(error)
+
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.insert_ansi_text(cursor, text)
+        self.setTextCursor(cursor)
+
     def flush_to_ui(self):
         if not self.poller:
             return
@@ -279,8 +400,15 @@ class output_widget(QTextEdit):
     def showEvent(self, event):
         super(output_widget, self).showEvent(event)
         parent = self.parent
-        if hasattr(parent, 'toolbar') and parent.toolbar.log_button.isChecked():
-            url = parent.toolbar.urls_box.currentText()
+        if not hasattr(parent, 'toolbar'):
+            return
+
+        toolbar = parent.toolbar
+        if toolbar.current_endpoint != LOGS_ENDPOINT:
+            return
+
+        if toolbar.log_button.isChecked():
+            url = toolbar.urls_box.currentText()
             temp_poller = LogPoller(url)
             latest_ts = temp_poller.get_latest_timestamp()
             self.start_log_from(url, latest_ts)

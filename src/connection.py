@@ -27,7 +27,7 @@ def get_ip_from_url(url):
     return rest.split(':')[0].split('/')[0]
 
 
-def format_URLs(url):
+def format_URLs(url, protocol=True):
     urls = []
     pattern = r'^(https?://)?([a-zA-Z0-9.-]+|\d{1,3}(\.\d{1,3}){3})(:\d{1,5})?$'
 
@@ -45,6 +45,8 @@ def format_URLs(url):
             u = 'http://{}'.format(u)
         if re.search(r':\d+$', u) is None:
             u += ':8188'
+        if not protocol:
+            u = u.split('://')[1]
         result.append(u)
 
     return result
