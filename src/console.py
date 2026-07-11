@@ -270,8 +270,8 @@ class toolbar_widget(QWidget):
         self.endpoint_box.addItems([LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT])
         self.endpoint_box.currentIndexChanged.connect(self.on_endpoint_changed)
 
-        self.log_button = self.make_icon_button( 'list.png', 'Start and Stop Logs', name=' Start', checkable=True)
-        self.log_button.clicked.connect(self.toggle_logs)
+        self.log_button = self.make_icon_button( 'list.png', 'Start and Stop', name=' Start', checkable=True)
+        self.log_button.clicked.connect(self.toggle_polling)
 
         self.clean_button = self.make_icon_button('clear_console.png', 'Clear Output')
         self.clean_button.clicked.connect(self.clean_output)
@@ -314,44 +314,48 @@ class toolbar_widget(QWidget):
             self.output_widget.clear()
             return
 
-        if self.current_endpoint == LOGS_ENDPOINT:
+        is_logs = self.current_endpoint == LOGS_ENDPOINT
+        if is_logs:
             self.start_logs_ui(url)
         else:
             self.output_widget.start_stats(url)
+            self.log_button.setChecked(True)
+            self.log_button.setText(' Stop')
 
     def on_endpoint_changed(self, _):
         self.output_widget.stop_all()
         self.output_widget.clear()
 
         url = self.urls_box.currentText()
-        is_logs = self.current_endpoint == LOGS_ENDPOINT
-        self.log_button.setEnabled(is_logs)
 
         if url == '-':
             self.reset_log_button_ui()
             return
 
+        is_logs = self.current_endpoint == LOGS_ENDPOINT
         if is_logs:
             self.start_logs_ui(url)
         else:
-            self.reset_log_button_ui()
             self.output_widget.start_stats(url)
+            self.log_button.setChecked(True)
+            self.log_button.setText(' Stop')
 
-    def toggle_logs(self, checked):
-        if self.current_endpoint != LOGS_ENDPOINT:
-            self.log_button.setChecked(False)
-            return
-
+    def toggle_polling(self, checked):
         url = self.urls_box.currentText()
 
         if checked and url == '-':
             self.log_button.setChecked(False)
             return
 
+        is_logs = self.current_endpoint == LOGS_ENDPOINT
         if checked:
-            self.start_logs_ui(url)
+            if is_logs:
+                self.start_logs_ui(url)
+            else:
+                self.output_widget.start_stats(url)
+                self.log_button.setText(' Stop')
         else:
-            self.output_widget.stop_log()
+            self.output_widget.stop_all()
             self.log_button.setText(' Start')
 
     def clean_output(self):
@@ -550,9 +554,11 @@ class output_widget(QTextEdit):
         if url == '-':
             return
 
+        if not toolbar.log_button.isChecked():
+            return
+
         if toolbar.current_endpoint == LOGS_ENDPOINT:
-            if toolbar.log_button.isChecked():
-                self.resume_log_from_latest(url)
+            self.resume_log_from_latest(url)
         else:
             self.start_stats(url)
 
