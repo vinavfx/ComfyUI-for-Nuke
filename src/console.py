@@ -188,9 +188,11 @@ class toolbar_widget(QWidget):
         log_icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'list.png')
         self.log_button.setIcon(QIcon(log_icon_path))
         self.log_button.setIconSize(QSize(16, 16))
+        self.log_button.setToolTip('Start and Stop Logs')
 
         self.clean_button = QPushButton('')
         self.clean_button.clicked.connect(self.clean_output)
+        self.clean_button.setToolTip('Clear Output')
         clean_icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'clear_console.png')
         self.clean_button.setIcon(QIcon(clean_icon_path))
         self.clean_button.setIconSize(QSize(16, 16))
