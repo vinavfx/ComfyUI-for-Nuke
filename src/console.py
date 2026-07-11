@@ -27,6 +27,7 @@ LOGS_ENDPOINT = 'Logs'
 SYSTEM_STATS_ENDPOINT = 'System Stats'
 LOGS_RAW_PATH = '/internal/logs/raw'
 SYSTEM_STATS_PATH = '/system_stats'
+CLEAR_SENTINEL = '__CLEAR__'
 
 
 def show_console():
@@ -91,13 +92,12 @@ def format_json_ansi(data, indent=0):
 class LogPoller:
     POLL_INTERVAL = 1
 
-    def __init__(self, url='127.0.0.1:8188', error_callback=None):
+    def __init__(self, url='127.0.0.1:8188'):
         self.url = format_URLs(url)[0]
         self.queue = queue.Queue()
         self.stop_event = threading.Event()
         self.thread = None
         self.last_timestamp = None
-        self.error_callback = error_callback
         self.last_error = None
 
     @property
@@ -135,8 +135,8 @@ class LogPoller:
                 error_msg = str(e)
                 if self.last_error != error_msg:
                     self.last_error = error_msg
-                    if self.error_callback:
-                        self.error_callback(error_msg)
+                    self.queue.put(CLEAR_SENTINEL)
+                    self.queue.put(ansi('31', 'Error: {}'.format(error_msg)))
             self.stop_event.wait(self.POLL_INTERVAL)
 
     def fetch_log_data(self):
@@ -235,7 +235,7 @@ class toolbar_widget(QWidget):
         self.log_button.setChecked(False)
         self.log_button.setText('')
 
-    def on_url_changed(self, event):
+    def on_url_changed(self, _):
         self.output_widget.stop_log()
 
         url = self.urls_box.currentText()
@@ -249,7 +249,7 @@ class toolbar_widget(QWidget):
         else:
             self.output_widget.show_system_stats(url)
 
-    def on_endpoint_changed(self, event):
+    def on_endpoint_changed(self, _):
         self.output_widget.stop_log()
         self.output_widget.clear()
 
@@ -327,16 +327,12 @@ class output_widget(QTextEdit):
         if self.poller and self.poller.is_running:
             return
 
-        self.poller = LogPoller(url or settings.URL, error_callback=self.on_poller_error)
+        self.poller = LogPoller(url or settings.URL)
         if last_timestamp is not None:
             self.poller.last_timestamp = last_timestamp
 
         self.poller.start()
         self.poll_timer.start()
-
-    def on_poller_error(self, message):
-        self.poller.queue.put('__CLEAR__')
-        self.poller.queue.put(ansi('31', 'Error: {}'.format(message)))
 
     def stop_log(self):
         if self.poller:
@@ -376,7 +372,7 @@ class output_widget(QTextEdit):
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.End)
         for msg in messages:
-            if msg == '__CLEAR__':
+            if msg == CLEAR_SENTINEL:
                 self.clear()
                 cursor = self.textCursor()
                 cursor.movePosition(QTextCursor.End)
