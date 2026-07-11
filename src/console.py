@@ -169,6 +169,74 @@ class LogPoller:
         return None
 
 
+class StatsPoller:
+    POLL_INTERVAL = 1
+
+    def __init__(self, url='127.0.0.1:8188'):
+        self.url = format_URLs(url)[0]
+        self.queue = queue.Queue(maxsize=1)
+        self.stop_event = threading.Event()
+        self.thread = None
+        self.last_error = None
+        self.last_text = None
+
+    @property
+    def is_running(self):
+        return self.thread is not None and self.thread.is_alive()
+
+    def start(self):
+        if self.is_running:
+            return
+        self.stop_event.clear()
+        self.thread = threading.Thread(target=self.poll_loop, daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        self.stop_event.set()
+        if self.thread:
+            self.thread.join(timeout=self.POLL_INTERVAL + 1)
+        self.thread = None
+
+    def put_latest(self, text):
+        try:
+            self.queue.get_nowait()
+        except queue.Empty:
+            pass
+        try:
+            self.queue.put_nowait(text)
+        except queue.Full:
+            pass
+
+    def get_latest(self):
+        latest = None
+        while True:
+            try:
+                latest = self.queue.get_nowait()
+            except queue.Empty:
+                break
+        return latest
+
+    def poll_loop(self):
+        while not self.stop_event.is_set():
+            try:
+                full_url = '{}{}'.format(self.url, SYSTEM_STATS_PATH)
+                data = fetch_json(full_url)
+                text = format_json_ansi(data)
+                if text != self.last_text:
+                    self.last_text = text
+                    self.put_latest(text)
+                self.last_error = None
+            except Exception as e:
+                error_msg = str(e)
+                if self.last_error != error_msg:
+                    self.last_error = error_msg
+                    error_text = ansi(
+                        '31', 'Error fetching system stats: {}'.format(error_msg))
+                    self.last_text = error_text
+                    self.put_latest(error_text)
+            self.stop_event.wait(self.POLL_INTERVAL)
+
+
 class console_panel(panel_widget):
     def __init__(self, parent=None):
         super(console_panel, self).__init__(parent)
@@ -202,8 +270,7 @@ class toolbar_widget(QWidget):
         self.endpoint_box.addItems([LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT])
         self.endpoint_box.currentIndexChanged.connect(self.on_endpoint_changed)
 
-        self.log_button = self.make_icon_button(
-            'list.png', 'Start and Stop Logs', checkable=True)
+        self.log_button = self.make_icon_button( 'list.png', 'Start and Stop Logs', name=' Start', checkable=True)
         self.log_button.clicked.connect(self.toggle_logs)
 
         self.clean_button = self.make_icon_button('clear_console.png', 'Clear Output')
@@ -216,8 +283,8 @@ class toolbar_widget(QWidget):
         layout.addWidget(self.clean_button)
 
     @staticmethod
-    def make_icon_button(icon_name, tooltip, checkable=False):
-        button = QPushButton('')
+    def make_icon_button(icon_name, tooltip, name='', checkable=False):
+        button = QPushButton(name)
         button.setCheckable(checkable)
         button.setToolTip(tooltip)
         icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', icon_name)
@@ -232,14 +299,14 @@ class toolbar_widget(QWidget):
     def start_logs_ui(self, url):
         self.output_widget.start_log(url)
         self.log_button.setChecked(True)
-        self.log_button.setText('Stop Logs')
+        self.log_button.setText(' Stop')
 
     def reset_log_button_ui(self):
         self.log_button.setChecked(False)
-        self.log_button.setText('')
+        self.log_button.setText(' Start')
 
     def on_url_changed(self, _):
-        self.output_widget.stop_log()
+        self.output_widget.stop_all()
 
         url = self.urls_box.currentText()
         if url == '-':
@@ -250,10 +317,10 @@ class toolbar_widget(QWidget):
         if self.current_endpoint == LOGS_ENDPOINT:
             self.start_logs_ui(url)
         else:
-            self.output_widget.show_system_stats(url)
+            self.output_widget.start_stats(url)
 
     def on_endpoint_changed(self, _):
-        self.output_widget.stop_log()
+        self.output_widget.stop_all()
         self.output_widget.clear()
 
         url = self.urls_box.currentText()
@@ -268,7 +335,7 @@ class toolbar_widget(QWidget):
             self.start_logs_ui(url)
         else:
             self.reset_log_button_ui()
-            self.output_widget.show_system_stats(url)
+            self.output_widget.start_stats(url)
 
     def toggle_logs(self, checked):
         if self.current_endpoint != LOGS_ENDPOINT:
@@ -285,7 +352,7 @@ class toolbar_widget(QWidget):
             self.start_logs_ui(url)
         else:
             self.output_widget.stop_log()
-            self.log_button.setText('')
+            self.log_button.setText(' Start')
 
     def clean_output(self):
         self.output_widget.clear()
@@ -312,6 +379,7 @@ class output_widget(QTextEdit):
         self.setReadOnly(True)
         self.document().setMaximumBlockCount(self.MAX_LINES)
         self.poller = None
+        self.stats_poller = None
 
         font = QFont('DejaVu Sans Mono')
         font.setStyleHint(QFont.Monospace)
@@ -326,7 +394,16 @@ class output_widget(QTextEdit):
         self.poll_timer.setInterval(500)
         self.poll_timer.timeout.connect(self.flush_to_ui)
 
+        self.stats_timer = QTimer(self)
+        self.stats_timer.setInterval(500)
+        self.stats_timer.timeout.connect(self.flush_stats_to_ui)
+
+    # ------------------------------------------------------------------
+    # Logs
+    # ------------------------------------------------------------------
     def start_log(self, url=None, last_timestamp=None):
+        self.stop_stats()
+
         if self.poller and self.poller.is_running:
             return
 
@@ -342,24 +419,6 @@ class output_widget(QTextEdit):
             self.poller.stop()
             self.poller = None
         self.poll_timer.stop()
-
-    def show_system_stats(self, url):
-        self.stop_log()
-        self.clear()
-
-        base_url = format_URLs(url)[0]
-
-        try:
-            full_url = '{}{}'.format(base_url, SYSTEM_STATS_PATH)
-            data = fetch_json(full_url)
-            text = format_json_ansi(data)
-        except Exception as error:
-            text = ansi('31', 'Error fetching system stats: {}'.format(error))
-
-        cursor = self.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.insert_ansi_text(cursor, text)
-        self.setTextCursor(cursor)
 
     def flush_to_ui(self):
         if not self.poller:
@@ -389,11 +448,68 @@ class output_widget(QTextEdit):
         if was_at_bottom:
             QTimer.singleShot(0, self.scroll_to_bottom)
 
-    def scroll_to_bottom(self):
-        self.moveCursor(QTextCursor.End)
-        self.ensureCursorVisible()
-        scrollbar = self.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+    def resume_log_from_latest(self, url):
+        temp_poller = LogPoller(url)
+        latest_ts = temp_poller.get_latest_timestamp()
+        self.stop_log()
+        self.start_log(url, last_timestamp=latest_ts)
+
+    # ------------------------------------------------------------------
+    # System Stats
+    # ------------------------------------------------------------------
+    def start_stats(self, url=None):
+        self.stop_log()
+
+        if self.stats_poller and self.stats_poller.is_running:
+            return
+
+        self.clear()
+        self.stats_poller = StatsPoller(url or settings.URL)
+        self.stats_poller.start()
+        self.stats_timer.start()
+
+    def stop_stats(self):
+        if self.stats_poller:
+            self.stats_poller.stop()
+            self.stats_poller = None
+        self.stats_timer.stop()
+
+    def flush_stats_to_ui(self):
+        if not self.stats_poller:
+            return
+
+        text = self.stats_poller.get_latest()
+        if text is None:
+            return
+
+        self.replace_all_ansi_text(text)
+
+    def replace_all_ansi_text(self, text):
+        """
+        Replaces the entire content of the widget with `text`, keeping the
+        scrollbar positions (vertical and horizontal) exactly where they
+        were before the refresh.
+        """
+        v_scroll = self.verticalScrollBar()
+        h_scroll = self.horizontalScrollBar()
+        v_value = v_scroll.value()
+        h_value = h_scroll.value()
+
+        self.clear()
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.insert_ansi_text(cursor, text)
+        self.setTextCursor(cursor)
+
+        v_scroll.setValue(v_value)
+        h_scroll.setValue(h_value)
+
+    # ------------------------------------------------------------------
+    # Shared
+    # ------------------------------------------------------------------
+    def stop_all(self):
+        self.stop_log()
+        self.stop_stats()
 
     def insert_ansi_text(self, cursor, text):
         parts = self.ANSI_RE.split(text)
@@ -413,15 +529,15 @@ class output_widget(QTextEdit):
                 elif code == '0':
                     color = self.DEFAULT_COLOR
 
-    def resume_log_from_latest(self, url):
-        temp_poller = LogPoller(url)
-        latest_ts = temp_poller.get_latest_timestamp()
-        self.stop_log()
-        self.start_log(url, last_timestamp=latest_ts)
+    def scroll_to_bottom(self):
+        self.moveCursor(QTextCursor.End)
+        self.ensureCursorVisible()
+        scrollbar = self.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
 
     def hideEvent(self, event):
         super(output_widget, self).hideEvent(event)
-        self.stop_log()
+        self.stop_all()
 
     def showEvent(self, event):
         super(output_widget, self).showEvent(event)
@@ -430,12 +546,15 @@ class output_widget(QTextEdit):
             return
 
         toolbar = parent.toolbar
-        if toolbar.current_endpoint != LOGS_ENDPOINT:
+        url = toolbar.urls_box.currentText()
+        if url == '-':
             return
 
-        if toolbar.log_button.isChecked():
-            url = toolbar.urls_box.currentText()
-            self.resume_log_from_latest(url)
+        if toolbar.current_endpoint == LOGS_ENDPOINT:
+            if toolbar.log_button.isChecked():
+                self.resume_log_from_latest(url)
+        else:
+            self.start_stats(url)
 
     def keyPressEvent(self, event):
         if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Backspace:
