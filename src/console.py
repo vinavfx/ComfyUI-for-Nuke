@@ -47,6 +47,25 @@ def ansi(code, text):
     return '\x1b[{}m{}\x1b[0m'.format(code, text)
 
 
+MEMORY_KEYS = {'ram_total', 'ram_free', 'vram_total', 'vram_free',
+                'torch_vram_total', 'torch_vram_free'}
+
+
+def bytes_to_gb(value):
+    if isinstance(value, (int, float)):
+        return '{} GB'.format(round(value / (1024 ** 3), 2))
+    return value
+
+
+def transform_memory_values(data):
+    if isinstance(data, dict):
+        return {k: bytes_to_gb(v) if k in MEMORY_KEYS else transform_memory_values(v)
+                for k, v in data.items()}
+    if isinstance(data, list):
+        return [transform_memory_values(item) for item in data]
+    return data
+
+
 def format_json_ansi(data, indent=0):
     pad = '  ' * indent
     pad_in = '  ' * (indent + 1)
@@ -222,6 +241,7 @@ class StatsPoller:
             try:
                 full_url = '{}{}'.format(self.url, SYSTEM_STATS_PATH)
                 data = fetch_json(full_url)
+                data = transform_memory_values(data)
                 text = format_json_ansi(data)
                 if text != self.last_text:
                     self.last_text = text
