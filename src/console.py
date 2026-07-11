@@ -11,7 +11,7 @@ import threading
 import urllib.request as urllib_request
 
 import nuke  # type: ignore
-import nukescripts # type: ignore
+import nukescripts  # type: ignore
 from ..nuke_util.panels import panel_widget
 from ..nuke_util import panels
 from ..nuke_util.pyside import (QVBoxLayout, QTextEdit, QWidget, QTimer,
@@ -61,7 +61,8 @@ def format_json_ansi(data, indent=0):
             comma = ',' if i < len(items) - 1 else ''
             key_str = ansi('36', '"{}"'.format(key))
             value_str = format_json_ansi(value, indent + 1)
-            lines.append('{}{}: {}{}'.format(pad_in, key_str, value_str, comma))
+            lines.append('{}{}: {}{}'.format(
+                pad_in, key_str, value_str, comma))
         lines.append(pad + '}')
         return '\n'.join(lines)
 
@@ -263,17 +264,20 @@ class toolbar_widget(QWidget):
         self.setLayout(layout)
 
         self.urls_box = QComboBox()
-        self.urls_box.addItems(['-'] + format_URLs(get_settings()['URL'], protocol=False))
+        self.urls_box.addItems(
+            ['-'] + format_URLs(get_settings()['URL'], protocol=False))
         self.urls_box.currentIndexChanged.connect(self.on_url_changed)
 
         self.endpoint_box = QComboBox()
         self.endpoint_box.addItems([LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT])
         self.endpoint_box.currentIndexChanged.connect(self.on_endpoint_changed)
 
-        self.log_button = self.make_icon_button( 'list.png', 'Start and Stop', name=' Start', checkable=True)
+        self.log_button = self.make_icon_button(
+            'list.png', 'Start and Stop', name=' Start', checkable=True)
         self.log_button.clicked.connect(self.toggle_polling)
 
-        self.clean_button = self.make_icon_button('clear_console.png', 'Clear Output')
+        self.clean_button = self.make_icon_button(
+            'clear_console.png', 'Clear Output')
         self.clean_button.clicked.connect(self.clean_output)
 
         layout.addWidget(self.urls_box)
@@ -402,9 +406,6 @@ class output_widget(QTextEdit):
         self.stats_timer.setInterval(500)
         self.stats_timer.timeout.connect(self.flush_stats_to_ui)
 
-    # ------------------------------------------------------------------
-    # Logs
-    # ------------------------------------------------------------------
     def start_log(self, url=None, last_timestamp=None):
         self.stop_stats()
 
@@ -458,9 +459,6 @@ class output_widget(QTextEdit):
         self.stop_log()
         self.start_log(url, last_timestamp=latest_ts)
 
-    # ------------------------------------------------------------------
-    # System Stats
-    # ------------------------------------------------------------------
     def start_stats(self, url=None):
         self.stop_log()
 
@@ -489,11 +487,6 @@ class output_widget(QTextEdit):
         self.replace_all_ansi_text(text)
 
     def replace_all_ansi_text(self, text):
-        """
-        Replaces the entire content of the widget with `text`, keeping the
-        scrollbar positions (vertical and horizontal) exactly where they
-        were before the refresh.
-        """
         v_scroll = self.verticalScrollBar()
         h_scroll = self.horizontalScrollBar()
         v_value = v_scroll.value()
@@ -508,9 +501,6 @@ class output_widget(QTextEdit):
         v_scroll.setValue(v_value)
         h_scroll.setValue(h_value)
 
-    # ------------------------------------------------------------------
-    # Shared
-    # ------------------------------------------------------------------
     def stop_all(self):
         self.stop_log()
         self.stop_stats()
