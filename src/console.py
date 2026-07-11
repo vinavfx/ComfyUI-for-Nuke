@@ -11,6 +11,7 @@ import threading
 import urllib.request as urllib_request
 
 import nuke  # type: ignore
+import nukescripts # type: ignore
 from ..nuke_util.panels import panel_widget
 from ..nuke_util import panels
 from ..nuke_util.pyside import (QVBoxLayout, QTextEdit, QWidget, QTimer,
@@ -31,8 +32,10 @@ CLEAR_SENTINEL = '__CLEAR__'
 
 
 def show_console():
-    widget = nuke.panels['comfyui_console']()
-    widget.show()
+    console = nukescripts.restorePanel('comfyui_console')
+    pane = nuke.getPaneFor('Properties.1')
+    if pane:
+        console.addToPane(pane)
 
 
 def fetch_json(url, timeout=5):
