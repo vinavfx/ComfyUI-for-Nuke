@@ -3,6 +3,7 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import nuke  # type: ignore
 
 from .connection import GET, POST, format_URLs, get_ip_from_url
@@ -66,33 +67,36 @@ def scan_urls(settings):
 
     running_client = []
     pending_client = []
-    online_urls = []
 
-    for url in urls:
-        if url in blocked_urls:
-            continue
+    online_urls = 0
+    active_urls = [u for u in urls if u not in blocked_urls]
 
-        settings['URL'] = url
-        queue = GET('queue', settings, warning=False, timeout=3)
+    with ThreadPoolExecutor(max_workers=min(30, len(active_urls) or 1)) as executor:
+        futures = {executor.submit(
+            GET, 'queue', {'URL': url}, warning=False, timeout=5): url for url in active_urls}
 
-        if not queue:
-            blocked_urls.append(url)
-            continue
+        for future in as_completed(futures):
+            url = futures[future]
+            queue = future.result()
 
-        online_urls.append(url)
+            if not queue:
+                blocked_urls.append(url)
+                continue
 
-        running = queue['queue_running']
-        pending = queue['queue_pending']
+            online_urls += 1
 
-        if len(pending) < lowest_pending:
-            lowest_pending = len(pending)
-            lowest_load_url = url
+            running = queue['queue_running']
+            pending = queue['queue_pending']
 
-        if not available_url and not running:
-            available_url = url
+            if len(pending) < lowest_pending:
+                lowest_pending = len(pending)
+                lowest_load_url = url
 
-        running_client += [(url, r[3]['client_id']) for r in running]
-        pending_client += [(url, p[3]['client_id']) for p in pending]
+            if not available_url and not running:
+                available_url = url
+
+            running_client += [(url, r[3]['client_id']) for r in running]
+            pending_client += [(url, p[3]['client_id']) for p in pending]
 
     if not online_urls:
         blocked_urls.clear()
