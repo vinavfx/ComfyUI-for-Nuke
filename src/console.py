@@ -33,13 +33,12 @@ CLEAR_SENTINEL = '__CLEAR__'
 
 def show_console():
     console = nuke.panels['comfyui_console']()
-    if console.isVisible():
-        return
 
-    console_pane = nukescripts.restorePanel('comfyui_console')
-    pane = nuke.getPaneFor('Properties.1')
-    if pane:
-        console_pane.addToPane(pane)
+    if not console.isVisible():
+        console_pane = nukescripts.restorePanel('comfyui_console')
+        pane = nuke.getPaneFor('Properties.1')
+        if pane:
+            console_pane.addToPane(pane)
 
     if console.toolbar.urls_box.currentIndex() == 0:
         console.toolbar.urls_box.setCurrentIndex(1)
