@@ -502,6 +502,7 @@ def restore_run_generations():
 
     main_node.parent().begin()
     message = ''
+    missing = []
 
     read = nuke.toNode(main_node.name() + 'Read')
     main_filename = read['file'].value() if read else ''
@@ -511,6 +512,12 @@ def restore_run_generations():
 
     for r in register:
         filename = r['filename']
+
+        dirname = os.path.dirname(filename)
+        if not os.path.isdir(dirname) or not os.listdir(dirname):
+            missing.append(filename)
+            continue
+
         if filename_matching(filename, [main_filename] + related_filenames):
             continue
 
@@ -530,9 +537,19 @@ def restore_run_generations():
 
         message += f"{read['file'].value()}\n"
 
-    if not message:
+    if not message and not missing:
         show_message('Nothing to restore!')
         return
 
     sort_reads(main_node)
-    show_message(f"Restored:\n{message}")
+
+    if message:
+        message = f'<font color=#6cb56b>Restored:</font>\n{message}'
+
+    if missing:
+        message += '\n<font color=red>Missing:</font>\n'
+        for f in missing:
+            fname = f.rsplit(' ', 1)[0]
+            message += f'<font color=red>{fname}</font>\n'
+
+    show_message(message)
