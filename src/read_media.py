@@ -8,10 +8,10 @@ import shutil
 import nuke  # type: ignore
 from time import time
 
-from ..nuke_util.media_util import get_padding, get_name_no_padding
+from ..nuke_util.media_util import get_padding
 from ..nuke_util.nuke_util import get_output_nodes
 from .nodes import get_connected_comfyui_nodes, get_input
-from .common import get_date_code
+from .common import get_date_code, jsonloads, jsondumps
 from .update_menu import normalize_nodename
 
 
@@ -295,6 +295,33 @@ def create_empty_read(run_node, data, settings):
     return read
 
 
+def inference_register(run_node, filename):
+    register_knob = run_node.knob('register')
+    if not register_knob:
+        register_knob = nuke.String_Knob('register')
+        register_knob.setFlag(nuke.INVISIBLE)
+        run_node.addKnob(register_knob)
+
+    register = jsonloads(register_knob.toScript())
+    key = run_node.fullName()
+    filenames = register.get(key, [])
+
+    if not filename in filenames:
+        filenames.append(filename)
+
+    register[key] = filenames
+    register_knob.setValue(jsondumps(register))
+
+
+def get_register(run_node):
+    register_knob = run_node.knob('register')
+    if register_knob:
+        register = jsonloads(register_knob.toScript())
+        return register.get(run_node.fullName(), [])
+
+    return []
+
+
 def create_read(run_node, data, settings, filename, already_exists=False):
     if not filename:
         return
@@ -356,6 +383,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
     for i, onode in get_output_nodes(comfyui_gizmo):
         onode.setInput(i, read)
 
+    inference_register(run_node, filename)
     return read
 
 
@@ -381,32 +409,37 @@ def backup_previous_generation(run_node=None):
         filename = '{} {}-{}'.format(read.knob('file').value(),
                                      read.knob('first').value(), read.knob('last').value())
 
-    basename = get_name_no_padding(filename).replace(' ', '_')
-    rand = os.path.basename(os.path.dirname(filename)).strip()
-    name = '{}Backup_{}_{}'.format(main_node.name(), rand, basename)
+    if is_geo:
+        new_read = nuke.createNode('ReadGeo', inpanel=False)
+        new_read.knob('file').setValue(filename)
+    else:
+        new_read = nuke.createNode('Read', inpanel=False)
+        new_read.knob('file').fromUserText(filename)
+        new_read.knob('frame_mode').setValue(read.knob('frame_mode').value())
+        new_read.knob('frame').setValue(read.knob('frame').value())
+        new_read.knob('auto_alpha').setValue(True)
+        new_read.knob('premultiplied').setValue(read.knob('premultiplied').value())
+        set_correct_colorspace(new_read)
+
+    name = f"{main_node.name()}Backup"
     name = normalize_nodename(name)
+    new_read.setName(name)
+    new_read.knob('label').setValue(read.knob('label').value())
 
-    if not nuke.toNode(name):
-        if is_geo:
-            new_read = nuke.createNode('ReadGeo', inpanel=False)
-            new_read.knob('file').setValue(filename)
-        else:
-            new_read = nuke.createNode('Read', inpanel=False)
-            new_read.knob('file').fromUserText(filename)
-            new_read.knob('frame_mode').setValue(read.knob('frame_mode').value())
-            new_read.knob('frame').setValue(read.knob('frame').value())
-            new_read.knob('auto_alpha').setValue(True)
-            new_read.knob('premultiplied').setValue(read.knob('premultiplied').value())
-            set_correct_colorspace(new_read)
+    reads = []
+    register = get_register(run_node)
 
-        new_read.setName(name)
-        new_read.knob('label').setValue(read.knob('label').value())
+    for n in nuke.allNodes():
+        if not n.Class() in ('Read', 'ReadGeo'):
+            continue
 
-    reads = sorted(
-        [n for n in nuke.allNodes() if n.name().split('Backup')[0] == main_node.name() and n.Class() in ('Read', 'ReadGeo')],
-        key=lambda n: n.name(),
-        reverse=True
-    )
+        if n == read:
+            continue
+
+        if n['file'].value() in register:
+            reads.append(n)
+
+    reads = sorted(reads, key=lambda n: n['file'].value(), reverse=True)
 
     xpos = read.xpos() + 150
     ypos = read.ypos()
