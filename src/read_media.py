@@ -278,7 +278,7 @@ def create_empty_read(run_node, data, settings):
     return read
 
 
-def inference_register(run_node, read, filename):
+def inference_register(run_node, read, filename, metadata):
     register_knob = run_node.knob('register')
     if not register_knob:
         register_knob = nuke.String_Knob('register')
@@ -291,11 +291,24 @@ def inference_register(run_node, read, filename):
     if not filename in filenames:
         filenames.append({
             'filename': filename,
-            'start_frame': read['frame'].value()
+            'start_frame': read['frame'].value(),
+            'metadata': metadata
         })
 
     register['filenames'] = filenames
     register_knob.setValue(jsondumps(register))
+
+
+def metadata_format(meta):
+    if not meta:
+        return ''
+
+    label = '<center>'
+    for key, value in meta:
+        label += '<font color="black" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
+            key, value)
+
+    return label
 
 
 def get_register(run_node):
@@ -365,14 +378,11 @@ def create_read(run_node, data, settings, filename, already_exists=False):
     read.knob('tile_color').setValue(
         main_node.knob('tile_color').value())
 
-    label = ''
-    if meta and settings['DISPLAY_META_IN_READ_NODE']:
-        label = '<center>'
-        for key, value in meta:
-            label += '<font color="black" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
-                key, value)
+    if not settings['DISPLAY_META_IN_READ_NODE']:
+        meta = []
 
     if not already_exists:
+        label = metadata_format(meta)
         read.knob('label').setValue(label)
 
     comfyui_gizmo = run_node.parent() if run_node.parent().knob(
@@ -381,7 +391,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
     for i, onode in get_output_nodes(comfyui_gizmo):
         onode.setInput(i, read)
 
-    inference_register(run_node, read, filename)
+    inference_register(run_node, read, filename, meta)
     return read
 
 
@@ -529,6 +539,10 @@ def restore_run_generations():
         read.knob('frame_mode').setValue('start at')
         read.knob('frame').setValue(str(r['start_frame']))
         read.knob('auto_alpha').setValue(True)
+
+        label = metadata_format(r['metadata'])
+        read.knob('label').setValue(label)
+
         set_correct_colorspace(read)
 
         h, s, l = get_tile_color(main_node)
