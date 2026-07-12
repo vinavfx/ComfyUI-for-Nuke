@@ -94,6 +94,9 @@ def setup():
         'Scripts/Reload Node', scripts.reload_node.reload_node, icon=icon_gray)
 
     comfyui_menu.addCommand(
+        'Scripts/Restore RunNode Generations', read_media.restore_run_generations, icon=icon_gray)
+
+    comfyui_menu.addCommand(
         'Console', console.show_console, icon=console_icon)
 
     if UPDATE_MENU_AT_START:

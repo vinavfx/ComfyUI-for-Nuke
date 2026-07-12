@@ -10,9 +10,9 @@ import nuke  # type: ignore
 from time import time
 
 from ..nuke_util.media_util import get_padding
-from ..nuke_util.nuke_util import get_output_nodes
+from ..nuke_util.nuke_util import get_output_nodes, selected_node
 from .nodes import get_connected_comfyui_nodes, get_input
-from .common import get_date_code, jsonloads, jsondumps
+from .common import get_date_code, jsonloads, jsondumps, show_message
 from .update_menu import normalize_nodename
 
 
@@ -278,7 +278,7 @@ def create_empty_read(run_node, data, settings):
     return read
 
 
-def inference_register(run_node, filename):
+def inference_register(run_node, read, filename):
     register_knob = run_node.knob('register')
     if not register_knob:
         register_knob = nuke.String_Knob('register')
@@ -289,7 +289,10 @@ def inference_register(run_node, filename):
     filenames = register.get('filenames', [])
 
     if not filename in filenames:
-        filenames.append(filename)
+        filenames.append({
+            'filename': filename,
+            'start_frame': read['frame'].value()
+        })
 
     register['filenames'] = filenames
     register_knob.setValue(jsondumps(register))
@@ -378,7 +381,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
     for i, onode in get_output_nodes(comfyui_gizmo):
         onode.setInput(i, read)
 
-    inference_register(run_node, filename)
+    inference_register(run_node, read, filename)
     return read
 
 
@@ -386,8 +389,7 @@ def backup_previous_generation(run_node=None):
     if not run_node:
         run_node = nuke.thisNode()
 
-    register = get_register(run_node)
-    if not register:
+    if not get_register(run_node):
         return
 
     main_node = get_gizmo_group(run_node)
@@ -426,21 +428,38 @@ def backup_previous_generation(run_node=None):
     new_read.setName(name)
     new_read.knob('label').setValue(read.knob('label').value())
 
-    reads = []
+    sort_reads(main_node)
+
+
+def get_related_reads(main_node):
+    from .execute_runs import get_run
+    run_node = get_run(main_node)
+    filenames = [f['filename'] for f in get_register(run_node)]
+
+    backup_reads = []
+    restore_reads = []
+
     for n in nuke.allNodes():
         if not n.Class() in ('Read', 'ReadGeo'):
             continue
 
-        if n == read:
+        if not n['file'].value() in filenames:
             continue
 
-        if not n.name().split('Backup')[0] == read.name().split('Read')[0]:
-            continue
+        if n.name().startswith(main_node.name() + 'Backup'):
+            backup_reads.append(n)
 
-        if n['file'].value() in register:
-            reads.append(n)
+        if n.name().startswith(main_node.name() + 'Restored'):
+            restore_reads.append(n)
 
-    reads = sorted(reads, key=lambda n: n['file'].value(), reverse=True)
+    backup_reads.sort(key=lambda n: n['file'].value(), reverse=True)
+    restore_reads.sort(key=lambda n: n['file'].value(), reverse=True)
+
+    return backup_reads + restore_reads
+
+
+def sort_reads(main_node):
+    reads = get_related_reads(main_node)
 
     xpos = main_node.xpos() + 150
     ypos = main_node.ypos() + 35
@@ -453,3 +472,58 @@ def backup_previous_generation(run_node=None):
         col = i % per_row
         row = i // per_row
         n.setXYpos(xpos + col * offset_x, ypos + row * offset_y)
+
+
+def restore_run_generations():
+    from .execute_runs import get_run
+
+    node = selected_node()
+    if not node:
+        return
+
+    run_node = get_run(node)
+    register = get_register(run_node)
+
+    if not register:
+        show_message('There are no generations before!')
+        return
+
+    main_node = get_gizmo_group(run_node)
+    if not main_node:
+        main_node = run_node
+
+    main_node.parent().begin()
+    message = ''
+
+    read = nuke.toNode(main_node.name() + 'Read')
+    main_filename = read['file'].value() if read else ''
+
+    related_filenames = [n['file'].value()
+                         for n in get_related_reads(main_node)]
+
+    for r in register:
+        filename = r['filename']
+        if filename in related_filenames:
+            continue
+
+        if main_filename == filename:
+            continue
+
+        name = f"{main_node.name()}Restored"
+        read = nuke.createNode('Read', inpanel=False)
+        read.setName(name)
+
+        read.knob('file').fromUserText(filename)
+        read.knob('frame_mode').setValue('start at')
+        read.knob('frame').setValue(str(r['start_frame']))
+        read.knob('auto_alpha').setValue(True)
+        set_correct_colorspace(read)
+
+        message += f'{filename}\n'
+
+    if not message:
+        show_message('Nothing to restore!')
+        return
+
+    sort_reads(main_node)
+    show_message(message)
