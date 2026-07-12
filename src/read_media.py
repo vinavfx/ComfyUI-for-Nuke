@@ -9,7 +9,7 @@ import shutil
 import nuke  # type: ignore
 from time import time
 
-from ..nuke_util.media_util import get_padding
+from ..nuke_util.media_util import get_padding, get_name_no_padding
 from ..nuke_util.nuke_util import get_output_nodes, selected_node, set_tile_color, get_tile_color
 from .nodes import get_connected_comfyui_nodes, get_input
 from .common import get_date_code, jsonloads, jsondumps, show_message
@@ -443,7 +443,8 @@ def get_related_reads(main_node):
         if not n.Class() in ('Read', 'ReadGeo'):
             continue
 
-        if not n['file'].value() in filenames:
+        filename_no_padding = get_name_no_padding(n['file'].value(), True)
+        if not any(get_name_no_padding(f, True) == filename_no_padding for f in filenames):
             continue
 
         if n.name().startswith(main_node.name() + 'Backup'):
@@ -460,6 +461,8 @@ def get_related_reads(main_node):
 
 def sort_reads(main_node):
     reads = get_related_reads(main_node)
+    if not reads:
+        return
 
     xpos = main_node.xpos() + 150
     ypos = main_node.ypos() + 35
