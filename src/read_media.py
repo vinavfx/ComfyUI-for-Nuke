@@ -10,7 +10,7 @@ import nuke  # type: ignore
 from time import time
 
 from ..nuke_util.media_util import get_padding
-from ..nuke_util.nuke_util import get_output_nodes, selected_node
+from ..nuke_util.nuke_util import get_output_nodes, selected_node, set_tile_color, get_tile_color
 from .nodes import get_connected_comfyui_nodes, get_input
 from .common import get_date_code, jsonloads, jsondumps, show_message
 from .update_menu import normalize_nodename
@@ -518,6 +518,10 @@ def restore_run_generations():
         read.knob('frame').setValue(str(r['start_frame']))
         read.knob('auto_alpha').setValue(True)
         set_correct_colorspace(read)
+
+        h, s, l = get_tile_color(main_node)
+        if l > 0:
+            set_tile_color(read, [h, s / 2, l])
 
         message += f'{filename}\n'
 
