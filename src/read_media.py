@@ -4,6 +4,7 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import os
+import math
 import shutil
 import nuke  # type: ignore
 from time import time
@@ -303,13 +304,12 @@ def inference_register(run_node, filename):
         run_node.addKnob(register_knob)
 
     register = jsonloads(register_knob.toScript())
-    key = run_node.fullName()
-    filenames = register.get(key, [])
+    filenames = register.get('filenames', [])
 
     if not filename in filenames:
         filenames.append(filename)
 
-    register[key] = filenames
+    register['filenames'] = filenames
     register_knob.setValue(jsondumps(register))
 
 
@@ -317,7 +317,7 @@ def get_register(run_node):
     register_knob = run_node.knob('register')
     if register_knob:
         register = jsonloads(register_knob.toScript())
-        return register.get(run_node.fullName(), [])
+        return register.get('filenames', [])
 
     return []
 
@@ -346,6 +346,16 @@ def create_read(run_node, data, settings, filename, already_exists=False):
 
     if ext in ['jpg', 'exr', 'tiff', 'png']:
         read = nuke.toNode(fullname)
+
+        if read:
+            dx = read.xpos() - main_node.xpos()
+            dy = read.ypos() - main_node.ypos()
+            dist = math.sqrt(dx**2 + dy**2)
+
+            if dist > 200:
+                read.setName(read.name() + '_orphan')
+                read = None
+
         if not read:
             read = nuke.createNode('Read', inpanel=False)
 
@@ -391,6 +401,10 @@ def backup_previous_generation(run_node=None):
     if not run_node:
         run_node = nuke.thisNode()
 
+    register = get_register(run_node)
+    if not register:
+        return
+
     main_node = get_gizmo_group(run_node)
     if not main_node:
         main_node = run_node
@@ -427,13 +441,14 @@ def backup_previous_generation(run_node=None):
     new_read.knob('label').setValue(read.knob('label').value())
 
     reads = []
-    register = get_register(run_node)
-
     for n in nuke.allNodes():
         if not n.Class() in ('Read', 'ReadGeo'):
             continue
 
         if n == read:
+            continue
+
+        if not n.name().split('Backup')[0] == read.name().split('Read')[0]:
             continue
 
         if n['file'].value() in register:
