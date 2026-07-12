@@ -286,16 +286,19 @@ def inference_register(run_node, read, filename, metadata):
         run_node.addKnob(register_knob)
 
     register = jsonloads(register_knob.toScript())
-    filenames = register.get('filenames', [])
+    inferences = register.get('inferences', [])
 
-    if not filename in filenames:
-        filenames.append({
-            'filename': filename,
-            'start_frame': read['frame'].value(),
-            'metadata': metadata
-        })
+    filenames = [i['filename'] for i in inferences]
+    if filename in filenames:
+        return
 
-    register['filenames'] = filenames
+    inferences.append({
+        'filename': filename,
+        'start_frame': read['frame'].value(),
+        'metadata': metadata
+    })
+
+    register['inferences'] = inferences
     register_knob.setValue(jsondumps(register))
 
 
@@ -315,7 +318,7 @@ def get_register(run_node):
     register_knob = run_node.knob('register')
     if register_knob:
         register = jsonloads(register_knob.toScript())
-        return register.get('filenames', [])
+        return register.get('inferences', [])
 
     return []
 
