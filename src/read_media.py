@@ -431,6 +431,12 @@ def backup_previous_generation(run_node=None):
     sort_reads(main_node)
 
 
+def filename_matching(filename, filenames=[]):
+    filename_no_padding = get_name_no_padding(filename, True)
+    if any(get_name_no_padding(f, True) == filename_no_padding for f in filenames):
+        return True
+
+
 def get_related_reads(main_node):
     from .execute_runs import get_run
     run_node = get_run(main_node)
@@ -443,8 +449,7 @@ def get_related_reads(main_node):
         if not n.Class() in ('Read', 'ReadGeo'):
             continue
 
-        filename_no_padding = get_name_no_padding(n['file'].value(), True)
-        if not any(get_name_no_padding(f, True) == filename_no_padding for f in filenames):
+        if not filename_matching(n['file'].value(), filenames):
             continue
 
         if n.name().startswith(main_node.name() + 'Backup'):
@@ -506,10 +511,7 @@ def restore_run_generations():
 
     for r in register:
         filename = r['filename']
-        if filename in related_filenames:
-            continue
-
-        if main_filename == filename:
+        if filename_matching(filename, [main_filename] + related_filenames):
             continue
 
         name = f"{main_node.name()}Restored"
@@ -526,11 +528,11 @@ def restore_run_generations():
         if l > 0:
             set_tile_color(read, [h, s / 2, l])
 
-        message += f'{filename}\n'
+        message += f"{read['file'].value()}\n"
 
     if not message:
         show_message('Nothing to restore!')
         return
 
     sort_reads(main_node)
-    show_message(message)
+    show_message(f"Restored:\n{message}")
