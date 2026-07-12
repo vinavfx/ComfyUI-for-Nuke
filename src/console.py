@@ -589,6 +589,11 @@ class output_widget(QTextEdit):
                 self.resume_log_from_latest(self.poller.url)
             return
 
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.scroll_to_bottom()
+            event.ignore()
+            return
+
         if event.key() == Qt.Key_Space:
             event.ignore()
             return
