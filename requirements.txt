@@ -1,3 +1,2 @@
 websocket-client
 requests
-trimesh

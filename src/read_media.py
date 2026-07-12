@@ -144,30 +144,12 @@ def extract_meta(data, settings):
     if lora3:
         meta.append(('lora3', lora3))
 
-
-    total_time = settings['pre_inference_time'] + (time() - settings['inference_time'])
+    total_time = settings['pre_inference_time'] + \
+        (time() - settings['inference_time'])
     itime = "%02d:%02d" % divmod(int(total_time), 60)
     meta.append(('time', itime))
 
     return meta
-
-
-def glb2obj(filename, fullname, ext):
-    if ext == 'glb':
-        import trimesh  # type: ignore
-        mesh = trimesh.load(filename)
-        new_filename = filename[:-3] + 'obj'
-        mesh.export(new_filename)
-    else:
-        new_filename = filename
-
-    read = nuke.toNode(fullname)
-    if not read:
-        read = nuke.createNode('ReadGeo', inpanel=False)
-    read.knob('file').setValue(new_filename)
-    read.setInput(0, None)
-
-    return read
 
 
 def get_frame_range(data):
@@ -344,18 +326,17 @@ def create_read(run_node, data, settings, filename, already_exists=False):
     name = '{}Read'.format(main_node.name())
     ext = filename.split('.')[-1].split(' ')[0].lower()
 
+    read = nuke.toNode(fullname)
+    if read:
+        dx = read.xpos() - main_node.xpos()
+        dy = read.ypos() - main_node.ypos()
+        dist = math.sqrt(dx**2 + dy**2)
+
+        if dist > 200:
+            read.setName(read.name() + '_orphan')
+            read = None
+
     if ext in ['jpg', 'exr', 'tiff', 'png']:
-        read = nuke.toNode(fullname)
-
-        if read:
-            dx = read.xpos() - main_node.xpos()
-            dy = read.ypos() - main_node.ypos()
-            dist = math.sqrt(dx**2 + dy**2)
-
-            if dist > 200:
-                read.setName(read.name() + '_orphan')
-                read = None
-
         if not read:
             read = nuke.createNode('Read', inpanel=False)
 
@@ -366,8 +347,12 @@ def create_read(run_node, data, settings, filename, already_exists=False):
 
         set_correct_colorspace(read)
 
-    elif ext in ['glb', 'obj']:
-        read = glb2obj(filename, fullname, ext)
+    elif ext in ['obj']:
+        if not read:
+            read = nuke.createNode('ReadGeo', inpanel=False)
+
+        read.knob('file').setValue(filename)
+        read.setInput(0, None)
 
     else:
         return
@@ -432,7 +417,8 @@ def backup_previous_generation(run_node=None):
         new_read.knob('frame_mode').setValue(read.knob('frame_mode').value())
         new_read.knob('frame').setValue(read.knob('frame').value())
         new_read.knob('auto_alpha').setValue(True)
-        new_read.knob('premultiplied').setValue(read.knob('premultiplied').value())
+        new_read.knob('premultiplied').setValue(
+            read.knob('premultiplied').value())
         set_correct_colorspace(new_read)
 
     name = f"{main_node.name()}Backup"
@@ -456,8 +442,8 @@ def backup_previous_generation(run_node=None):
 
     reads = sorted(reads, key=lambda n: n['file'].value(), reverse=True)
 
-    xpos = read.xpos() + 150
-    ypos = read.ypos()
+    xpos = main_node.xpos() + 150
+    ypos = main_node.ypos() + 35
 
     offset_x = 100
     offset_y = 20 + max(reads, key=lambda n: n.screenHeight()).screenHeight()
