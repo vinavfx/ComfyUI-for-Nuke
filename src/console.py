@@ -409,6 +409,7 @@ class output_widget(QTextEdit):
         '96': (86, 182, 194),  '97': (255, 255, 255),
     }
     DEFAULT_COLOR = (187, 187, 187)
+    PROGRESS_RE = re.compile(r'\d{1,3}%\|.*\|\s*\d+/\d+')
 
     def __init__(self, parent):
         QTextEdit.__init__(self, parent)
@@ -417,6 +418,7 @@ class output_widget(QTextEdit):
         self.document().setMaximumBlockCount(self.MAX_LINES)
         self.poller = None
         self.stats_poller = None
+        self.last_line_was_progress = False
 
         font = QFont('DejaVu Sans Mono')
         font.setStyleHint(QFont.Monospace)
@@ -472,10 +474,21 @@ class output_widget(QTextEdit):
                 self.clear()
                 cursor = self.textCursor()
                 cursor.movePosition(QTextCursor.End)
+                self.last_line_was_progress = False
                 continue
-            self.insert_ansi_text(cursor, msg)
-            if not msg.endswith('\n'):
+
+            clean_msg = msg.replace('\r', '').rstrip('\n')
+            is_progress = bool(self.PROGRESS_RE.search(clean_msg))
+
+            if is_progress and self.last_line_was_progress:
+                cursor.movePosition(QTextCursor.StartOfBlock)
+                cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                cursor.removeSelectedText()
+            elif not cursor.atBlockStart():
                 cursor.insertText('\n')
+
+            self.insert_ansi_text(cursor, clean_msg)
+            self.last_line_was_progress = is_progress
 
         self.setTextCursor(cursor)
 
