@@ -334,6 +334,7 @@ class toolbar_widget(QWidget):
         self.log_button.setChecked(running)
 
     def start_logs_ui(self, url):
+        self.output_widget.clear()
         self.output_widget.start_log(url)
         self.set_button_running(True)
 
