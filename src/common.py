@@ -3,7 +3,6 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
-from contextlib import contextmanager
 import nuke  # type: ignore
 from datetime import datetime
 import json
@@ -21,26 +20,9 @@ image_inputs = []
 mask_inputs = []
 updated_inputs = False
 
-message_active = True
 
-
-@contextmanager
-def disable_message():
-    global message_active
-    previous_value = message_active
-    message_active = False
-
-    try:
-        yield
-    finally:
-        message_active = previous_value
-
-
-def show_message(msg):
-    if not message_active:
-        return
-
-    if nuke.GUI:
+def show_message(msg, gui=True):
+    if nuke.GUI and gui:
         execute_in_main_thread(nuke.message, (msg, ))
     else:
         print(msg)
@@ -56,14 +38,14 @@ def execute_in_main_thread(func, args=(), kwargs=None):
     return func(*args, **kwargs)
 
 
-def update_images_and_mask_inputs(settings):
+def update_images_and_mask_inputs(settings, gui_message=True):
     global image_inputs, mask_inputs, updated_inputs
 
     if updated_inputs:
         return
 
     from .connection import GET
-    info = GET('object_info', settings)
+    info = GET('object_info', settings, gui_message=gui_message)
     if not info:
         return
 

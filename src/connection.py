@@ -52,7 +52,7 @@ def format_URLs(url, protocol=True):
     return result
 
 
-def GET(endpoint, settings, warning=True, timeout=30):
+def GET(endpoint, settings, warning=True, timeout=30, gui_message=True):
     url = format_URLs(settings['URL'])[0]
 
     url = '{}/{}'.format(url, endpoint)
@@ -64,7 +64,8 @@ def GET(endpoint, settings, warning=True, timeout=30):
         return json.loads(data, object_pairs_hook=OrderedDict)
     except:
         if warning:
-            show_message(f"Error connecting to ComfyUI server {settings['URL']} !")
+            show_message(
+                f"Error connecting to ComfyUI server {settings['URL']}!", gui_message)
 
 
 def check_connection():

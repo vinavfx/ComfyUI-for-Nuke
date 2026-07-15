@@ -53,12 +53,11 @@ def show_queue(nuke_message=True):
 blocked_urls = []
 
 
-def scan_urls(settings):
+def scan_urls(settings, gui_message=True):
     urls = format_URLs(settings['URL'])
 
     if not urls:
-        show_message(
-            '{}\nIt has to be an URL address or a list of URL addresses as JSON !'.format(settings['URL']))
+        show_message(f"{settings['URL']}\nIt has to be an URL address or a list of URL addresses as JSON!", gui_message)
         return [None] * 5
 
     available_url = ''
@@ -72,8 +71,8 @@ def scan_urls(settings):
     active_urls = [u for u in urls if u not in blocked_urls]
 
     with ThreadPoolExecutor(max_workers=min(30, len(active_urls) or 1)) as executor:
-        futures = {executor.submit(
-            GET, 'queue', {'URL': url}, warning=False, timeout=5): url for url in active_urls}
+        futures = {executor.submit(GET, 'queue', {'URL': url}, warning=False,
+                                   timeout=5): url for url in active_urls}
 
         for future in as_completed(futures):
             url = futures[future]
@@ -104,13 +103,14 @@ def scan_urls(settings):
     return urls, available_url, lowest_load_url, running_client, pending_client
 
 
-def resolve_submission_target(settings):
-    urls, available_url, lowest_load_url, _, _ = scan_urls(settings)
+def resolve_submission_target(settings, gui_message=True):
+    urls, available_url, lowest_load_url, _, _ = scan_urls(settings, gui_message)
     if not urls:
         return
 
     if not available_url and not lowest_load_url:
-        show_message("No ComfyUI servers found running !\n\n{}".format('\n'.join(urls)))
+        show_message("No ComfyUI servers found running!\n{}".format(
+            '\n'.join(urls)), gui_message)
         return
 
     elif available_url:
@@ -119,7 +119,7 @@ def resolve_submission_target(settings):
     else:
         settings['URL'] = lowest_load_url
 
-    if not GET('system_stats', settings):
+    if not GET('system_stats', settings, timeout=10, gui_message=gui_message):
         return
 
     return settings

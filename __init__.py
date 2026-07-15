@@ -13,10 +13,9 @@ from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
 
 def init_scan_thread():
-    with common.disable_message():
-        settings = common.get_settings()
-        queue_manager.resolve_submission_target(settings)
-        common.update_images_and_mask_inputs(settings)
+    settings = common.get_settings()
+    queue_manager.resolve_submission_target(settings, gui_message=False)
+    common.update_images_and_mask_inputs(settings, gui_message=False)
 
 
 def setup():
