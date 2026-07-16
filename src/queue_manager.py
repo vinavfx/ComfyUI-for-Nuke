@@ -71,13 +71,17 @@ def scan_urls(settings, gui_message=True):
     active_urls = [u for u in urls if u not in blocked_urls]
 
     with ThreadPoolExecutor(max_workers=min(30, len(active_urls) or 1)) as executor:
-        futures = {executor.submit(GET, 'queue', {'URL': url}, warning=False,
-                                   timeout=5): url for url in active_urls}
+        futures = {executor.submit(GET, 'queue', {'URL': url}, warning=False, timeout=5): (
+            i, url) for i, url in enumerate(active_urls)}
 
+        results = []
         for future in as_completed(futures):
-            url = futures[future]
-            queue = future.result()
+            i, url = futures[future]
+            results.append((i, url, future.result()))
 
+        results.sort(key=lambda x: x[0])
+
+        for _, url, queue in results:
             if not queue:
                 blocked_urls.append(url)
                 continue
