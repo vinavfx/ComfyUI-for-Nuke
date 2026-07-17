@@ -12,6 +12,7 @@ from .cmd import inference_end, inference_start
 from .common import get_settings, override_settings
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
+from .connection import format_URLs
 
 
 def get_run(run):
@@ -145,8 +146,9 @@ def execute_runs_plus():
         settings['URL'] = all_urls
     else:
         settings['URL'] = url
+        if p.value(keys[1]):
+            queue_manager.primary_url = format_URLs(url)[0]
 
-    queue_manager.primary_url = url if p.value(keys[1]) else queue_manager.primary_url
     settings['USE_EXR_TO_LOAD_IMAGES'] = p.value(keys[2])
     settings['DISPLAY_META_IN_READ_NODE'] = p.value(keys[3])
     settings['BACKGROUND_SUBMIT'] = p.value(keys[4])
