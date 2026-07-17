@@ -10,55 +10,17 @@ from .connection import GET, POST, format_URLs, get_ip_from_url
 from .common import show_message, get_settings
 
 
-def job_running_message(running_client, pending_client):
-    def ellipsis(s, n):
-        return s if len(s) <= n else s[:n - 3] + "..."
-
-    msgline = '    {} - <font color=orange>{}</font> : <font color=#4FC3F7>{}</font> : {} : <font color=#6cb56b>{}</font>\n'
-    msg = ''
-
-    if running_client:
-        msg = '<b>Running</b>:\n'
-        for i, (url, client) in enumerate(running_client):
-            user, nk, send_id = (client.split(':') + [client, '', 1])[:3]
-            ip = get_ip_from_url(url)
-            msg += msgline.format(i + 1, user, ip, ellipsis(nk, 35), send_id)
-
-    if pending_client:
-        msg += '\n<b>Pending</b>:\n'
-        for i, (url, client) in enumerate(pending_client):
-            user, nk, send_id = (client.split(':') + [client, '', ''])[:3]
-            ip = get_ip_from_url(url)
-            msg += msgline.format(i + 1, user, ip, ellipsis(nk, 35), send_id)
-
-    if not msg:
-        msg = 'No inference is executed!'
-
-    msg = "<span style='white-space: pre;'>{}</span>".format(msg)
-
-    return msg
-
-
-def show_queue(nuke_message=True):
-    settings = get_settings()
-    _, _, _, running_client, pending_client = scan_urls(settings)
-
-    queue = job_running_message(running_client, pending_client)
-    if nuke_message:
-        nuke.message(queue)
-
-    return queue
-
-
 blocked_urls = []
 primary_url = None
+scan_timeout = 10
 
 
 def scan_urls(settings, gui_message=True):
     urls = format_URLs(settings['URL'])
 
     if not urls:
-        show_message(f"{settings['URL']}\nIt has to be an URL address or a list of URL addresses as JSON!", gui_message)
+        show_message(
+            f"{settings['URL']}\nIt has to be an URL address or a list of URL addresses as JSON!", gui_message)
         return [None] * 5
 
     lowest_load_url = None
@@ -72,7 +34,7 @@ def scan_urls(settings, gui_message=True):
     active_urls = [u for u in urls if u not in blocked_urls]
 
     with ThreadPoolExecutor(max_workers=min(30, len(active_urls) or 1)) as executor:
-        futures = {executor.submit(GET, 'queue', {'URL': url}, warning=False, timeout=5): (
+        futures = {executor.submit(GET, 'queue', {'URL': url}, warning=False, timeout=scan_timeout): (
             i, url) for i, url in enumerate(active_urls)}
 
         results = []
@@ -116,7 +78,8 @@ def scan_urls(settings, gui_message=True):
 
 
 def resolve_submission_target(settings, gui_message=True):
-    urls, available_url, lowest_load_url, _, _ = scan_urls(settings, gui_message)
+    urls, available_url, lowest_load_url, _, _ = scan_urls(
+        settings, gui_message)
     if not urls:
         return
 
@@ -131,10 +94,50 @@ def resolve_submission_target(settings, gui_message=True):
     else:
         settings['URL'] = lowest_load_url
 
-    if not GET('system_stats', settings, timeout=10, gui_message=gui_message):
+    if not GET('system_stats', settings, timeout=scan_timeout, gui_message=gui_message):
         return
 
     return settings
+
+
+def job_running_message(running_client, pending_client):
+    def ellipsis(s, n):
+        return s if len(s) <= n else s[:n - 3] + "..."
+
+    msgline = '    {} - <font color=orange>{}</font> : <font color=#4FC3F7>{}</font> : {} : <font color=#6cb56b>{}</font>\n'
+    msg = ''
+
+    if running_client:
+        msg = '<b>Running</b>:\n'
+        for i, (url, client) in enumerate(running_client):
+            user, nk, send_id = (client.split(':') + [client, '', 1])[:3]
+            ip = get_ip_from_url(url)
+            msg += msgline.format(i + 1, user, ip, ellipsis(nk, 35), send_id)
+
+    if pending_client:
+        msg += '\n<b>Pending</b>:\n'
+        for i, (url, client) in enumerate(pending_client):
+            user, nk, send_id = (client.split(':') + [client, '', ''])[:3]
+            ip = get_ip_from_url(url)
+            msg += msgline.format(i + 1, user, ip, ellipsis(nk, 35), send_id)
+
+    if not msg:
+        msg = 'No inference is executed!'
+
+    msg = "<span style='white-space: pre;'>{}</span>".format(msg)
+
+    return msg
+
+
+def show_queue(nuke_message=True):
+    settings = get_settings()
+    _, _, _, running_client, pending_client = scan_urls(settings)
+
+    queue = job_running_message(running_client, pending_client)
+    if nuke_message:
+        nuke.message(queue)
+
+    return queue
 
 
 def find_prompt_id(queue_list, client_id):
