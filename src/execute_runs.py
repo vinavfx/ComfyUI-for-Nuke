@@ -10,6 +10,7 @@ from ..nuke_util.nuke_util import selected_node
 from .run import submit
 from .cmd import inference_end, inference_start
 from .common import get_settings, override_settings
+from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
 
 
@@ -111,6 +112,7 @@ def execute_runs_plus():
 
     keys = [
         'URL',
+        'Use this URL as primary',
         'Use EXR to laod images',
         'Display metadata in Read Node',
         'Background Submit',
@@ -119,11 +121,12 @@ def execute_runs_plus():
 
     p = nuke.Panel('Run')
     p.addEnumerationPulldown(keys[0], ' '.join(urls))
+    p.addBooleanCheckBox(keys[1], False)
     p.addNotepad('Queue', queue)
-    p.addBooleanCheckBox(keys[1], True)
     p.addBooleanCheckBox(keys[2], True)
-    p.addBooleanCheckBox(keys[3], False)
+    p.addBooleanCheckBox(keys[3], True)
     p.addBooleanCheckBox(keys[4], False)
+    p.addBooleanCheckBox(keys[5], False)
     p.addButton('Cancel')
     p.addButton('Run')
 
@@ -143,11 +146,12 @@ def execute_runs_plus():
     else:
         settings['URL'] = url
 
-    settings['USE_EXR_TO_LOAD_IMAGES'] = p.value(keys[1])
-    settings['DISPLAY_META_IN_READ_NODE'] = p.value(keys[2])
-    settings['BACKGROUND_SUBMIT'] = p.value(keys[3])
+    queue_manager.primary_url = url if p.value(keys[1]) else queue_manager.primary_url
+    settings['USE_EXR_TO_LOAD_IMAGES'] = p.value(keys[2])
+    settings['DISPLAY_META_IN_READ_NODE'] = p.value(keys[3])
+    settings['BACKGROUND_SUBMIT'] = p.value(keys[4])
 
-    if p.value(keys[4]):
+    if p.value(keys[5]):
         blocked_urls.clear()
 
     execute_runs(settings, distribute_load)

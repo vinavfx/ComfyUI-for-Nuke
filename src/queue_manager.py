@@ -51,6 +51,7 @@ def show_queue(nuke_message=True):
 
 
 blocked_urls = []
+primary_url = None
 
 
 def scan_urls(settings, gui_message=True):
@@ -60,12 +61,12 @@ def scan_urls(settings, gui_message=True):
         show_message(f"{settings['URL']}\nIt has to be an URL address or a list of URL addresses as JSON!", gui_message)
         return [None] * 5
 
-    available_url = ''
     lowest_load_url = None
     lowest_pending = 99999
 
     running_client = []
     pending_client = []
+    available_urls = []
 
     online_urls = 0
     active_urls = [u for u in urls if u not in blocked_urls]
@@ -95,11 +96,18 @@ def scan_urls(settings, gui_message=True):
                 lowest_pending = len(pending)
                 lowest_load_url = url
 
-            if not available_url and not running:
-                available_url = url
+            if not running:
+                available_urls.append(url)
 
             running_client += [(url, r[3]['client_id']) for r in running]
             pending_client += [(url, p[3]['client_id']) for p in pending]
+
+    if primary_url and primary_url in available_urls:
+        available_url = primary_url
+    elif available_urls:
+        available_url = available_urls[0]
+    else:
+        available_url = None
 
     if not online_urls:
         blocked_urls.clear()
