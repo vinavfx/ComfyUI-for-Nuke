@@ -422,6 +422,7 @@ class output_widget(QTextEdit):
         self.poller = None
         self.stats_poller = None
         self.queue_poller = None
+        self.last_log_timestamp = None
         self.last_line_was_progress = False
 
         font = QFont('DejaVu Sans Mono')
@@ -453,14 +454,16 @@ class output_widget(QTextEdit):
             return
 
         self.poller = LogPoller(url or settings.URL)
-        if last_timestamp is not None:
-            self.poller.last_timestamp = last_timestamp
+        ts = last_timestamp if last_timestamp is not None else self.last_log_timestamp
+        if ts is not None:
+            self.poller.last_timestamp = ts
 
         self.poller.start()
         self.poll_timer.start()
 
     def stop_log(self):
         if self.poller:
+            self.last_log_timestamp = self.poller.last_timestamp
             self.poller.stop()
             self.poller = None
         self.poll_timer.stop()
@@ -630,7 +633,7 @@ class output_widget(QTextEdit):
 
         endpoint = toolbar.current_endpoint
         if endpoint == LOGS_ENDPOINT:
-            self.resume_log_from_latest(url)
+            self.start_log(url)
         elif endpoint == QUEUE_ENDPOINT:
             self.start_queue(url)
         else:
