@@ -328,6 +328,7 @@ class toolbar_widget(QWidget):
 
     def start_logs_ui(self, url):
         self.output_widget.clear()
+        self.output_widget.last_log_timestamp = None
         self.output_widget.start_log(url)
         self.set_button_running(True)
 
