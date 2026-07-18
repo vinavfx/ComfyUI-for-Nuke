@@ -77,6 +77,43 @@ def scan_urls(settings, gui_message=True):
     return urls, available_url, lowest_load_url, running_client, pending_client
 
 
+def resolve_queue_position(settings, new_user):
+    queue = GET('queue', settings)
+    if not queue:
+        return 1
+
+    items = []
+    for i in queue['queue_pending']:
+        user = i[3]['client_id'].split(':')[0]
+        prio = float(i[0])
+        items.append((user, prio))
+
+    items.sort(key=lambda x: x[1])
+
+    counts = {}
+    rounds = []
+    for user, prio in items:
+        r = counts.get(user, 0)
+        rounds.append(r)
+        counts[user] = r + 1
+
+    target_round = counts.get(new_user, 0)
+
+    insert_index = None
+    for i, r in enumerate(rounds):
+        if r > target_round:
+            insert_index = i
+            break
+
+    if insert_index is None:
+        last_prio = items[-1][1] if items else 0
+        return last_prio + 1
+    else:
+        prev_prio = items[insert_index - 1][1] if insert_index > 0 else 0
+        next_prio = items[insert_index][1]
+        return (prev_prio + next_prio) / 2
+
+
 def resolve_submission_target(settings, gui_message=True):
     urls, available_url, lowest_load_url, _, _ = scan_urls(
         settings, gui_message)

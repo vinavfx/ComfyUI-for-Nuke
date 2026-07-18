@@ -17,7 +17,7 @@ import copy
 from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
 from .common import update_images_and_mask_inputs, get_settings, show_message, execute_in_main_thread
 from .connection import POST, get_ip_from_url
-from .queue_manager import resolve_submission_target, interrupt, get_prompt_id, show_queue
+from .queue_manager import resolve_submission_target, interrupt, get_prompt_id, show_queue, resolve_queue_position
 from .nodes import extract_data
 from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, resolve_filename, create_empty_read
 
@@ -208,11 +208,12 @@ def submit(run_node, success_callback=None, settings=None):
     state_data = copy.deepcopy(data)
 
     global prompt_counter; prompt_counter += 1
-    client_id = '{}:{}:{}'.format(os.path.basename(
-        get_user_path()), get_project_name(), prompt_counter).replace(' ', '-')
+    user = os.path.basename(get_user_path())
+    client_id = f'{user}:{get_project_name()}:{prompt_counter}'.replace(' ', '-')
 
     body = {
         'client_id': client_id,
+        'number': resolve_queue_position(settings, user),
         'prompt': data,
         'extra_data': {}
     }
