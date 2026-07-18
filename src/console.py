@@ -21,11 +21,13 @@ from ..nuke_util.pyside import (QVBoxLayout, QTextEdit, QWidget, QTimer,
 from .. import settings
 from .connection import format_URLs
 from .common import get_settings
+from .queue_manager import scan_urls, job_running_message
 
 panels.init('comfyui.console.console_panel', 'ComfyUI Console')
 
 LOGS_ENDPOINT = 'Logs'
 SYSTEM_STATS_ENDPOINT = 'System Stats'
+QUEUE_ENDPOINT = 'Queue'
 LOGS_RAW_PATH = '/internal/logs/raw'
 SYSTEM_STATS_PATH = '/system_stats'
 CLEAR_SENTINEL = '__CLEAR__'
@@ -118,89 +120,12 @@ def format_json_ansi(data, indent=0):
     return str(data)
 
 
-class LogPoller:
+class Poller:
     POLL_INTERVAL = 1
 
-    def __init__(self, url='127.0.0.1:8188'):
+    def __init__(self, url='127.0.0.1:8188', maxsize=1):
         self.url = format_URLs(url)[0]
-        self.queue = queue.Queue()
-        self.stop_event = threading.Event()
-        self.thread = None
-        self.last_timestamp = None
-        self.last_error = None
-
-    @property
-    def is_running(self):
-        return self.thread is not None and self.thread.is_alive()
-
-    def start(self):
-        if self.is_running:
-            return
-        self.stop_event.clear()
-        self.thread = threading.Thread(target=self.poll_loop, daemon=True)
-        self.thread.start()
-
-    def stop(self):
-        self.stop_event.set()
-        if self.thread:
-            self.thread.join(timeout=self.POLL_INTERVAL + 1)
-        self.thread = None
-
-    def get_messages(self):
-        messages = []
-        while True:
-            try:
-                messages.append(self.queue.get_nowait())
-            except queue.Empty:
-                break
-        return messages
-
-    def poll_loop(self):
-        while not self.stop_event.is_set():
-            try:
-                self.fetch_logs()
-                self.last_error = None
-            except Exception as e:
-                error_msg = str(e)
-                if self.last_error != error_msg:
-                    self.last_error = error_msg
-                    self.queue.put(CLEAR_SENTINEL)
-                    self.queue.put(ansi('31', 'Error: {}'.format(error_msg)))
-            self.stop_event.wait(self.POLL_INTERVAL)
-
-    def fetch_log_data(self):
-        url = '{}{}'.format(self.url, LOGS_RAW_PATH)
-        return fetch_json(url)
-
-    def fetch_logs(self):
-        data = self.fetch_log_data()
-
-        for entry in data.get('entries', []):
-            timestamp = entry.get('t', '')
-            message = entry.get('m', '')
-
-            if self.last_timestamp and timestamp <= self.last_timestamp:
-                continue
-
-            self.last_timestamp = timestamp
-            self.queue.put(message)
-
-    def get_latest_timestamp(self):
-        try:
-            entries = self.fetch_log_data().get('entries', [])
-            if entries:
-                return entries[-1].get('t', '')
-        except Exception:
-            pass
-        return None
-
-
-class StatsPoller:
-    POLL_INTERVAL = 1
-
-    def __init__(self, url='127.0.0.1:8188'):
-        self.url = format_URLs(url)[0]
-        self.queue = queue.Queue(maxsize=1)
+        self.queue = queue.Queue(maxsize=maxsize)
         self.stop_event = threading.Event()
         self.thread = None
         self.last_error = None
@@ -242,26 +167,94 @@ class StatsPoller:
                 break
         return latest
 
+    def get_messages(self):
+        messages = []
+        while True:
+            try:
+                messages.append(self.queue.get_nowait())
+            except queue.Empty:
+                break
+        return messages
+
     def poll_loop(self):
         while not self.stop_event.is_set():
             try:
-                full_url = '{}{}'.format(self.url, SYSTEM_STATS_PATH)
-                data = fetch_json(full_url)
-                data = transform_memory_values(data)
-                text = format_json_ansi(data)
-                if text != self.last_text:
-                    self.last_text = text
-                    self.put_latest(text)
+                self.fetch()
                 self.last_error = None
             except Exception as e:
                 error_msg = str(e)
                 if self.last_error != error_msg:
                     self.last_error = error_msg
-                    error_text = ansi(
-                        '31', 'Error fetching system stats: {}'.format(error_msg))
-                    self.last_text = error_text
-                    self.put_latest(error_text)
+                    self.put_latest(ansi('31', 'Error: {}'.format(error_msg)))
             self.stop_event.wait(self.POLL_INTERVAL)
+
+    def fetch(self):
+        pass
+
+
+class LogPoller(Poller):
+    def __init__(self, url='127.0.0.1:8188'):
+        super().__init__(url, maxsize=0)
+        self.last_timestamp = None
+
+    def poll_loop(self):
+        while not self.stop_event.is_set():
+            try:
+                self.fetch()
+                self.last_error = None
+            except Exception as e:
+                error_msg = str(e)
+                if self.last_error != error_msg:
+                    self.last_error = error_msg
+                    self.queue.put(CLEAR_SENTINEL)
+                    self.queue.put(ansi('31', 'Error: {}'.format(error_msg)))
+            self.stop_event.wait(self.POLL_INTERVAL)
+
+    def fetch(self):
+        url = '{}{}'.format(self.url, LOGS_RAW_PATH)
+        data = fetch_json(url)
+
+        for entry in data.get('entries', []):
+            timestamp = entry.get('t', '')
+            message = entry.get('m', '')
+
+            if self.last_timestamp and timestamp <= self.last_timestamp:
+                continue
+
+            self.last_timestamp = timestamp
+            self.queue.put(message)
+
+    def get_latest_timestamp(self):
+        try:
+            url = '{}{}'.format(self.url, LOGS_RAW_PATH)
+            entries = fetch_json(url).get('entries', [])
+            if entries:
+                return entries[-1].get('t', '')
+        except Exception:
+            pass
+        return None
+
+
+class StatsPoller(Poller):
+    def fetch(self):
+        full_url = '{}{}'.format(self.url, SYSTEM_STATS_PATH)
+        data = fetch_json(full_url)
+        data = transform_memory_values(data)
+        text = format_json_ansi(data)
+        if text != self.last_text:
+            self.last_text = text
+            self.put_latest(text)
+
+
+class QueuePoller(Poller):
+    def fetch(self):
+        settings = get_settings()
+        settings['URL'] = self.url
+        _, _, _, running_client, pending_client = scan_urls(settings)
+        text = job_running_message(running_client, pending_client)
+        if text != self.last_text:
+            self.last_text = text
+            self.put_latest(text)
 
 
 class console_panel(panel_widget):
@@ -295,7 +288,7 @@ class toolbar_widget(QWidget):
         self.urls_box.currentIndexChanged.connect(self.on_url_changed)
 
         self.endpoint_box = QComboBox()
-        self.endpoint_box.addItems([LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT])
+        self.endpoint_box.addItems([LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT, QUEUE_ENDPOINT])
         self.endpoint_box.currentIndexChanged.connect(self.on_endpoint_changed)
 
         self.log_button = QPushButton('Start')
@@ -350,9 +343,12 @@ class toolbar_widget(QWidget):
             self.output_widget.clear()
             return
 
-        is_logs = self.current_endpoint == LOGS_ENDPOINT
-        if is_logs:
+        endpoint = self.current_endpoint
+        if endpoint == LOGS_ENDPOINT:
             self.start_logs_ui(url)
+        elif endpoint == QUEUE_ENDPOINT:
+            self.output_widget.start_queue(url)
+            self.set_button_running(True)
         else:
             self.output_widget.start_stats(url)
             self.set_button_running(True)
@@ -367,9 +363,12 @@ class toolbar_widget(QWidget):
             self.reset_log_button_ui()
             return
 
-        is_logs = self.current_endpoint == LOGS_ENDPOINT
-        if is_logs:
+        endpoint = self.current_endpoint
+        if endpoint == LOGS_ENDPOINT:
             self.start_logs_ui(url)
+        elif endpoint == QUEUE_ENDPOINT:
+            self.output_widget.start_queue(url)
+            self.set_button_running(True)
         else:
             self.output_widget.start_stats(url)
             self.set_button_running(True)
@@ -381,10 +380,13 @@ class toolbar_widget(QWidget):
             self.set_button_running(False)
             return
 
-        is_logs = self.current_endpoint == LOGS_ENDPOINT
+        endpoint = self.current_endpoint
         if checked:
-            if is_logs:
+            if endpoint == LOGS_ENDPOINT:
                 self.start_logs_ui(url)
+            elif endpoint == QUEUE_ENDPOINT:
+                self.output_widget.start_queue(url)
+                self.set_button_running(True)
             else:
                 self.output_widget.start_stats(url)
                 self.set_button_running(True)
@@ -419,6 +421,7 @@ class output_widget(QTextEdit):
         self.document().setMaximumBlockCount(self.MAX_LINES)
         self.poller = None
         self.stats_poller = None
+        self.queue_poller = None
         self.last_line_was_progress = False
 
         font = QFont('DejaVu Sans Mono')
@@ -438,8 +441,13 @@ class output_widget(QTextEdit):
         self.stats_timer.setInterval(500)
         self.stats_timer.timeout.connect(self.flush_stats_to_ui)
 
+        self.queue_timer = QTimer(self)
+        self.queue_timer.setInterval(500)
+        self.queue_timer.timeout.connect(self.flush_queue_to_ui)
+
     def start_log(self, url=None, last_timestamp=None):
         self.stop_stats()
+        self.stop_queue()
 
         if self.poller and self.poller.is_running:
             return
@@ -504,6 +512,7 @@ class output_widget(QTextEdit):
 
     def start_stats(self, url=None):
         self.stop_log()
+        self.stop_queue()
 
         if self.stats_poller and self.stats_poller.is_running:
             return
@@ -529,6 +538,34 @@ class output_widget(QTextEdit):
 
         self.replace_all_ansi_text(text)
 
+    def start_queue(self, url=None):
+        self.stop_log()
+        self.stop_stats()
+
+        if self.queue_poller and self.queue_poller.is_running:
+            return
+
+        self.clear()
+        self.queue_poller = QueuePoller(url or settings.URL)
+        self.queue_poller.start()
+        self.queue_timer.start()
+
+    def stop_queue(self):
+        if self.queue_poller:
+            self.queue_poller.stop()
+            self.queue_poller = None
+        self.queue_timer.stop()
+
+    def flush_queue_to_ui(self):
+        if not self.queue_poller:
+            return
+
+        text = self.queue_poller.get_latest()
+        if text is None:
+            return
+
+        self.setHtml(text)
+
     def replace_all_ansi_text(self, text):
         v_scroll = self.verticalScrollBar()
         h_scroll = self.horizontalScrollBar()
@@ -547,6 +584,7 @@ class output_widget(QTextEdit):
     def stop_all(self):
         self.stop_log()
         self.stop_stats()
+        self.stop_queue()
 
     def insert_ansi_text(self, cursor, text):
         parts = self.ANSI_RE.split(text)
@@ -590,8 +628,11 @@ class output_widget(QTextEdit):
         if not toolbar.log_button.isChecked():
             return
 
-        if toolbar.current_endpoint == LOGS_ENDPOINT:
+        endpoint = toolbar.current_endpoint
+        if endpoint == LOGS_ENDPOINT:
             self.resume_log_from_latest(url)
+        elif endpoint == QUEUE_ENDPOINT:
+            self.start_queue(url)
         else:
             self.start_stats(url)
 
