@@ -62,7 +62,10 @@ def scan_urls(settings, gui_message=True):
                 available_urls.append(url)
 
             running_client += [(url, r[3]['client_id']) for r in running]
-            pending_client += [(url, p[3]['client_id']) for p in pending]
+            pending_client += [(url, p[3]['client_id'], p[0]) for p in pending]
+
+    pending_client.sort(key=lambda x: x[2])
+    pending_client = [(url, client_id) for url, client_id, _ in pending_client]
 
     if primary_url and primary_url in available_urls:
         available_url = primary_url
