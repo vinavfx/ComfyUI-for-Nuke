@@ -13,6 +13,7 @@ from .common import get_settings, override_settings
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
 from .connection import format_URLs
+from ..settings import ALLOW_ALL_IPS_SUBMIT
 
 
 def get_run(run):
@@ -105,8 +106,11 @@ def execute_runs_plus():
     settings = get_settings()
     all_urls = settings['URL']
 
-    urls = ['-', '{%s}' % 'Distribute on all IPs']
-    urls.extend(json.loads(settings['URL']))
+    if ALLOW_ALL_IPS_SUBMIT:
+        urls = ['-', '{%s}' % 'Distribute on all IPs']
+        urls.extend(json.loads(settings['URL']))
+    else:
+        urls = ['-', '127.0.0.1:8188']
 
     _, _, _, running_client, pending_client = scan_urls(settings)
     queue = job_running_message(running_client, pending_client)
