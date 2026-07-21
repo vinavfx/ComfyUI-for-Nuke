@@ -31,6 +31,7 @@ QUEUE_ENDPOINT = 'Queue'
 LOGS_RAW_PATH = '/internal/logs/raw'
 SYSTEM_STATS_PATH = '/system_stats'
 CLEAR_SENTINEL = '__CLEAR__'
+TIMEOUT_THRESHOLD = 5
 
 
 def show_console():
@@ -46,7 +47,7 @@ def show_console():
         console.toolbar.urls_box.setCurrentIndex(1)
 
 
-def fetch_json(url, timeout=2):
+def fetch_json(url, timeout=5):
     response = urllib_request.urlopen(url, timeout=timeout)
     return json.loads(response.read().decode())
 
@@ -130,6 +131,7 @@ class Poller:
         self.thread = None
         self.last_error = None
         self.last_text = None
+        self.timeout_count = 0
 
     @property
     def is_running(self):
@@ -181,11 +183,18 @@ class Poller:
             try:
                 self.fetch()
                 self.last_error = None
+                self.timeout_count = 0
             except Exception as e:
                 error_msg = str(e)
                 if self.last_error != error_msg:
                     self.last_error = error_msg
+                    self.timeout_count = 1
                     self.put_latest(ansi('31', 'Error: {}'.format(error_msg)))
+                else:
+                    self.timeout_count += 1
+                    if self.timeout_count >= TIMEOUT_THRESHOLD:
+                        self.put_latest(ansi('31', 'Error: {}'.format(error_msg)))
+                        self.timeout_count = 0
             self.stop_event.wait(self.POLL_INTERVAL)
 
     def fetch(self):
@@ -196,18 +205,26 @@ class LogPoller(Poller):
     def __init__(self, url='127.0.0.1:8188'):
         super().__init__(url, maxsize=0)
         self.last_timestamp = None
+        self.timeout_count = 0
 
     def poll_loop(self):
         while not self.stop_event.is_set():
             try:
                 self.fetch()
                 self.last_error = None
+                self.timeout_count = 0
             except Exception as e:
                 error_msg = str(e)
                 if self.last_error != error_msg:
                     self.last_error = error_msg
-                    self.queue.put(CLEAR_SENTINEL)
+                    self.timeout_count = 1
                     self.queue.put(ansi('31', 'Error: {}'.format(error_msg)))
+                else:
+                    self.timeout_count += 1
+                    if self.timeout_count >= TIMEOUT_THRESHOLD:
+                        self.queue.put(CLEAR_SENTINEL)
+                        self.queue.put(ansi('31', 'Error: {}'.format(error_msg)))
+                        self.timeout_count = 0
             self.stop_event.wait(self.POLL_INTERVAL)
 
     def fetch(self):
