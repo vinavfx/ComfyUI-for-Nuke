@@ -12,7 +12,7 @@ from .cmd import inference_end, inference_start
 from .common import get_settings, override_settings
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
-from .connection import format_URLs
+from .connection import format_URLs, get_ip_from_url
 from ..settings import ALLOW_ALL_IPS_SUBMIT
 
 
@@ -106,11 +106,8 @@ def execute_runs_plus():
     settings = get_settings()
     all_urls = settings['URL']
 
-    if ALLOW_ALL_IPS_SUBMIT:
-        urls = ['-', '{%s}' % 'Distribute on all IPs']
-        urls.extend(json.loads(settings['URL']))
-    else:
-        urls = ['-', '127.0.0.1:8188']
+    urls = ['-', '{%s}' % 'Distribute on all IPs']
+    urls.extend(json.loads(settings['URL']))
 
     _, _, _, running_client, pending_client = scan_urls(settings)
     queue = job_running_message(running_client, pending_client)
@@ -159,5 +156,20 @@ def execute_runs_plus():
 
     if p.value(keys[5]):
         blocked_urls.clear()
+
+    current_ips = {get_ip_from_url(u) for u in format_URLs(
+        settings['URL']) if not get_ip_from_url(u).startswith('127')}
+
+    non_permitted = set()
+    for node in nodes:
+        node_settings = copy.deepcopy(settings)
+        override_settings(get_run(node), node_settings)
+        allowed = {get_ip_from_url(u) for u in format_URLs(node_settings['URL'])}
+        non_permitted |= current_ips - allowed
+
+    if non_permitted and not ALLOW_ALL_IPS_SUBMIT:
+        node_names = ', '.join([n.name() for n in nodes])
+        nuke.message('These IPs are not allowed for nodes [{}]:\n{}'.format(node_names, '\n'.join(sorted(non_permitted))))
+        return
 
     execute_runs(settings, distribute_load)
