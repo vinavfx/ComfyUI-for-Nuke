@@ -15,12 +15,12 @@ primary_url = None
 scan_timeout = 10
 
 
-def scan_urls(settings, gui_message=True):
+def scan_urls(settings):
     urls = format_URLs(settings['URL'])
 
     if not urls:
         show_message(
-            f"{settings['URL']}\nIt has to be an URL address or a list of URL addresses as JSON!", gui_message)
+            f"{settings['URL']}\nIt has to be an URL address or a list of URL addresses as JSON!")
         return [None] * 5
 
     lowest_load_url = None
@@ -117,15 +117,13 @@ def resolve_queue_position(settings, new_user):
         return (prev_prio + next_prio) / 2
 
 
-def resolve_submission_target(settings, gui_message=True):
-    urls, available_url, lowest_load_url, _, _ = scan_urls(
-        settings, gui_message)
+def resolve_submission_target(settings):
+    urls, available_url, lowest_load_url, _, _ = scan_urls(settings)
     if not urls:
         return
 
     if not available_url and not lowest_load_url:
-        show_message("No ComfyUI servers found running!\n{}".format(
-            '\n'.join(urls)), gui_message)
+        show_message("No ComfyUI servers found running!\n{}".format('\n'.join(urls)))
         return
 
     elif available_url:
@@ -134,7 +132,7 @@ def resolve_submission_target(settings, gui_message=True):
     else:
         settings['URL'] = lowest_load_url
 
-    if not GET('system_stats', settings, timeout=scan_timeout, gui_message=gui_message):
+    if not GET('system_stats', settings, timeout=scan_timeout):
         return
 
     return settings

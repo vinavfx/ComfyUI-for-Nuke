@@ -52,7 +52,7 @@ def format_URLs(url, protocol=True):
     return result
 
 
-def GET(endpoint, settings, warning=True, timeout=30, gui_message=True):
+def GET(endpoint, settings, warning=True, timeout=30):
     url = format_URLs(settings['URL'])[0]
 
     url = '{}/{}'.format(url, endpoint)
@@ -65,7 +65,7 @@ def GET(endpoint, settings, warning=True, timeout=30, gui_message=True):
     except:
         if warning:
             show_message(
-                f"Error connecting to ComfyUI server {settings['URL']}!", gui_message)
+                f"Error connecting to ComfyUI server {settings['URL']}!")
 
 
 def check_connection():

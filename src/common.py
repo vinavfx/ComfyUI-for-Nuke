@@ -13,16 +13,13 @@ from ..settings import *
 from ..nuke_util.nuke_util import get_connected_nodes
 import threading
 
-if not getattr(nuke, 'comfyui_running', False):
-    nuke.comfyui_running = False
-
 image_inputs = []
 mask_inputs = []
 updated_inputs = False
 
 
-def show_message(msg, gui=True):
-    if nuke.GUI and gui:
+def show_message(msg):
+    if nuke.GUI:
         execute_in_main_thread(nuke.message, (msg, ))
     else:
         print(msg)
@@ -38,14 +35,14 @@ def execute_in_main_thread(func, args=(), kwargs=None):
     return func(*args, **kwargs)
 
 
-def update_images_and_mask_inputs(settings, gui_message=True):
+def update_images_and_mask_inputs(settings):
     global image_inputs, mask_inputs, updated_inputs
 
     if updated_inputs:
         return
 
     from .connection import GET
-    info = GET('object_info', settings, gui_message=gui_message)
+    info = GET('object_info', settings)
     if not info:
         return
 

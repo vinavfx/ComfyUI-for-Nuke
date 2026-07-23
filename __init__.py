@@ -4,7 +4,6 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import os
-import threading
 import nuke  # type: ignore
 from .src import *
 from .testing import *
@@ -12,15 +11,7 @@ from functools import partial
 from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
 
-def init_scan_thread():
-    settings = common.get_settings()
-    queue_manager.resolve_submission_target(settings, gui_message=False)
-    common.update_images_and_mask_inputs(settings, gui_message=False)
-
-
 def setup():
-    threading.Thread(target=init_scan_thread, daemon=True).start()
-
     icon = '{}/icons/comfyui_icon.png'.format(COMFYUI2NUKE)
     comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI', icon=icon)
 
