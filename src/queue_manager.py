@@ -12,7 +12,7 @@ from .common import show_message, get_settings
 
 blocked_urls = []
 primary_url = None
-scan_timeout = 10
+scan_timeout = 3
 
 
 def scan_urls(settings):
