@@ -4,3 +4,6 @@
 [submodule "python_util"]
 	path = python_util
 	url = https://github.com/vinavfx/python_util
+[submodule "harness"]
+	path = harness
+	url = https://github.com/vinavfx/harness.git
