@@ -96,7 +96,8 @@ def get_name_code(name, length=15):
 
 def override_settings(run_node, settings):
     override_node = None
-    for n in get_connected_nodes(run_node, ignore_disabled=True, continue_at_up_level=True):
+    for n in get_connected_nodes(run_node, ignore_disabled=True,
+                                 continue_at_up_level=True, active_switch=True):
         if n.knob('override_settings'):
             override_node = n
             break
