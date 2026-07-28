@@ -11,5 +11,5 @@ from . import (
     scripts,
     queue_manager,
     cmd,
-    console
+    console,
 )

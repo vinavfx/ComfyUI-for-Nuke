@@ -12,18 +12,17 @@ from .common import get_settings
 
 def upload_media():
     settings = get_settings()
-    input_dir = settings['INPUT_DIRECTORY']
-    filepath = nuke.getFilename(
-        'Upload Media', "*.jpg *.exr *.png *.mp3 *.wav")
+    input_dir = settings["INPUT_DIRECTORY"]
+    filepath = nuke.getFilename("Upload Media", "*.jpg *.exr *.png *.mp3 *.wav")
 
     if not filepath:
         return
 
     this = nuke.thisNode()
 
-    list_knob = this.knob('audio_')
+    list_knob = this.knob("audio_")
     if not list_knob:
-        list_knob = this.knob('image_')
+        list_knob = this.knob("image_")
 
     if not list_knob:
         return

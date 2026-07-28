@@ -1,9 +1,4 @@
-from . import (
-    knob2input,
-    force_output_connection,
-    export_workflow,
-    reload_node
-)
+from . import knob2input, force_output_connection, export_workflow, reload_node
 
 
 import nuke  # type: ignore
@@ -21,13 +16,13 @@ def show_data():
     raw_json = json.dumps(get_node_data(node), indent=10)
 
     lines = []
-    for line in raw_json.split('\n'):
-        if ':' in line:
-            key, val = line.split(':', 1)
+    for line in raw_json.split("\n"):
+        if ":" in line:
+            key, val = line.split(":", 1)
 
             key = f"<font color=#569CD6>{key}</font>"
 
-            clean_val = val.strip().rstrip(',')
+            clean_val = val.strip().rstrip(",")
             comma = "," if val.strip().endswith(",") else ""
 
             if clean_val.startswith('"'):
@@ -36,13 +31,12 @@ def show_data():
                 val = f"<font color=#D19A66>{clean_val}</font>"
             elif clean_val == "null":
                 val = f"<font color=#D19A66>{clean_val}</font>"
-            elif re.match(r'^-?\d+(?:\.\d+)?$', clean_val):
+            elif re.match(r"^-?\d+(?:\.\d+)?$", clean_val):
                 val = f"<font color=#D19A66>{clean_val}</font>"
 
             lines.append(f"{key}:{val}{comma}")
         else:
             lines.append(f"<font color=#ABB2BF>{line}</font>")
 
-    formatted_msg = "<span style='white-space: pre;'>{}</span>".format(
-        '\n'.join(lines))
+    formatted_msg = "<span style='white-space: pre;'>{}</span>".format("\n".join(lines))
     nuke.message(formatted_msg)

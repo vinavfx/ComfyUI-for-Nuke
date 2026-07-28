@@ -19,11 +19,11 @@ def create_all_comfyui_nodes():
 
         return items
 
-    menu = nuke.menu('Nodes').menu('ComfyUI')
+    menu = nuke.menu("Nodes").menu("ComfyUI")
     all_items = get_menu_items(menu)
 
     for item in all_items:
-        if 'Update all' in item.name():
+        if "Update all" in item.name():
             continue
 
         item.invoke()

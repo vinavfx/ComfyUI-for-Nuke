@@ -19,7 +19,7 @@ from .update_menu import normalize_nodename
 def exr_filepath_fixed(run_node):
     nodes = get_connected_comfyui_nodes(run_node)
     for n, _ in nodes:
-        filepath_knob = n.knob('filepath_')
+        filepath_knob = n.knob("filepath_")
         if not filepath_knob:
             continue
 
@@ -28,7 +28,7 @@ def exr_filepath_fixed(run_node):
         if not padding:
             continue
 
-        filepath = filepath.replace(padding, '%04d')
+        filepath = filepath.replace(padding, "%04d")
         filepath_knob.setText(filepath)
 
 
@@ -38,10 +38,10 @@ def update_filename_prefix(run_node, update=True, data={}):
         return
 
     filename_prefix_knob = None
-    filename_knob_name = ''
+    filename_knob_name = ""
 
-    for knob_name in ['filename_prefix', 'file_path']:
-        filename_prefix_knob = output_node.knob(knob_name + '_')
+    for knob_name in ["filename_prefix", "file_path"]:
+        filename_prefix_knob = output_node.knob(knob_name + "_")
         if filename_prefix_knob:
             filename_knob_name = knob_name
             break
@@ -53,25 +53,25 @@ def update_filename_prefix(run_node, update=True, data={}):
         return filename_prefix_knob.value()
 
     prefix = filename_prefix_knob.value()
-    old_rand = prefix.split('/')[0]
+    old_rand = prefix.split("/")[0]
 
     if old_rand.isdigit():
-        prefix = prefix.replace(old_rand + '/', '')
+        prefix = prefix.replace(old_rand + "/", "")
 
-    new_prefix = '{}/{}'.format(get_date_code(), prefix)
+    new_prefix = "{}/{}".format(get_date_code(), prefix)
     filename_prefix_knob.setValue(new_prefix)
-    data[output_node.name()]['inputs'][filename_knob_name] = new_prefix
+    data[output_node.name()]["inputs"][filename_knob_name] = new_prefix
     return new_prefix
 
 
 def set_correct_colorspace(read):
-    filename = read.knob('file').value()
-    ext = filename.split('.')[-1]
+    filename = read.knob("file").value()
+    ext = filename.split(".")[-1]
 
-    if ext == 'exr':
-        read.knob('raw').setValue(True)
+    if ext == "exr":
+        read.knob("raw").setValue(True)
     else:
-        read.knob('raw').setValue(False)
+        read.knob("raw").setValue(False)
 
 
 def get_gizmo_group(run_node):
@@ -79,108 +79,105 @@ def get_gizmo_group(run_node):
 
     while gizmo:
         gizmo = gizmo.parent()
-        if not hasattr(gizmo, 'knob'):
+        if not hasattr(gizmo, "knob"):
             return
 
-        if gizmo.knob('comfyui_gizmo'):
+        if gizmo.knob("comfyui_gizmo"):
             return gizmo
 
 
 def extract_meta(data, settings):
     seed = steps = denoise = -1
-    lora = lora2 = lora3 = ''
+    lora = lora2 = lora3 = ""
 
     for name, node in data.items():
-        inputs = node['inputs']
+        inputs = node["inputs"]
 
         if seed == -1:
-            if 'seed' in name.lower():
-                seed = inputs.get('value', -1)
+            if "seed" in name.lower():
+                seed = inputs.get("value", -1)
 
         if seed == -1:
-            seed = inputs.get('noise_seed', -1)
+            seed = inputs.get("noise_seed", -1)
             seed = seed if type(seed) == int else -1
 
         if seed == -1:
-            seed = inputs.get('seed', -1)
+            seed = inputs.get("seed", -1)
             seed = seed if type(seed) == int else -1
 
         if steps == -1:
-            steps = inputs.get('steps', -1)
+            steps = inputs.get("steps", -1)
 
         if denoise == -1:
-            denoise = inputs.get('denoise', -1)
+            denoise = inputs.get("denoise", -1)
 
-        if name in ('extra_lora1', 'extra_lora2', 'extra_lora3'):
-            lora_name = inputs.get('lora_name', '').split(
-                '/')[-1].rsplit('.', 1)[0]
-            lora_strength = inputs.get('strength_model', 0)
-            formatted = '{}:{}'.format(lora_name, lora_strength)
+        if name in ("extra_lora1", "extra_lora2", "extra_lora3"):
+            lora_name = inputs.get("lora_name", "").split("/")[-1].rsplit(".", 1)[0]
+            lora_strength = inputs.get("strength_model", 0)
+            formatted = "{}:{}".format(lora_name, lora_strength)
 
-            if name == 'extra_lora1':
+            if name == "extra_lora1":
                 lora = formatted
-            elif name == 'extra_lora2':
+            elif name == "extra_lora2":
                 lora2 = formatted
-            elif name == 'extra_lora3':
+            elif name == "extra_lora3":
                 lora3 = formatted
 
     meta = []
 
     if not seed == -1:
-        meta.append(('seed', seed))
+        meta.append(("seed", seed))
 
     if not steps == -1:
-        meta.append(('steps', steps))
+        meta.append(("steps", steps))
 
     if not denoise == -1:
-        meta.append(('denoise', denoise))
+        meta.append(("denoise", denoise))
 
     if lora:
-        meta.append(('lora', lora))
+        meta.append(("lora", lora))
 
     if lora2:
-        meta.append(('lora2', lora2))
+        meta.append(("lora2", lora2))
 
     if lora3:
-        meta.append(('lora3', lora3))
+        meta.append(("lora3", lora3))
 
-    total_time = settings['pre_inference_time'] + \
-        (time() - settings['inference_time'])
+    total_time = settings["pre_inference_time"] + (time() - settings["inference_time"])
     itime = "%02d:%02d" % divmod(int(total_time), 60)
-    meta.append(('time', itime))
+    meta.append(("time", itime))
 
     return meta
 
 
 def get_frame_range(data):
     #  Of all the read nodes, it gets the longest range.
-    ranges = [n.get('frame_range')
-              for n in data.values() if n.get('frame_range')]
+    ranges = [n.get("frame_range") for n in data.values() if n.get("frame_range")]
     if not ranges:
         return [1, 1]
     return max(ranges, key=lambda r: r[1] - r[0])
 
 
 def get_output_path(settings, default_output=False):
-    default_output_dir = settings['OUTPUT_DIRECTORY']
+    default_output_dir = settings["OUTPUT_DIRECTORY"]
 
     if default_output:
         return default_output_dir
 
-    collect_dir = settings['COLLECT_DIRECTORY'].strip()
-    untitled = settings['project_name'] == 'Root'
+    collect_dir = settings["COLLECT_DIRECTORY"].strip()
+    untitled = settings["project_name"] == "Root"
 
     if os.path.isabs(collect_dir) and os.path.isdir(collect_dir):
         return collect_dir
 
     elif collect_dir and not untitled:
-        return os.path.join(os.path.dirname(settings['project_name']), collect_dir)
+        return os.path.join(os.path.dirname(settings["project_name"]), collect_dir)
 
     return default_output_dir
 
 
 def relocate_filename(filename, settings):
-    if not settings['COLLECT_DIRECTORY'].strip():
+    if not settings["COLLECT_DIRECTORY"].strip():
         return filename
 
     if not filename:
@@ -196,8 +193,8 @@ def relocate_filename(filename, settings):
     if src_dir == dst_dir:
         return filename
 
-    task = nuke.ProgressTask('Relocate from ComfyUI')
-    task.setMessage('Relocating: ...')
+    task = nuke.ProgressTask("Relocate from ComfyUI")
+    task.setMessage("Relocating: ...")
     task.setProgress(0)
 
     if os.path.exists(dst_dir):
@@ -211,7 +208,7 @@ def relocate_filename(filename, settings):
         if os.path.isfile(src_file):
             shutil.move(src_file, dst_dir)
 
-        task.setMessage('Relocating: ' + f)
+        task.setMessage("Relocating: " + f)
         task.setProgress(int((i / float(len(files))) * 100))
 
     task.setProgress(100)
@@ -223,7 +220,7 @@ def relocate_filename(filename, settings):
 
 
 def get_local_filename(settings, default_output=False):
-    filename_prefix = settings.get('filename_prefix')
+    filename_prefix = settings.get("filename_prefix")
 
     if not filename_prefix:
         return
@@ -231,8 +228,7 @@ def get_local_filename(settings, default_output=False):
     basename = os.path.basename(filename_prefix)
     dirname = os.path.dirname(filename_prefix)
 
-    sequence_output = os.path.join(get_output_path(
-        settings, default_output), dirname)
+    sequence_output = os.path.join(get_output_path(settings, default_output), dirname)
 
     if not sequence_output:
         return
@@ -260,65 +256,59 @@ def resolve_filename(settings, already_generated=False):
 
 
 def create_empty_read(run_node, data, settings):
-    filename = os.path.join(
-        settings['OUTPUT_DIRECTORY'], settings['filename_prefix'])
+    filename = os.path.join(settings["OUTPUT_DIRECTORY"], settings["filename_prefix"])
 
-    filename += '_#####_.png'
+    filename += "_#####_.png"
     read = create_read(run_node, data, settings, filename)
 
     if not read:
         return
 
     first_frame, last_frame = get_frame_range(data)
-    read['on_error'].setValue('black')
-    read['first'].setValue(1)
-    read['last'].setValue(last_frame - first_frame + 1)
-    read['origlast'].setValue(last_frame - first_frame + 1)
+    read["on_error"].setValue("black")
+    read["first"].setValue(1)
+    read["last"].setValue(last_frame - first_frame + 1)
+    read["origlast"].setValue(last_frame - first_frame + 1)
 
     return read
 
 
 def inference_register(run_node, read, filename, metadata):
-    register_knob = run_node.knob('register')
+    register_knob = run_node.knob("register")
     if not register_knob:
-        register_knob = nuke.String_Knob('register')
+        register_knob = nuke.String_Knob("register")
         register_knob.setFlag(nuke.INVISIBLE)
         run_node.addKnob(register_knob)
 
     register = jsonloads(register_knob.toScript())
-    inferences = register.get('inferences', [])
+    inferences = register.get("inferences", [])
 
-    filenames = [i['filename'] for i in inferences]
+    filenames = [i["filename"] for i in inferences]
     if filename in filenames:
         return
 
-    inferences.append({
-        'filename': filename,
-        'start_frame': read['frame'].value(),
-        'metadata': metadata
-    })
+    inferences.append({"filename": filename, "start_frame": read["frame"].value(), "metadata": metadata})
 
-    register['inferences'] = inferences
+    register["inferences"] = inferences
     register_knob.setValue(jsondumps(register))
 
 
 def metadata_format(meta):
     if not meta:
-        return ''
+        return ""
 
-    label = '<center>'
+    label = "<center>"
     for key, value in meta:
-        label += '<font color="black" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
-            key, value)
+        label += '<font color="black" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(key, value)
 
     return label
 
 
 def get_register(run_node):
-    register_knob = run_node.knob('register')
+    register_knob = run_node.knob("register")
     if register_knob:
         register = jsonloads(register_knob.toScript())
-        return register.get('inferences', [])
+        return register.get("inferences", [])
 
     return []
 
@@ -341,9 +331,9 @@ def create_read(run_node, data, settings, filename, already_exists=False):
 
     main_node.parent().begin()
 
-    fullname = '{}Read'.format(main_node.fullName())
-    name = '{}Read'.format(main_node.name())
-    ext = filename.split('.')[-1].split(' ')[0].lower()
+    fullname = "{}Read".format(main_node.fullName())
+    name = "{}Read".format(main_node.name())
+    ext = filename.split(".")[-1].split(" ")[0].lower()
 
     read = nuke.toNode(fullname)
     if read:
@@ -352,25 +342,25 @@ def create_read(run_node, data, settings, filename, already_exists=False):
         dist = math.sqrt(dx**2 + dy**2)
 
         if dist > 200:
-            read.setName(read.name() + '_orphan')
+            read.setName(read.name() + "_orphan")
             read = None
 
-    if ext in ['jpg', 'exr', 'tiff', 'png']:
+    if ext in ["jpg", "exr", "tiff", "png"]:
         if not read:
-            read = nuke.createNode('Read', inpanel=False)
+            read = nuke.createNode("Read", inpanel=False)
 
-        read.knob('file').fromUserText(filename)
-        read.knob('frame_mode').setValue('start at')
-        read.knob('frame').setValue(str(get_frame_range(data)[0]))
-        read.knob('auto_alpha').setValue(True)
+        read.knob("file").fromUserText(filename)
+        read.knob("frame_mode").setValue("start at")
+        read.knob("frame").setValue(str(get_frame_range(data)[0]))
+        read.knob("auto_alpha").setValue(True)
 
         set_correct_colorspace(read)
 
-    elif ext in ['obj']:
+    elif ext in ["obj"]:
         if not read:
-            read = nuke.createNode('ReadGeo', inpanel=False)
+            read = nuke.createNode("ReadGeo", inpanel=False)
 
-        read.knob('file').setValue(filename)
+        read.knob("file").setValue(filename)
         read.setInput(0, None)
 
     else:
@@ -378,18 +368,16 @@ def create_read(run_node, data, settings, filename, already_exists=False):
 
     read.setName(name)
     read.setXYpos(main_node.xpos(), main_node.ypos() + 35)
-    read.knob('tile_color').setValue(
-        main_node.knob('tile_color').value())
+    read.knob("tile_color").setValue(main_node.knob("tile_color").value())
 
-    if not settings['DISPLAY_META_IN_READ_NODE']:
+    if not settings["DISPLAY_META_IN_READ_NODE"]:
         meta = []
 
     if not already_exists:
         label = metadata_format(meta)
-        read.knob('label').setValue(label)
+        read.knob("label").setValue(label)
 
-    comfyui_gizmo = run_node.parent() if run_node.parent().knob(
-        'comfyui_gizmo') else run_node
+    comfyui_gizmo = run_node.parent() if run_node.parent().knob("comfyui_gizmo") else run_node
 
     for i, onode in get_output_nodes(comfyui_gizmo):
         onode.setInput(i, read)
@@ -411,35 +399,33 @@ def backup_previous_generation(run_node=None):
 
     main_node.parent().begin()
 
-    read = nuke.toNode(main_node.fullName() + 'Read')
+    read = nuke.toNode(main_node.fullName() + "Read")
     if not read:
         return
 
-    is_geo = read.Class() == 'ReadGeo'
+    is_geo = read.Class() == "ReadGeo"
 
     if is_geo:
-        filename = read.knob('file').value()
+        filename = read.knob("file").value()
     else:
-        filename = '{} {}-{}'.format(read.knob('file').value(),
-                                     read.knob('first').value(), read.knob('last').value())
+        filename = "{} {}-{}".format(read.knob("file").value(), read.knob("first").value(), read.knob("last").value())
 
     if is_geo:
-        new_read = nuke.createNode('ReadGeo', inpanel=False)
-        new_read.knob('file').setValue(filename)
+        new_read = nuke.createNode("ReadGeo", inpanel=False)
+        new_read.knob("file").setValue(filename)
     else:
-        new_read = nuke.createNode('Read', inpanel=False)
-        new_read.knob('file').fromUserText(filename)
-        new_read.knob('frame_mode').setValue(read.knob('frame_mode').value())
-        new_read.knob('frame').setValue(read.knob('frame').value())
-        new_read.knob('auto_alpha').setValue(True)
-        new_read.knob('premultiplied').setValue(
-            read.knob('premultiplied').value())
+        new_read = nuke.createNode("Read", inpanel=False)
+        new_read.knob("file").fromUserText(filename)
+        new_read.knob("frame_mode").setValue(read.knob("frame_mode").value())
+        new_read.knob("frame").setValue(read.knob("frame").value())
+        new_read.knob("auto_alpha").setValue(True)
+        new_read.knob("premultiplied").setValue(read.knob("premultiplied").value())
         set_correct_colorspace(new_read)
 
     name = f"{main_node.name()}Backup"
     name = normalize_nodename(name)
     new_read.setName(name)
-    new_read.knob('label').setValue(read.knob('label').value())
+    new_read.knob("label").setValue(read.knob("label").value())
 
     sort_reads(main_node)
 
@@ -452,27 +438,28 @@ def filename_matching(filename, filenames=[]):
 
 def get_related_reads(main_node):
     from .execute_runs import get_run
+
     run_node = get_run(main_node)
-    filenames = [f['filename'] for f in get_register(run_node)]
+    filenames = [f["filename"] for f in get_register(run_node)]
 
     backup_reads = []
     restore_reads = []
 
     for n in nuke.allNodes():
-        if not n.Class() in ('Read', 'ReadGeo'):
+        if not n.Class() in ("Read", "ReadGeo"):
             continue
 
-        if not filename_matching(n['file'].value(), filenames):
+        if not filename_matching(n["file"].value(), filenames):
             continue
 
-        if n.name().startswith(main_node.name() + 'Backup'):
+        if n.name().startswith(main_node.name() + "Backup"):
             backup_reads.append(n)
 
-        if n.name().startswith(main_node.name() + 'Restored'):
+        if n.name().startswith(main_node.name() + "Restored"):
             restore_reads.append(n)
 
-    backup_reads.sort(key=lambda n: n['file'].value(), reverse=True)
-    restore_reads.sort(key=lambda n: n['file'].value(), reverse=True)
+    backup_reads.sort(key=lambda n: n["file"].value(), reverse=True)
+    restore_reads.sort(key=lambda n: n["file"].value(), reverse=True)
 
     return backup_reads + restore_reads
 
@@ -506,7 +493,7 @@ def restore_run_generations():
     register = get_register(run_node)
 
     if not register:
-        show_message('There are no generations before!')
+        show_message("There are no generations before!")
         return
 
     main_node = get_gizmo_group(run_node)
@@ -514,17 +501,16 @@ def restore_run_generations():
         main_node = run_node
 
     main_node.parent().begin()
-    message = ''
+    message = ""
     missing = []
 
-    read = nuke.toNode(main_node.name() + 'Read')
-    main_filename = read['file'].value() if read else ''
+    read = nuke.toNode(main_node.name() + "Read")
+    main_filename = read["file"].value() if read else ""
 
-    related_filenames = [n['file'].value()
-                         for n in get_related_reads(main_node)]
+    related_filenames = [n["file"].value() for n in get_related_reads(main_node)]
 
     for r in register:
-        filename = r['filename']
+        filename = r["filename"]
 
         dirname = os.path.dirname(filename)
         if not os.path.isdir(dirname) or not os.listdir(dirname):
@@ -535,16 +521,16 @@ def restore_run_generations():
             continue
 
         name = f"{main_node.name()}Restored"
-        read = nuke.createNode('Read', inpanel=False)
+        read = nuke.createNode("Read", inpanel=False)
         read.setName(name)
 
-        read.knob('file').fromUserText(filename)
-        read.knob('frame_mode').setValue('start at')
-        read.knob('frame').setValue(str(r['start_frame']))
-        read.knob('auto_alpha').setValue(True)
+        read.knob("file").fromUserText(filename)
+        read.knob("frame_mode").setValue("start at")
+        read.knob("frame").setValue(str(r["start_frame"]))
+        read.knob("auto_alpha").setValue(True)
 
-        label = metadata_format(r['metadata'])
-        read.knob('label').setValue(label)
+        label = metadata_format(r["metadata"])
+        read.knob("label").setValue(label)
 
         set_correct_colorspace(read)
 
@@ -555,18 +541,18 @@ def restore_run_generations():
         message += f"{read['file'].value()}\n"
 
     if not message and not missing:
-        show_message('Nothing to restore!')
+        show_message("Nothing to restore!")
         return
 
     sort_reads(main_node)
 
     if message:
-        message = f'<font color=#6cb56b>Restored:</font>\n{message}'
+        message = f"<font color=#6cb56b>Restored:</font>\n{message}"
 
     if missing:
-        message += '\n<font color=red>Missing:</font>\n'
+        message += "\n<font color=red>Missing:</font>\n"
         for f in missing:
-            fname = f.rsplit(' ', 1)[0]
-            message += f'<font color=red>{fname}</font>\n'
+            fname = f.rsplit(" ", 1)[0]
+            message += f"<font color=red>{fname}</font>\n"
 
     show_message(message)

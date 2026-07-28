@@ -22,25 +22,28 @@ def api_to_workflow(api):
         "groups": [],
         "config": {},
         "extra": {},
-        "version": 0.4
+        "version": 0.4,
     }
     lk_id = 1
 
     for name, body in api.items():
-        attrs = body.get('nuke_attrs', {})
-        xpos = attrs.get('xpos', 0) * 3
-        ypos = attrs.get('ypos', 0) * 3
-        tile_color = attrs.get('tile_color')
+        attrs = body.get("nuke_attrs", {})
+        xpos = attrs.get("xpos", 0) * 3
+        ypos = attrs.get("ypos", 0) * 3
+        tile_color = attrs.get("tile_color")
 
-        hex_color = f"#{int((tile_color >> 24) & 0xFF):02x}{int((tile_color >> 16) & 0xFF):02x}{int((tile_color >> 8) & 0xFF):02x}" if tile_color else '#4d4d4d'
+        hex_color = (
+            f"#{int((tile_color >> 24) & 0xFF):02x}{int((tile_color >> 16) & 0xFF):02x}{int((tile_color >> 8) & 0xFF):02x}"
+            if tile_color
+            else "#4d4d4d"
+        )
 
         n_id = id_map[name]
         ins, w_vals = [], []
 
         for k, v in body.get("inputs", {}).items():
             if isinstance(v, list) and v and isinstance(v[0], str) and v[0] in id_map:
-                wf["links"].append(
-                    [lk_id, id_map[v[0]], v[1], n_id, len(ins), "IMAGE"])
+                wf["links"].append([lk_id, id_map[v[0]], v[1], n_id, len(ins), "IMAGE"])
                 ins.append({"name": k, "type": "IMAGE", "link": lk_id})
                 lk_id += 1
             else:
@@ -57,7 +60,7 @@ def api_to_workflow(api):
             "inputs": ins,
             "outputs": [],
             "properties": {"NodeData": {"title": name}},
-            "widgets_values": w_vals
+            "widgets_values": w_vals,
         }
 
         if hex_color:
@@ -82,15 +85,14 @@ def copy_workflow():
 
     workflow, settings = data
     root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    xclip = os.path.join(root, 'bin/xclip')
+    xclip = os.path.join(root, "bin/xclip")
 
-    os.system("echo '{}' | {} -selection clipboard".format(
-        api_to_workflow(workflow), xclip))
+    os.system("echo '{}' | {} -selection clipboard".format(api_to_workflow(workflow), xclip))
 
-    url = json.loads(settings['URL'])[0]
+    url = json.loads(settings["URL"])[0]
 
-    if nuke.ask('Workflow copied to clipboard\nOpen ComfyUI and paste ?'):
-        os.system('xdg-open http://' + url)
+    if nuke.ask("Workflow copied to clipboard\nOpen ComfyUI and paste ?"):
+        os.system("xdg-open http://" + url)
 
 
 def get_workflow():
@@ -98,11 +100,11 @@ def get_workflow():
     if not node:
         return
 
-    if node.knob('comfyui_gizmo'):
+    if node.knob("comfyui_gizmo"):
         node.begin()
-        node = nuke.toNode('Run')
+        node = nuke.toNode("Run")
 
-    elif not node.knob('run'):
+    elif not node.knob("run"):
         nuke.message("Select the 'Run' node")
         return
 
@@ -120,16 +122,13 @@ def export_workflow():
     data = data[0]
 
     workflow = nuke.getFilename(
-        'Export Workflow',
-        "*.json",
-        os.path.join(os.path.expanduser('~'), 'Desktop/workflow.json'),
-        type='save'
+        "Export Workflow", "*.json", os.path.join(os.path.expanduser("~"), "Desktop/workflow.json"), type="save"
     )
 
     if not workflow:
         return
 
-    workflow = workflow if 'json' in workflow else workflow + '.json'
+    workflow = workflow if "json" in workflow else workflow + ".json"
     jwrite(workflow, data)
 
-    nuke.message('Workflow Saved: ' + workflow)
+    nuke.message("Workflow Saved: " + workflow)

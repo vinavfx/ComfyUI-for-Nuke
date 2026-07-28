@@ -14,32 +14,44 @@ import nuke  # type: ignore
 import nukescripts  # type: ignore
 from ..nuke_util.panels import panel_widget
 from ..nuke_util import panels
-from ..nuke_util.pyside import (QVBoxLayout, QTextEdit, QWidget, QTimer,
-                                QHBoxLayout, QPushButton, Qt,
-                                QComboBox, QFont, QTextCursor, QTextCharFormat,
-                                QColor, QIcon, QSize)
+from ..nuke_util.pyside import (
+    QVBoxLayout,
+    QTextEdit,
+    QWidget,
+    QTimer,
+    QHBoxLayout,
+    QPushButton,
+    Qt,
+    QComboBox,
+    QFont,
+    QTextCursor,
+    QTextCharFormat,
+    QColor,
+    QIcon,
+    QSize,
+)
 from .. import settings
 from .connection import format_URLs
 from .common import get_settings
 from .queue_manager import scan_urls, job_running_message
 
-panels.init('comfyui.console.console_panel', 'ComfyUI Console')
+panels.init("comfyui.console.console_panel", "ComfyUI Console")
 
-LOGS_ENDPOINT = 'Logs'
-SYSTEM_STATS_ENDPOINT = 'System Stats'
-QUEUE_ENDPOINT = 'Queue'
-LOGS_RAW_PATH = '/internal/logs/raw'
-SYSTEM_STATS_PATH = '/system_stats'
-CLEAR_SENTINEL = '__CLEAR__'
+LOGS_ENDPOINT = "Logs"
+SYSTEM_STATS_ENDPOINT = "System Stats"
+QUEUE_ENDPOINT = "Queue"
+LOGS_RAW_PATH = "/internal/logs/raw"
+SYSTEM_STATS_PATH = "/system_stats"
+CLEAR_SENTINEL = "__CLEAR__"
 TIMEOUT_THRESHOLD = 5
 
 
 def show_console():
-    console = nuke.panels['comfyui_console']()
+    console = nuke.panels["comfyui_console"]()
 
     if not console.isVisible():
-        console_pane = nukescripts.restorePanel('comfyui_console')
-        pane = nuke.getPaneFor('Properties.1')
+        console_pane = nukescripts.restorePanel("comfyui_console")
+        pane = nuke.getPaneFor("Properties.1")
         if pane:
             console_pane.addToPane(pane)
 
@@ -53,21 +65,19 @@ def fetch_json(url, timeout=5):
 
 
 def ansi(code, text):
-    return '\x1b[{}m{}\x1b[0m'.format(code, text)
+    return "\x1b[{}m{}\x1b[0m".format(code, text)
 
 
 def transform_memory_values(data):
-    memory_keys = {'ram_total', 'ram_free', 'vram_total', 'vram_free',
-                   'torch_vram_total', 'torch_vram_free'}
+    memory_keys = {"ram_total", "ram_free", "vram_total", "vram_free", "torch_vram_total", "torch_vram_free"}
 
     def bytes_to_gb(value):
         if isinstance(value, (int, float)):
-            return '{} GB'.format(round(value / (1024 ** 3), 2))
+            return "{} GB".format(round(value / (1024**3), 2))
         return value
 
     if isinstance(data, dict):
-        return {k: bytes_to_gb(v) if k in memory_keys else transform_memory_values(v)
-                for k, v in data.items()}
+        return {k: bytes_to_gb(v) if k in memory_keys else transform_memory_values(v) for k, v in data.items()}
 
     if isinstance(data, list):
         return [transform_memory_values(item) for item in data]
@@ -76,47 +86,46 @@ def transform_memory_values(data):
 
 
 def format_json_ansi(data, indent=0):
-    pad = '  ' * indent
-    pad_in = '  ' * (indent + 1)
+    pad = "  " * indent
+    pad_in = "  " * (indent + 1)
 
     if isinstance(data, dict):
         if not data:
-            return '{}'
+            return "{}"
 
         items = list(data.items())
-        lines = ['{']
+        lines = ["{"]
         for i, (key, value) in enumerate(items):
-            comma = ',' if i < len(items) - 1 else ''
-            key_str = ansi('36', '"{}"'.format(key))
+            comma = "," if i < len(items) - 1 else ""
+            key_str = ansi("36", '"{}"'.format(key))
             value_str = format_json_ansi(value, indent + 1)
-            lines.append('{}{}: {}{}'.format(
-                pad_in, key_str, value_str, comma))
-        lines.append(pad + '}')
-        return '\n'.join(lines)
+            lines.append("{}{}: {}{}".format(pad_in, key_str, value_str, comma))
+        lines.append(pad + "}")
+        return "\n".join(lines)
 
     if isinstance(data, list):
         if not data:
-            return '[]'
+            return "[]"
 
-        lines = ['[']
+        lines = ["["]
         for i, value in enumerate(data):
-            comma = ',' if i < len(data) - 1 else ''
+            comma = "," if i < len(data) - 1 else ""
             value_str = format_json_ansi(value, indent + 1)
-            lines.append('{}{}{}'.format(pad_in, value_str, comma))
-        lines.append(pad + ']')
-        return '\n'.join(lines)
+            lines.append("{}{}{}".format(pad_in, value_str, comma))
+        lines.append(pad + "]")
+        return "\n".join(lines)
 
     if isinstance(data, bool):
-        return ansi('35', 'true' if data else 'false')
+        return ansi("35", "true" if data else "false")
 
     if data is None:
-        return ansi('35', 'null')
+        return ansi("35", "null")
 
     if isinstance(data, (int, float)):
-        return ansi('33', data)
+        return ansi("33", data)
 
     if isinstance(data, str):
-        return ansi('32', '"{}"'.format(data))
+        return ansi("32", '"{}"'.format(data))
 
     return str(data)
 
@@ -124,7 +133,7 @@ def format_json_ansi(data, indent=0):
 class Poller:
     POLL_INTERVAL = 1
 
-    def __init__(self, url='127.0.0.1:8188', maxsize=1):
+    def __init__(self, url="127.0.0.1:8188", maxsize=1):
         self.url = format_URLs(url)[0]
         self.queue = queue.Queue(maxsize=maxsize)
         self.stop_event = threading.Event()
@@ -189,11 +198,11 @@ class Poller:
                 if self.last_error != error_msg:
                     self.last_error = error_msg
                     self.timeout_count = 1
-                    self.put_latest(ansi('31', 'Error: {}'.format(error_msg)))
+                    self.put_latest(ansi("31", "Error: {}".format(error_msg)))
                 else:
                     self.timeout_count += 1
                     if self.timeout_count >= TIMEOUT_THRESHOLD:
-                        self.put_latest(ansi('31', 'Error: {}'.format(error_msg)))
+                        self.put_latest(ansi("31", "Error: {}".format(error_msg)))
                         self.timeout_count = 0
             self.stop_event.wait(self.POLL_INTERVAL)
 
@@ -202,7 +211,7 @@ class Poller:
 
 
 class LogPoller(Poller):
-    def __init__(self, url='127.0.0.1:8188'):
+    def __init__(self, url="127.0.0.1:8188"):
         super().__init__(url, maxsize=0)
         self.last_timestamp = None
         self.timeout_count = 0
@@ -218,22 +227,22 @@ class LogPoller(Poller):
                 if self.last_error != error_msg:
                     self.last_error = error_msg
                     self.timeout_count = 1
-                    self.queue.put(ansi('31', 'Error: {}'.format(error_msg)))
+                    self.queue.put(ansi("31", "Error: {}".format(error_msg)))
                 else:
                     self.timeout_count += 1
                     if self.timeout_count >= TIMEOUT_THRESHOLD:
                         self.queue.put(CLEAR_SENTINEL)
-                        self.queue.put(ansi('31', 'Error: {}'.format(error_msg)))
+                        self.queue.put(ansi("31", "Error: {}".format(error_msg)))
                         self.timeout_count = 0
             self.stop_event.wait(self.POLL_INTERVAL)
 
     def fetch(self):
-        url = '{}{}'.format(self.url, LOGS_RAW_PATH)
+        url = "{}{}".format(self.url, LOGS_RAW_PATH)
         data = fetch_json(url)
 
-        for entry in data.get('entries', []):
-            timestamp = entry.get('t', '')
-            message = entry.get('m', '')
+        for entry in data.get("entries", []):
+            timestamp = entry.get("t", "")
+            message = entry.get("m", "")
 
             if self.last_timestamp and timestamp <= self.last_timestamp:
                 continue
@@ -243,10 +252,10 @@ class LogPoller(Poller):
 
     def get_latest_timestamp(self):
         try:
-            url = '{}{}'.format(self.url, LOGS_RAW_PATH)
-            entries = fetch_json(url).get('entries', [])
+            url = "{}{}".format(self.url, LOGS_RAW_PATH)
+            entries = fetch_json(url).get("entries", [])
             if entries:
-                return entries[-1].get('t', '')
+                return entries[-1].get("t", "")
         except Exception:
             pass
         return None
@@ -254,7 +263,7 @@ class LogPoller(Poller):
 
 class StatsPoller(Poller):
     def fetch(self):
-        full_url = '{}{}'.format(self.url, SYSTEM_STATS_PATH)
+        full_url = "{}{}".format(self.url, SYSTEM_STATS_PATH)
         data = fetch_json(full_url)
         data = transform_memory_values(data)
         text = format_json_ansi(data)
@@ -266,7 +275,7 @@ class StatsPoller(Poller):
 class QueuePoller(Poller):
     def fetch(self):
         settings = get_settings()
-        settings['URL'] = self.url
+        settings["URL"] = self.url
         _, _, _, running_client, pending_client = scan_urls(settings)
         text = job_running_message(running_client, pending_client)
         if text != self.last_text:
@@ -300,25 +309,24 @@ class toolbar_widget(QWidget):
         self.setLayout(layout)
 
         self.urls_box = QComboBox()
-        self.urls_box.addItems(
-            ['-'] + format_URLs(get_settings()['URL'], protocol=False))
+        self.urls_box.addItems(["-"] + format_URLs(get_settings()["URL"], protocol=False))
         self.urls_box.currentIndexChanged.connect(self.on_url_changed)
 
         self.endpoint_box = QComboBox()
         self.endpoint_box.addItems([LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT, QUEUE_ENDPOINT])
         self.endpoint_box.currentIndexChanged.connect(self.on_endpoint_changed)
 
-        self.log_button = QPushButton('Start')
+        self.log_button = QPushButton("Start")
         self.log_button.setCheckable(True)
-        self.log_button.setToolTip('Start and Stop')
-        icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'start.png')
+        self.log_button.setToolTip("Start and Stop")
+        icon_path = os.path.join(settings.COMFYUI2NUKE, "icons", "start.png")
         self.log_button.setIcon(QIcon(icon_path))
         self.log_button.setIconSize(QSize(16, 16))
         self.log_button.clicked.connect(self.toggle_polling)
 
         self.clean_button = QPushButton()
-        self.clean_button.setToolTip('Clear Output')
-        icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'clear_console.png')
+        self.clean_button.setToolTip("Clear Output")
+        icon_path = os.path.join(settings.COMFYUI2NUKE, "icons", "clear_console.png")
         self.clean_button.setIcon(QIcon(icon_path))
         self.clean_button.setIconSize(QSize(16, 16))
         self.clean_button.clicked.connect(self.clean_output)
@@ -335,11 +343,11 @@ class toolbar_widget(QWidget):
 
     def set_button_running(self, running):
         if running:
-            icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'stop.png')
-            self.log_button.setText(' Stop')
+            icon_path = os.path.join(settings.COMFYUI2NUKE, "icons", "stop.png")
+            self.log_button.setText(" Stop")
         else:
-            icon_path = os.path.join(settings.COMFYUI2NUKE, 'icons', 'start.png')
-            self.log_button.setText('Start')
+            icon_path = os.path.join(settings.COMFYUI2NUKE, "icons", "start.png")
+            self.log_button.setText("Start")
         self.log_button.setIcon(QIcon(icon_path))
         self.log_button.setChecked(running)
 
@@ -356,7 +364,7 @@ class toolbar_widget(QWidget):
         self.output_widget.stop_all()
 
         url = self.urls_box.currentText()
-        if url == '-':
+        if url == "-":
             self.reset_log_button_ui()
             self.output_widget.clear()
             return
@@ -377,7 +385,7 @@ class toolbar_widget(QWidget):
 
         url = self.urls_box.currentText()
 
-        if url == '-':
+        if url == "-":
             self.reset_log_button_ui()
             return
 
@@ -394,7 +402,7 @@ class toolbar_widget(QWidget):
     def toggle_polling(self, checked):
         url = self.urls_box.currentText()
 
-        if checked and url == '-':
+        if checked and url == "-":
             self.set_button_running(False)
             return
 
@@ -418,19 +426,27 @@ class toolbar_widget(QWidget):
 
 class output_widget(QTextEdit):
     MAX_LINES = 1000
-    ANSI_RE = re.compile(r'\x1b\[([0-9;]*)m')
+    ANSI_RE = re.compile(r"\x1b\[([0-9;]*)m")
     ANSI_COLORS = {
-        '30': (40, 44, 52),    '31': (224, 108, 117),
-        '32': (152, 195, 121), '33': (229, 192, 123),
-        '34': (97, 175, 239),  '35': (198, 120, 221),
-        '36': (86, 182, 194),  '37': (215, 218, 224),
-        '90': (92, 99, 112),   '91': (224, 108, 117),
-        '92': (152, 195, 121), '93': (229, 192, 123),
-        '94': (97, 175, 239),  '95': (198, 120, 221),
-        '96': (86, 182, 194),  '97': (255, 255, 255),
+        "30": (40, 44, 52),
+        "31": (224, 108, 117),
+        "32": (152, 195, 121),
+        "33": (229, 192, 123),
+        "34": (97, 175, 239),
+        "35": (198, 120, 221),
+        "36": (86, 182, 194),
+        "37": (215, 218, 224),
+        "90": (92, 99, 112),
+        "91": (224, 108, 117),
+        "92": (152, 195, 121),
+        "93": (229, 192, 123),
+        "94": (97, 175, 239),
+        "95": (198, 120, 221),
+        "96": (86, 182, 194),
+        "97": (255, 255, 255),
     }
     DEFAULT_COLOR = (187, 187, 187)
-    PROGRESS_RE = re.compile(r'\d{1,3}%\|.*\|\s*\d+/\d+')
+    PROGRESS_RE = re.compile(r"\d{1,3}%\|.*\|\s*\d+/\d+")
 
     def __init__(self, parent):
         QTextEdit.__init__(self, parent)
@@ -443,14 +459,12 @@ class output_widget(QTextEdit):
         self.last_log_timestamp = None
         self.last_line_was_progress = False
 
-        font = QFont('DejaVu Sans Mono')
+        font = QFont("DejaVu Sans Mono")
         font.setStyleHint(QFont.Monospace)
         font.setPixelSize(font.pixelSize() + 14)
         self.setFont(font)
 
-        self.setStyleSheet(
-            'QTextEdit { background-color: #1e1e1e; color: #c8c8c8; }'
-        )
+        self.setStyleSheet("QTextEdit { background-color: #1e1e1e; color: #c8c8c8; }")
 
         self.poll_timer = QTimer(self)
         self.poll_timer.setInterval(500)
@@ -507,7 +521,7 @@ class output_widget(QTextEdit):
                 self.last_line_was_progress = False
                 continue
 
-            clean_msg = msg.replace('\r', '').rstrip('\n')
+            clean_msg = msg.replace("\r", "").rstrip("\n")
             is_progress = bool(self.PROGRESS_RE.search(clean_msg))
 
             if is_progress and self.last_line_was_progress:
@@ -515,7 +529,7 @@ class output_widget(QTextEdit):
                 cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
                 cursor.removeSelectedText()
             elif not cursor.atBlockStart():
-                cursor.insertText('\n')
+                cursor.insertText("\n")
 
             self.insert_ansi_text(cursor, clean_msg)
             self.last_line_was_progress = is_progress
@@ -619,10 +633,10 @@ class output_widget(QTextEdit):
                     cursor.insertText(part, fmt)
                 continue
 
-            for code in part.split(';'):
+            for code in part.split(";"):
                 if code in self.ANSI_COLORS:
                     color = self.ANSI_COLORS[code]
-                elif code == '0':
+                elif code == "0":
                     color = self.DEFAULT_COLOR
 
     def scroll_to_bottom(self):
@@ -638,12 +652,12 @@ class output_widget(QTextEdit):
     def showEvent(self, event):
         super(output_widget, self).showEvent(event)
         parent = self.parent
-        if not hasattr(parent, 'toolbar'):
+        if not hasattr(parent, "toolbar"):
             return
 
         toolbar = parent.toolbar
         url = toolbar.urls_box.currentText()
-        if url == '-':
+        if url == "-":
             return
 
         if not toolbar.log_button.isChecked():

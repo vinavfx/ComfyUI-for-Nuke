@@ -18,17 +18,17 @@ from .scripts.knob2input import convert_knobs, get_swapped_knobs
 
 
 def center_nodes(nodes):
-    min_x = min(node['xpos'].value() for node in nodes)
-    min_y = min(node['ypos'].value() for node in nodes)
+    min_x = min(node["xpos"].value() for node in nodes)
+    min_y = min(node["ypos"].value() for node in nodes)
 
     for node in nodes:
-        new_x = node['xpos'].value() - min_x
-        new_y = node['ypos'].value() - min_y
+        new_x = node["xpos"].value() - min_x
+        new_y = node["ypos"].value() - min_y
         node.setXYpos(int(new_x), int(new_y))
 
 
 def import_workflow():
-    workflow_path = nuke.getFilename('Workflow', '*.json')
+    workflow_path = nuke.getFilename("Workflow", "*.json")
     if not workflow_path:
         return
 
@@ -39,9 +39,8 @@ def import_workflow():
     data = jread(workflow_path)
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
-    if not 'nodes' in data:
-        show_message(
-            "Incompatible workflow, perhaps exported from 'Export(API)'")
+    if not "nodes" in data:
+        show_message("Incompatible workflow, perhaps exported from 'Export(API)'")
         return
 
     if not update_menu():
@@ -52,78 +51,75 @@ def import_workflow():
     nodes = []
     ignore_nodes = []
 
-    for attrs in data['nodes']:
-        if attrs['type'] in ignore_nodes:
+    for attrs in data["nodes"]:
+        if attrs["type"] in ignore_nodes:
             continue
 
-        node = create_comfyui_node(attrs['type'], inpanel=False)
+        node = create_comfyui_node(attrs["type"], inpanel=False)
 
         swapped_knobs = {}
         knobs_to_inputs_names = []
 
-        for input_item in attrs.get('inputs', []):
-            if 'widget' in input_item and 'name' in input_item['widget']:
-                name = input_item['widget']['name']
+        for input_item in attrs.get("inputs", []):
+            if "widget" in input_item and "name" in input_item["widget"]:
+                name = input_item["widget"]["name"]
                 knobs_to_inputs_names.append(name)
 
-                swapped_knobs[name] = {
-                    'class': input_item['type'].lower(),
-                    'swapped_knob': True
-                }
+                swapped_knobs[name] = {"class": input_item["type"].lower(), "swapped_knob": True}
 
         if node and swapped_knobs:
             convert_knobs(node, get_node_data(node), swapped_knobs)
 
-        if attrs['type'] in ['Note', 'MarkdownNote']:
-            node = nuke.createNode('StickyNote', inpanel=False)
-            text = str(convert_to_utf8(attrs['widgets_values'][0]))
-            formatted_note = '\n'.join(textwrap.wrap(text, width=40))
-            node.knob('label').setValue(formatted_note + '\n\n')
+        if attrs["type"] in ["Note", "MarkdownNote"]:
+            node = nuke.createNode("StickyNote", inpanel=False)
+            text = str(convert_to_utf8(attrs["widgets_values"][0]))
+            formatted_note = "\n".join(textwrap.wrap(text, width=40))
+            node.knob("label").setValue(formatted_note + "\n\n")
 
-        elif attrs['type'] == 'Reroute':
-            node = nuke.createNode('Dot', inpanel=False)
+        elif attrs["type"] == "Reroute":
+            node = nuke.createNode("Dot", inpanel=False)
 
-        elif attrs['type'] in ('easy getNode', 'easy setNode'):
-            node = nuke.createNode('Dot', inpanel=False)
-            prefix = 'Get' if attrs['type'] == 'easy getNode' else 'Set'
-            name = prefix + normalize_nodename(attrs['title'])
+        elif attrs["type"] in ("easy getNode", "easy setNode"):
+            node = nuke.createNode("Dot", inpanel=False)
+            prefix = "Get" if attrs["type"] == "easy getNode" else "Set"
+            name = prefix + normalize_nodename(attrs["title"])
             node.setName(name)
-            node.knob('label').setValue(normalize_nodename(attrs['title']))
+            node.knob("label").setValue(normalize_nodename(attrs["title"]))
 
         elif not node:
-            node = nuke.createNode('NoOp', inpanel=False)
-            node.setName(normalize_nodename(attrs['type']))
-            error_node_style(node.fullName(), True, 'Node not installed !')
-            not_installed.append(attrs['type'])
+            node = nuke.createNode("NoOp", inpanel=False)
+            node.setName(normalize_nodename(attrs["type"]))
+            error_node_style(node.fullName(), True, "Node not installed !")
+            not_installed.append(attrs["type"])
 
-        if not node.knob('tile_color').value():
-            set_hex_color(node, attrs.get('bgcolor'))
+        if not node.knob("tile_color").value():
+            set_hex_color(node, attrs.get("bgcolor"))
 
-        created_nodes[attrs['id']] = (node, attrs, knobs_to_inputs_names)
+        created_nodes[attrs["id"]] = (node, attrs, knobs_to_inputs_names)
         nodes.append(node)
         node.setSelected(False)
 
-        pos = attrs['pos']
+        pos = attrs["pos"]
 
         if type(pos) == list:
-            xpos, ypos = attrs['pos']
+            xpos, ypos = attrs["pos"]
         else:
-            xpos = attrs['pos']['0']
-            ypos = attrs['pos']['1']
+            xpos = attrs["pos"]["0"]
+            ypos = attrs["pos"]["1"]
 
-        node.setXYpos(int(xpos/2), int(ypos/2))
+        node.setXYpos(int(xpos / 2), int(ypos / 2))
 
-    for attrs in data['groups']:
-        bd = nuke.createNode('BackdropNode', inpanel=False)
-        bd.setName('GROUP')
-        text = convert_to_utf8(attrs['title'])
-        bd.knob('label').setValue(attrs['title'])
-        bd.knob('bdwidth').setValue(attrs['bounding'][2]/2)
-        bd.knob('bdheight').setValue(attrs['bounding'][3]/2)
-        bd.setXYpos(int(attrs['bounding'][0]/2), int(attrs['bounding'][1]/2))
-        bd.knob('z_order').setValue(0)
-        bd.knob('note_font_size').setValue(30)
-        set_hex_color(bd, attrs.get('color'))
+    for attrs in data["groups"]:
+        bd = nuke.createNode("BackdropNode", inpanel=False)
+        bd.setName("GROUP")
+        text = convert_to_utf8(attrs["title"])
+        bd.knob("label").setValue(attrs["title"])
+        bd.knob("bdwidth").setValue(attrs["bounding"][2] / 2)
+        bd.knob("bdheight").setValue(attrs["bounding"][3] / 2)
+        bd.setXYpos(int(attrs["bounding"][0] / 2), int(attrs["bounding"][1] / 2))
+        bd.knob("z_order").setValue(0)
+        bd.knob("note_font_size").setValue(30)
+        set_hex_color(bd, attrs.get("color"))
 
         nodes.append(bd)
         bd.setSelected(False)
@@ -138,8 +134,8 @@ def import_workflow():
             return
 
         for node, attrs, _ in created_nodes.values():
-            for odata in attrs.get('outputs', {}):
-                links = odata['links']
+            for odata in attrs.get("outputs", {}):
+                links = odata["links"]
                 if not links:
                     continue
 
@@ -148,32 +144,32 @@ def import_workflow():
 
     for node, attrs, knobs_to_inputs_names in created_nodes.values():
 
-        if attrs['type'] in ('Reroute', 'easy setNode'):
+        if attrs["type"] in ("Reroute", "easy setNode"):
             knobs_order = []
 
-        elif attrs['type'] == 'easy getNode':
+        elif attrs["type"] == "easy getNode":
             knobs_order = []
-            node_name = node.name().replace('Get', 'Set')
+            node_name = node.name().replace("Get", "Set")
             node.setInput(0, nuke.toNode(node_name))
-            node.knob('hide_input').setValue(True)
+            node.knob("hide_input").setValue(True)
 
         else:
             node_data = get_node_data(node)
             if not node_data:
                 continue
 
-            knobs_order = node_data['knobs_order']
+            knobs_order = node_data["knobs_order"]
 
-        widgets_values = attrs.get('widgets_values')
+        widgets_values = attrs.get("widgets_values")
         values = []
 
         if type(widgets_values) == list:
             for value in widgets_values:
-                if value in ['fixed', 'increment', 'decrement', 'randomize']:
-                    if any('seed' in s for s in knobs_order):
-                        randomize_knob = node.knob('randomize')
+                if value in ["fixed", "increment", "decrement", "randomize"]:
+                    if any("seed" in s for s in knobs_order):
+                        randomize_knob = node.knob("randomize")
                         if randomize_knob:
-                            randomize_knob.setValue(not value == 'fixed')
+                            randomize_knob.setValue(not value == "fixed")
                         continue
                 values.append(value)
         else:
@@ -199,20 +195,21 @@ def import_workflow():
                 try:
                     knob.setValue(value)
                 except:
-                    show_message('Could not set the knob "{}" value for this node "{}" !'.format(
-                        knob.name(), node.name()))
+                    show_message(
+                        'Could not set the knob "{}" value for this node "{}" !'.format(knob.name(), node.name())
+                    )
 
-        for i, idata in enumerate(attrs.get('inputs', {})):
-            link = idata['link']
+        for i, idata in enumerate(attrs.get("inputs", {})):
+            link = idata["link"]
 
-            if idata['name'] + '_' in knobs_order and not idata['name'] in knobs_to_inputs_names:
+            if idata["name"] + "_" in knobs_order and not idata["name"] in knobs_to_inputs_names:
                 continue
 
             onode = find_node_link(link)
             node.setInput(i, onode)
 
-        if 'Save' in attrs['type']:
-            run_nk = os.path.join(COMFYUI2NUKE, 'nodes/ComfyUI/Run.nk')
+        if "Save" in attrs["type"]:
+            run_nk = os.path.join(COMFYUI2NUKE, "nodes/ComfyUI/Run.nk")
             run_node = nuke.nodePaste(run_nk)
             run_node.setInput(0, node)
             run_node.setSelected(False)
@@ -222,6 +219,5 @@ def import_workflow():
     [n.setSelected(True) for n in nodes]
 
     if not_installed:
-        nodes_list = '\n'.join(not_installed)
-        show_message(
-            'You need to install these nodes in ComfyUI:\n\n' + nodes_list)
+        nodes_list = "\n".join(not_installed)
+        show_message("You need to install these nodes in ComfyUI:\n\n" + nodes_list)
