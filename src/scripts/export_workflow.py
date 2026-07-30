@@ -8,7 +8,7 @@ import os
 import json
 from ..nodes import extract_data
 from ...nuke_util.nuke_util import selected_node
-from ...python_util.util import jwrite
+from ...nuke_util.python_util import jwrite
 from ..common import update_images_and_mask_inputs, get_settings
 
 
@@ -33,7 +33,9 @@ def api_to_workflow(api):
         tile_color = attrs.get("tile_color")
 
         hex_color = (
-            f"#{int((tile_color >> 24) & 0xFF):02x}{int((tile_color >> 16) & 0xFF):02x}{int((tile_color >> 8) & 0xFF):02x}"
+            f"#{int((tile_color >> 24) & 0xFF):02x}"
+            f"{int((tile_color >> 16) & 0xFF):02x}"
+            f"{int((tile_color >> 8) & 0xFF):02x}"
             if tile_color
             else "#4d4d4d"
         )

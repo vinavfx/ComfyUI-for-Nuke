@@ -7,14 +7,14 @@ import textwrap
 import os
 import nuke  # type: ignore
 from ..nuke_util.nuke_util import set_hex_color
-from ..python_util.util import jread
+from ..nuke_util.python_util import jread
 from .update_menu import create_comfyui_node, normalize_nodename, update_menu
 from .run import error_node_style
 from .nodes import get_node_data
 from .connection import convert_to_utf8
 from .common import show_message
 from ..settings import COMFYUI2NUKE
-from .scripts.knob2input import convert_knobs, get_swapped_knobs
+from .scripts.knob2input import convert_knobs
 
 
 def center_nodes(nodes):
@@ -39,7 +39,7 @@ def import_workflow():
     data = jread(workflow_path)
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
-    if not "nodes" in data:
+    if "nodes" not in data:
         show_message("Incompatible workflow, perhaps exported from 'Export(API)'")
         return
 
@@ -197,7 +197,7 @@ def import_workflow():
             else:
                 try:
                     knob.setValue(value)
-                except:
+                except Exception:
                     show_message(
                         'Could not set the knob "{}" value for this node "{}" !'.format(
                             knob.name(), node.name()
