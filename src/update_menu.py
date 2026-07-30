@@ -20,11 +20,11 @@ menu_updated = False
 
 def normalize_nodename(name):
     if not name.strip():
-        return 'unnamed'
+        return "unnamed"
 
-    name = re.sub(r'[^a-zA-Z0-9_]', '', name)
+    name = re.sub(r"[^a-zA-Z0-9_]", "", name)
     if name and name[0].isdigit():
-        name = '_' + name
+        name = "_" + name
 
     return name
 
@@ -49,11 +49,11 @@ def refresh_models(node, knob_name, class_type):
     nodes = get_nodes()
 
     knob = node.knob(knob_name)
-    _knob = nodes[class_type]['input']['required'][knob_name[:-1]]
+    _knob = nodes[class_type]["input"]["required"][knob_name[:-1]]
     models = _knob[0]
 
-    if models == 'COMBO':
-        models = _knob[1].get('options', [])
+    if models == "COMBO":
+        models = _knob[1].get("options", [])
 
     knob.setValues(models)
 
@@ -64,37 +64,37 @@ def create_node(data, inpanel=True):
     except:
         selected_node = None
 
-    n = nuke.createNode('Group', inpanel=inpanel)
+    n = nuke.createNode("Group", inpanel=inpanel)
 
-    name = normalize_nodename(data['name'])
-    display_name = normalize_nodename(data['display_name'])
+    name = normalize_nodename(data["name"])
+    display_name = normalize_nodename(data["display_name"])
     if display_name[0].isdigit():
-        display_name = '_' + display_name
+        display_name = "_" + display_name
 
     n.setName(display_name)
 
-    category = data['category'].split('/')[-1]
+    category = data["category"].split("/")[-1]
 
-    if category == 'loaders':
-        set_tile_color(n, [.57, .58, .48])
-    elif category == 'mask':
-        set_tile_color(n, [.33, .42, .77])
-    elif 'VAE' in name:
-        set_tile_color(n, [.08, .8, .97])
-    elif 'Save' in name:
-        set_tile_color(n, [.16, 1, .74])
-    elif 'Merge' in name or 'Combine' in name:
-        set_tile_color(n, [.64, .62, .77])
+    if category == "loaders":
+        set_tile_color(n, [0.57, 0.58, 0.48])
+    elif category == "mask":
+        set_tile_color(n, [0.33, 0.42, 0.77])
+    elif "VAE" in name:
+        set_tile_color(n, [0.08, 0.8, 0.97])
+    elif "Save" in name:
+        set_tile_color(n, [0.16, 1, 0.74])
+    elif "Merge" in name or "Combine" in name:
+        set_tile_color(n, [0.64, 0.62, 0.77])
 
     inputs = []
 
-    input_data = data['input']
-    required = input_data.get('required', {})
-    optional = input_data.get('optional', {})
+    input_data = data["input"]
+    required = input_data.get("required", {})
+    optional = input_data.get("optional", {})
 
-    input_order = data.get('input_order', {})
-    required_order = input_order.get('required', [])
-    optional_order = input_order.get('optional', [])
+    input_order = data.get("input_order", {})
+    required_order = input_order.get("required", [])
+    optional_order = input_order.get("optional", [])
 
     knobs_order = []
     knobs_class = {}
@@ -112,67 +112,66 @@ def create_node(data, inpanel=True):
         if not type(info) == dict:
             continue
 
-        tooltip = info.get('tooltip', '')
-        placeholder = info.get('placeholder', '')
-        force_input = info.get('forceInput', False)
-        default_value = info.get('default', 0)
+        tooltip = info.get("tooltip", "")
+        placeholder = info.get("placeholder", "")
+        force_input = info.get("forceInput", False)
+        default_value = info.get("default", 0)
 
-        knob_name = key + '_'
+        knob_name = key + "_"
 
         if force_input:
             inputs.append([key, _class, is_optional])
             continue
 
-        elif _class == 'INT':
+        elif _class == "INT":
             knob = nuke.Int_Knob(knob_name, key)
             default_value = default_value if default_value < 1e9 else 1e9
             knob.setValue(int(default_value))
             knob.setTooltip(tooltip)
 
-        elif _class == 'FLOAT':
-            min_value = info.get('min', 0)
-            max_value = info.get('max', 1)
+        elif _class == "FLOAT":
+            min_value = info.get("min", 0)
+            max_value = info.get("max", 1)
 
             knob = nuke.Double_Knob(knob_name, key)
             knob.setRange(min_value, max_value)
             knob.setValue(default_value)
             knob.setTooltip(tooltip)
 
-        elif _class == 'STRING' and key in ['filepath', 'file', 'directory']:
+        elif _class == "STRING" and key in ["filepath", "file", "directory"]:
             knob = nuke.File_Knob(knob_name, key)
             knob.setTooltip(tooltip)
 
-        elif _class == 'STRING':
-            multiline = info.get('multiline', False)
+        elif _class == "STRING":
+            multiline = info.get("multiline", False)
 
             if multiline:
                 knob = nuke.Multiline_Eval_String_Knob(knob_name, key)
             else:
                 knob = nuke.String_Knob(knob_name, key)
 
-            default_string = info.get('default', '')
+            default_string = info.get("default", "")
             knob.setText(str(default_string))
             knob.setTooltip(tooltip + placeholder)
 
-        elif _class in ['BOOLEAN', [True, False], [[True, False]]]:
+        elif _class in ["BOOLEAN", [True, False], [[True, False]]]:
             knob = nuke.Boolean_Knob(knob_name, key)
             knob.setFlag(nuke.STARTLINE)
             knob.setValue(default_value)
             knob.setTooltip(tooltip)
 
-        elif type(_class) == list or _class == 'COMBO':
-            if _class == 'COMBO':
-                options = info.get('options', [])
+        elif type(_class) == list or _class == "COMBO":
+            if _class == "COMBO":
+                options = info.get("options", [])
             else:
                 options = _class
 
-            knob = nuke.Enumeration_Knob(
-                knob_name, key, [str(i) for i in options])
+            knob = nuke.Enumeration_Knob(knob_name, key, [str(i) for i in options])
 
             knob.setTooltip(tooltip)
-            default_item = str(info.get('default', None))
+            default_item = str(info.get("default", None))
 
-            if not default_item == 'None':
+            if not default_item == "None":
                 knob.setValue(default_item)
 
         else:
@@ -182,31 +181,36 @@ def create_node(data, inpanel=True):
         n.addKnob(knob)
         knobs_order.append(knob.name())
 
-        if _class in ['INT', 'STRING', 'BOOLEAN', 'FLOAT']:
+        if _class in ["INT", "STRING", "BOOLEAN", "FLOAT"]:
             knobs_class[knob.name()] = str(_class).lower()
 
-        if name in ['LoadAudio', 'LoadImage']:
-            upload_knob = nuke.PyScript_Knob('upload', '+')
-            upload_knob.setValue('comfyui.upload_and_download.upload_media()')
+        if name in ["LoadAudio", "LoadImage"]:
+            upload_knob = nuke.PyScript_Knob("upload", "+")
+            upload_knob.setValue("comfyui.upload_and_download.upload_media()")
             n.addKnob(upload_knob)
 
-        if category == 'loaders' and 'name' in knob_name:
-            refresh_models_knob = nuke.PyScript_Knob('refresh_models', '🔄')
+        if category == "loaders" and "name" in knob_name:
+            refresh_models_knob = nuke.PyScript_Knob("refresh_models", "🔄")
             refresh_models_knob.setValue(
-                'comfyui.update_menu.refresh_models(nuke.thisNode(), "{}", "{}")'. format(knob_name, data['name']))
+                'comfyui.update_menu.refresh_models(nuke.thisNode(), "{}", "{}")'.format(
+                    knob_name, data["name"]
+                )
+            )
             n.addKnob(refresh_models_knob)
 
-        if 'seed' in key:
-            randomize_knob = nuke.Boolean_Knob('randomize')
+        if "seed" in key:
+            randomize_knob = nuke.Boolean_Knob("randomize")
             randomize_knob.setTooltip(
-                'Allows the linked Run to automatically change the seed by randomizing the number.')
+                "Allows the linked Run to automatically change the seed by randomizing the number."
+            )
             randomize_knob.setValue(False)
             n.addKnob(randomize_knob)
 
     # Nuke no genera automaticamente una nueva entrada, asi que genera una entrada 2 cuando solo hay 1 !
     if inputs:
-        inputs.append(['input_2'] + inputs[0][1:]
-                      ) if inputs[0][0] == 'input_1' else None
+        inputs.append(["input_2"] + inputs[0][1:]) if inputs[0][
+            0
+        ] == "input_1" else None
 
     _inputs = []
 
@@ -215,42 +219,43 @@ def create_node(data, inpanel=True):
         if not _class:
             continue
 
-        inode = nuke.createNode('Input', inpanel=False)
+        inode = nuke.createNode("Input", inpanel=False)
         inode.setName(normalize_nodename(key))
 
-        _inputs.append({
-            'name': key,
-            'outputs': [_class.lower()],
-            'opt': is_optional
-        })
+        _inputs.append({"name": key, "outputs": [_class.lower()], "opt": is_optional})
 
-    nuke.createNode('Output', inpanel=False)
+    nuke.createNode("Output", inpanel=False)
     n.end()
 
-    data_knob = nuke.PyScript_Knob('data')
+    data_knob = nuke.PyScript_Knob("data")
     data_knob.setVisible(False)
 
     outputs = []
-    for output, output_name in zip(data['output'], data['output_name']):
+    for output, output_name in zip(data["output"], data["output_name"]):
         if type(output) == list:
             outputs.append(output_name)
         else:
             outputs.append(output.lower())
 
-    data_knob.setValue(json.dumps({
-        'knobs_order': knobs_order,
-        'knobs_class': knobs_class,
-        'class_type': data['name'],
-        'output_name': data.get('output_name', False),
-        'output_node': data.get('output_node', False),
-        'inputs': _inputs,
-        'outputs': outputs,
-    }, indent=4).replace('"', "'"))
+    data_knob.setValue(
+        json.dumps(
+            {
+                "knobs_order": knobs_order,
+                "knobs_class": knobs_class,
+                "class_type": data["name"],
+                "output_name": data.get("output_name", False),
+                "output_node": data.get("output_node", False),
+                "inputs": _inputs,
+                "outputs": outputs,
+            },
+            indent=4,
+        ).replace('"', "'")
+    )
 
     n.addKnob(data_knob)
 
-    if n.knob('User'):
-        n.knob('User').setName('Controls')
+    if n.knob("User"):
+        n.knob("User").setName("Controls")
 
     if selected_node:
         n.setXYpos(selected_node.xpos(), selected_node.ypos() + 24)
@@ -258,17 +263,17 @@ def create_node(data, inpanel=True):
         for i, onode in get_output_nodes(selected_node):
             onode.setInput(i, n)
 
-    if 'ShowText' in name:
-        show_knob = nuke.Multiline_Eval_String_Knob('text', '')
+    if "ShowText" in name:
+        show_knob = nuke.Multiline_Eval_String_Knob("text", "")
         n.addKnob(show_knob)
-        n.knob('text').setFlag(nuke.READ_ONLY)
-        n.knob('onCreate').setValue(
-            'nuke.thisNode().knob("text").setFlag(nuke.READ_ONLY)')
-        output_text_node = nuke.createNode('StickyNote', inpanel=False)
-        output_text_node.setName(display_name + 'Output')
+        n.knob("text").setFlag(nuke.READ_ONLY)
+        n.knob("onCreate").setValue(
+            'nuke.thisNode().knob("text").setFlag(nuke.READ_ONLY)'
+        )
+        output_text_node = nuke.createNode("StickyNote", inpanel=False)
+        output_text_node.setName(display_name + "Output")
         output_text_node.setXYpos(n.xpos() - 100, n.ypos())
-        output_text_node.knob('label').setText(
-            '[value {}.name]'.format(n.name()))
+        output_text_node.knob("label").setText("[value {}.name]".format(n.name()))
         n.setSelected(True)
 
     return n
@@ -283,23 +288,23 @@ def update_menu():
 
 def update():
     global menu_updated
-    progress = nuke.ProgressTask('Updating ComfyUI')
-    progress.setMessage('Loading data from server...')
+    progress = nuke.ProgressTask("Updating ComfyUI")
+    progress.setMessage("Loading data from server...")
     progress.setProgress(0)
 
-    info = GET('object_info', get_settings())
+    info = GET("object_info", get_settings())
     if not info:
         return
 
     menu_updated = True
 
-    comfyui_menu = nuke.menu('Nodes').addMenu('ComfyUI')
+    comfyui_menu = nuke.menu("Nodes").addMenu("ComfyUI")
 
     for item in comfyui_menu.items():
-        if item.name() in ['Update all ComfyUI', 'Basic Nodes', 'Gizmos', 'Scripts']:
+        if item.name() in ["Update all ComfyUI", "Basic Nodes", "Gizmos", "Scripts"]:
             continue
 
-        if not hasattr(item, 'clearMenu'):
+        if not hasattr(item, "clearMenu"):
             continue
         item.clearMenu()
 
@@ -308,54 +313,54 @@ def update():
 
     def normalize_string(string):
         if not string:
-            return ''
+            return ""
 
-        string = ''.join(char if ord(
-            char) < 128 else '' for char in string)
-        return string.replace(' /', '/').replace('/ ', '/').strip()
+        string = "".join(char if ord(char) < 128 else "" for char in string)
+        return string.replace(" /", "/").replace("/ ", "/").strip()
 
     for _, value in info.items():
-        name = value['name'].replace('+', '')
+        name = value["name"].replace("+", "")
 
-        if name == 'LoadEXR':
+        if name == "LoadEXR":
             load_exr_exist = True
 
-        value['display_name'] = value.get('display_name') or value.get('name')
-        display_name = normalize_string(value['display_name'])
-        category = normalize_string(value['category'])
+        value["display_name"] = value.get("display_name") or value.get("name")
+        display_name = normalize_string(value["display_name"])
+        category = normalize_string(value["category"])
 
         if not category:
-            category = 'Uncategorized'
+            category = "Uncategorized"
 
-        value['category'] = category
+        value["category"] = category
 
-        item_name = '{}/{}'.format(category, display_name)
+        item_name = "{}/{}".format(category, display_name)
         nodes[item_name] = value
 
     if not load_exr_exist:
-        show_message('ComfyUI-HQ-Image-Save module is required !')
+        show_message("ComfyUI-HQ-Image-Save module is required !")
 
-    icon_gray = '{}/icons/comfyui_icon_gray.png'.format(COMFYUI2NUKE)
-    progress.setMessage('Refreshing menu items...')
+    icon_gray = "{}/icons/comfyui_icon_gray.png".format(COMFYUI2NUKE)
+    progress.setMessage("Refreshing menu items...")
 
     for i, (fullname, value) in enumerate(sorted(nodes.items())):
         progress.setProgress(int(i * 100 / len(nodes)))
 
-        input_data = value.get('input', {})
-        input_order = value.get('input_order', {})
+        input_data = value.get("input", {})
+        input_order = value.get("input_order", {})
 
         if not input_order:
-            value['input_order'] = {
-                'required': list(input_data.get('required', {})),
-                'optional': list(input_data.get('optional', {}))
+            value["input_order"] = {
+                "required": list(input_data.get("required", {})),
+                "optional": list(input_data.get("optional", {})),
             }
 
         value = json.loads(json.dumps(value))  # OrderedDict to Dict
         value_utf8 = convert_to_utf8(value)
 
-        comfyui_nodes[value['name']] = value_utf8
-        comfyui_menu.addCommand(fullname, partial(
-            create_node, value_utf8), '', icon_gray)
+        comfyui_nodes[value["name"]] = value_utf8
+        comfyui_menu.addCommand(
+            fullname, partial(create_node, value_utf8), "", icon_gray
+        )
 
     del progress
     return True

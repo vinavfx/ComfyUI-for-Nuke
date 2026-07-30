@@ -16,11 +16,11 @@ def export_workflow():
     if not node:
         return
 
-    if node.knob('comfyui_gizmo'):
+    if node.knob("comfyui_gizmo"):
         node.begin()
-        node = nuke.toNode('Run')
+        node = nuke.toNode("Run")
 
-    elif not node.knob('run'):
+    elif not node.knob("run"):
         nuke.message("Select the 'Run' node")
         return
 
@@ -32,16 +32,16 @@ def export_workflow():
         return
 
     workflow = nuke.getFilename(
-        'Export Workflow',
+        "Export Workflow",
         "*.json",
-        os.path.join(os.path.expanduser('~'), 'Desktop/workflow.json'),
-        type='save'
+        os.path.join(os.path.expanduser("~"), "Desktop/workflow.json"),
+        type="save",
     )
 
     if not workflow:
         return
 
-    workflow = workflow if 'json' in workflow else workflow + '.json'
+    workflow = workflow if "json" in workflow else workflow + ".json"
     jwrite(workflow, data)
 
-    nuke.message('Workflow Saved: ' + workflow)
+    nuke.message("Workflow Saved: " + workflow)

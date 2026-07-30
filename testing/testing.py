@@ -22,11 +22,11 @@ def create_all_comfyui_nodes():
 
         return items
 
-    menu = nuke.menu('Nodes').menu('ComfyUI')
+    menu = nuke.menu("Nodes").menu("ComfyUI")
     all_items = get_menu_items(menu)
 
     for item in all_items:
-        if 'Update all' in item.name():
+        if "Update all" in item.name():
             continue
 
         item.invoke()
@@ -36,17 +36,17 @@ def status_diff(a, b):
     if not a or not b:
         return
 
-    tokens_a = re.findall(r'\S+', a)
-    tokens_b = re.findall(r'\S+', b)
+    tokens_a = re.findall(r"\S+", a)
+    tokens_b = re.findall(r"\S+", b)
 
     diffs = [(x, y) for x, y in zip(tokens_a, tokens_b) if x != y]
-    diff = ''
+    diff = ""
 
     for x, y in diffs:
-        diff += '{} -> {}\n'.format(x, y)
+        diff += "{} -> {}\n".format(x, y)
 
-    info = 'diff:\n{}\n\nPREVIOUS:\n{}\n\nCURRENT:\n{}'.format(diff, a, b)
-    file = '/tmp/comfyu2nuke_diff.txt'
+    info = "diff:\n{}\n\nPREVIOUS:\n{}\n\nCURRENT:\n{}".format(diff, a, b)
+    file = "/tmp/comfyu2nuke_diff.txt"
     fwrite(file, info)
-    if nuke.ask('diff -> {}, open?'.format(file)):
-        os.system('pluma {}'.format(file))
+    if nuke.ask("diff -> {}, open?".format(file)):
+        os.system("pluma {}".format(file))

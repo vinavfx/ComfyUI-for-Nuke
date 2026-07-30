@@ -11,4 +11,4 @@ OUTPUT_DIRECTORY =                  os.getenv('OUTPUT_DIRECTORY', '')
 UPDATE_MENU_AT_START = False
 USE_EXR_TO_LOAD_IMAGES = False
 DISPLAY_META_IN_READ_NODE = True
-TEMPORAL_DIR = os.path.join(os.path.expanduser("~"), '.nuke', 'comfyui_temp')
+TEMPORAL_DIR = os.path.join(os.path.expanduser("~"), ".nuke", "comfyui_temp")

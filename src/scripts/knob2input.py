@@ -15,20 +15,20 @@ def knob_to_input():
 
     data = get_node_data(node)
     if not data:
-        nuke.message('Must be a ComfyUI node !')
+        nuke.message("Must be a ComfyUI node !")
         return
 
-    panel = nuke.Panel('Knob to Input ({})'.format(node.name()))
+    panel = nuke.Panel("Knob to Input ({})".format(node.name()))
 
     knobs = []
-    for knob in data['knobs_order']:
-        if not knob in data['knobs_class']:
+    for knob in data["knobs_order"]:
+        if not knob in data["knobs_class"]:
             continue
-        _class = data['knobs_class'][knob]
+        _class = data["knobs_class"][knob]
         knobs.append((knob, knob[:-1], _class))
 
     for knob, knob_name, _ in knobs:
-        if any(v.get('name') == knob_name for v in data['inputs']):
+        if any(v.get("name") == knob_name for v in data["inputs"]):
             panel.addBooleanCheckBox(knob_name, True)
         else:
             panel.addBooleanCheckBox(knob_name, False)
@@ -36,8 +36,10 @@ def knob_to_input():
     if not panel.show():
         return
 
-    knobs = [[panel.value(knob_name), knob, knob_name, _class]
-             for knob, knob_name, _class in knobs]
+    knobs = [
+        [panel.value(knob_name), knob, knob_name, _class]
+        for knob, knob_name, _class in knobs
+    ]
 
     convert_knobs(node, data, knobs)
 
@@ -45,22 +47,18 @@ def knob_to_input():
 def convert_knobs(node, data, knobs):
     for value, knob, knob_name, _class in knobs:
 
-        knob_data = {
-            'opt': False,
-            'outputs': [_class],
-            'name': knob_name
-        }
+        knob_data = {"opt": False, "outputs": [_class], "name": knob_name}
 
-        exists_konb = any(i.get('name') == knob_name for i in data['inputs'])
+        exists_konb = any(i.get("name") == knob_name for i in data["inputs"])
 
         if value:
             if not exists_konb:
-                data['inputs'].append(knob_data)
+                data["inputs"].append(knob_data)
                 _knob = node.knob(knob)
-                _knob.setName(knob_name + '_hide')
+                _knob.setName(knob_name + "_hide")
                 _knob.setVisible(False)
                 node.begin()
-                input_node = nuke.createNode('Input', inpanel=False)
+                input_node = nuke.createNode("Input", inpanel=False)
                 input_node.setSelected(False)
                 input_node.setName(knob_name)
                 node.end()
@@ -69,12 +67,11 @@ def convert_knobs(node, data, knobs):
             node.begin()
             nuke.delete(nuke.toNode(knob_name))
             node.end()
-            data['inputs'] = [i for i in data['inputs']
-                              if i.get('name') != knob_name]
+            data["inputs"] = [i for i in data["inputs"] if i.get("name") != knob_name]
 
-            _knob = node.knob(knob_name + '_hide')
+            _knob = node.knob(knob_name + "_hide")
             _knob.setName(knob)
             _knob.setVisible(True)
-            node.knob('label').setValue('')
+            node.knob("label").setValue("")
 
     save_node_data(node, data)
