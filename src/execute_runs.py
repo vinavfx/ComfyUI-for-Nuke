@@ -51,7 +51,11 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
                 success_callback()
 
         with run:
-            settings = submit(run, success_callback=on_success, settings=copy.deepcopy(settings) if settings else None)
+            settings = submit(
+                run,
+                success_callback=on_success,
+                settings=copy.deepcopy(settings) if settings else None,
+            )
 
         if distribute_load:
             settings = None
@@ -156,7 +160,11 @@ def execute_runs_plus():
     if p.value(keys[5]):
         blocked_urls.clear()
 
-    current_ips = {get_ip_from_url(u) for u in format_URLs(settings["URL"]) if not get_ip_from_url(u).startswith("127")}
+    current_ips = {
+        get_ip_from_url(u)
+        for u in format_URLs(settings["URL"])
+        if not get_ip_from_url(u).startswith("127")
+    }
 
     non_permitted = set()
     for node in nodes:
@@ -168,7 +176,9 @@ def execute_runs_plus():
     if non_permitted and not ALLOW_ALL_IPS_SUBMIT:
         node_names = ", ".join([n.name() for n in nodes])
         nuke.message(
-            "These IPs are not allowed for nodes [{}]:\n{}".format(node_names, "\n".join(sorted(non_permitted)))
+            "These IPs are not allowed for nodes [{}]:\n{}".format(
+                node_names, "\n".join(sorted(non_permitted))
+            )
         )
         return
 

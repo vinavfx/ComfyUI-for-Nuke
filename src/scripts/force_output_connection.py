@@ -45,7 +45,11 @@ def force_output(node=None):
             continue
 
         if not "output_name" in dst_node_data:
-            nuke.message("{} obsolete node, generate node again".format(dst_node_data["class_type"]))
+            nuke.message(
+                "{} obsolete node, generate node again".format(
+                    dst_node_data["class_type"]
+                )
+            )
             return
 
         output_name = dst_node_data["output_name"]
@@ -84,7 +88,9 @@ def force_output(node=None):
         force_outputs += "{} -> {}\n".format(input_name, value)
 
     if force_outputs:
-        node.knob("label").setValue('<font color="green" size=1>{}</font>'.format(force_outputs[:-1]))
+        node.knob("label").setValue(
+            '<font color="green" size=1>{}</font>'.format(force_outputs[:-1])
+        )
     else:
         node.knob("label").setValue("")
 

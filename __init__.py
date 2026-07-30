@@ -27,7 +27,9 @@ def setup():
 
     comfyui_menu.addCommand("Update all ComfyUI", update_menu.update, "", refresh_icon)
 
-    comfyui_menu.addCommand("Import Workflow", workflow_importer.import_workflow, "", workflow_icon)
+    comfyui_menu.addCommand(
+        "Import Workflow", workflow_importer.import_workflow, "", workflow_icon
+    )
 
     comfyui_menu.addMenu("Basic Nodes", basic_icon)
     comfyui_menu.addMenu("Scripts", scripts_icon)
@@ -47,30 +49,59 @@ def setup():
             if not nk.split(".")[-1] == "nk":
                 continue
 
-            name = "{}/{}".format("Basic Nodes" if dirname == "ComfyUI" else dirname, nk.split(".")[0])
+            name = "{}/{}".format(
+                "Basic Nodes" if dirname == "ComfyUI" else dirname, nk.split(".")[0]
+            )
 
             path_nk = os.path.join(folder, nk)
             comfyui_menu.addCommand(name, partial(create_node, path_nk), "", icon_gray)
 
-    comfyui_menu.addCommand("Scripts/Knob to Input", scripts.knob2input.knob_to_input, icon=icon_gray)
+    comfyui_menu.addCommand(
+        "Scripts/Knob to Input", scripts.knob2input.knob_to_input, icon=icon_gray
+    )
 
-    comfyui_menu.addCommand("Scripts/Force Output", scripts.force_output_connection.force_output, icon=icon_gray)
+    comfyui_menu.addCommand(
+        "Scripts/Force Output",
+        scripts.force_output_connection.force_output,
+        icon=icon_gray,
+    )
 
-    comfyui_menu.addCommand("Scripts/Export Workflow", scripts.export_workflow.export_workflow, icon=icon_gray)
+    comfyui_menu.addCommand(
+        "Scripts/Export Workflow",
+        scripts.export_workflow.export_workflow,
+        icon=icon_gray,
+    )
 
-    comfyui_menu.addCommand("Scripts/Copy Workflow", scripts.export_workflow.copy_workflow, icon=icon_gray)
+    comfyui_menu.addCommand(
+        "Scripts/Copy Workflow", scripts.export_workflow.copy_workflow, icon=icon_gray
+    )
 
-    comfyui_menu.addCommand("Scripts/Execute Runs", execute_runs.execute_runs, "Ctrl+R", icon=icon_gray)
+    comfyui_menu.addCommand(
+        "Scripts/Execute Runs", execute_runs.execute_runs, "Ctrl+R", icon=icon_gray
+    )
 
-    comfyui_menu.addCommand("Scripts/Execute Runs +", execute_runs.execute_runs_plus, "Ctrl+Shift+R", icon=icon_gray)
+    comfyui_menu.addCommand(
+        "Scripts/Execute Runs +",
+        execute_runs.execute_runs_plus,
+        "Ctrl+Shift+R",
+        icon=icon_gray,
+    )
 
-    comfyui_menu.addCommand("Scripts/Show Queue", queue_manager.show_queue, icon=icon_gray)
+    comfyui_menu.addCommand(
+        "Scripts/Show Queue", queue_manager.show_queue, icon=icon_gray
+    )
 
     comfyui_menu.addCommand("Scripts/Show Data", scripts.show_data, icon=icon_gray)
 
-    comfyui_menu.addCommand("Scripts/Reload Node", scripts.reload_node.reload_node, icon=icon_gray)
+    comfyui_menu.addCommand(
+        "Scripts/Reload Node", scripts.reload_node.reload_node, icon=icon_gray
+    )
 
-    comfyui_menu.addCommand("Scripts/Restore RunNode Generations", read_media.restore_run_generations, icon=icon_gray)
+    comfyui_menu.addCommand(
+        "Scripts/Restore RunNode Generations",
+        read_media.restore_run_generations,
+        icon=icon_gray,
+    )
 
     comfyui_menu.addCommand("Console", console.show_console, icon=console_icon)
 

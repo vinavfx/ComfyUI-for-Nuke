@@ -65,7 +65,10 @@ def import_workflow():
                 name = input_item["widget"]["name"]
                 knobs_to_inputs_names.append(name)
 
-                swapped_knobs[name] = {"class": input_item["type"].lower(), "swapped_knob": True}
+                swapped_knobs[name] = {
+                    "class": input_item["type"].lower(),
+                    "swapped_knob": True,
+                }
 
         if node and swapped_knobs:
             convert_knobs(node, get_node_data(node), swapped_knobs)
@@ -196,13 +199,18 @@ def import_workflow():
                     knob.setValue(value)
                 except:
                     show_message(
-                        'Could not set the knob "{}" value for this node "{}" !'.format(knob.name(), node.name())
+                        'Could not set the knob "{}" value for this node "{}" !'.format(
+                            knob.name(), node.name()
+                        )
                     )
 
         for i, idata in enumerate(attrs.get("inputs", {})):
             link = idata["link"]
 
-            if idata["name"] + "_" in knobs_order and not idata["name"] in knobs_to_inputs_names:
+            if (
+                idata["name"] + "_" in knobs_order
+                and not idata["name"] in knobs_to_inputs_names
+            ):
                 continue
 
             onode = find_node_link(link)

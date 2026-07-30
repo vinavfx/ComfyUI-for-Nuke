@@ -27,7 +27,10 @@ def get_swapped_knobs(node):
         else:
             swapped_knob = False
 
-        swapped_knobs[knob_name] = {"class": data["knobs_class"][nuke_knob_name], "swapped_knob": swapped_knob}
+        swapped_knobs[knob_name] = {
+            "class": data["knobs_class"][nuke_knob_name],
+            "swapped_knob": swapped_knob,
+        }
 
     return swapped_knobs, data
 

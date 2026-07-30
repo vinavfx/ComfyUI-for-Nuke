@@ -87,7 +87,9 @@ def copy_workflow():
     root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     xclip = os.path.join(root, "bin/xclip")
 
-    os.system("echo '{}' | {} -selection clipboard".format(api_to_workflow(workflow), xclip))
+    os.system(
+        "echo '{}' | {} -selection clipboard".format(api_to_workflow(workflow), xclip)
+    )
 
     url = json.loads(settings["URL"])[0]
 
@@ -122,7 +124,10 @@ def export_workflow():
     data = data[0]
 
     workflow = nuke.getFilename(
-        "Export Workflow", "*.json", os.path.join(os.path.expanduser("~"), "Desktop/workflow.json"), type="save"
+        "Export Workflow",
+        "*.json",
+        os.path.join(os.path.expanduser("~"), "Desktop/workflow.json"),
+        type="save",
     )
 
     if not workflow:

@@ -19,7 +19,9 @@ def scan_urls(settings):
     urls = format_URLs(settings["URL"])
 
     if not urls:
-        show_message(f"{settings['URL']}\nIt has to be an URL address or a list of URL addresses as JSON!")
+        show_message(
+            f"{settings['URL']}\nIt has to be an URL address or a list of URL addresses as JSON!"
+        )
         return [None] * 5
 
     lowest_load_url = None
@@ -34,7 +36,9 @@ def scan_urls(settings):
 
     with ThreadPoolExecutor(max_workers=min(30, len(active_urls) or 1)) as executor:
         futures = {
-            executor.submit(GET, "queue", {"URL": url}, warning=False, timeout=scan_timeout): (i, url)
+            executor.submit(
+                GET, "queue", {"URL": url}, warning=False, timeout=scan_timeout
+            ): (i, url)
             for i, url in enumerate(active_urls)
         }
 
@@ -143,9 +147,7 @@ def job_running_message(running_client, pending_client):
     def ellipsis(s, n):
         return s if len(s) <= n else s[: n - 3] + "..."
 
-    msgline = (
-        "    {} - <font color=orange>{}</font> : <font color=#4FC3F7>{}</font> : {} : <font color=#6cb56b>{}</font>\n"
-    )
+    msgline = "    {} - <font color=orange>{}</font> : <font color=#4FC3F7>{}</font> : {} : <font color=#6cb56b>{}</font>\n"
     msg = ""
 
     if running_client:

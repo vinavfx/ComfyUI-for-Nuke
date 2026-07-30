@@ -14,12 +14,34 @@ import json
 import threading
 import copy
 
-from ..nuke_util.nuke_util import set_tile_color, get_connected_nodes, get_user_path, get_project_name
-from .common import update_images_and_mask_inputs, get_settings, show_message, execute_in_main_thread
+from ..nuke_util.nuke_util import (
+    set_tile_color,
+    get_connected_nodes,
+    get_user_path,
+    get_project_name,
+)
+from .common import (
+    update_images_and_mask_inputs,
+    get_settings,
+    show_message,
+    execute_in_main_thread,
+)
 from .connection import POST, get_ip_from_url
-from .queue_manager import resolve_submission_target, interrupt, get_prompt_id, show_queue, resolve_queue_position
+from .queue_manager import (
+    resolve_submission_target,
+    interrupt,
+    get_prompt_id,
+    show_queue,
+    resolve_queue_position,
+)
 from .nodes import extract_data
-from .read_media import create_read, update_filename_prefix, exr_filepath_fixed, resolve_filename, create_empty_read
+from .read_media import (
+    create_read,
+    update_filename_prefix,
+    exr_filepath_fixed,
+    resolve_filename,
+    create_empty_read,
+)
 
 
 states = {}
@@ -92,7 +114,11 @@ def show_text_uptate(node_name, data):
     label = "( [value {}.name] )\n{}\n\n".format(node_name, formatted_text)
     output_text_node.knob("label").setValue(label)
     xpos = show_text_node.xpos() - output_text_node.screenWidth() - 50
-    ypos = show_text_node.ypos() - (output_text_node.screenHeight() / 2) + (show_text_node.screenHeight() / 2)
+    ypos = (
+        show_text_node.ypos()
+        - (output_text_node.screenHeight() / 2)
+        + (show_text_node.screenHeight() / 2)
+    )
     output_text_node.knob("label")
     output_text_node.setXYpos(xpos, ypos)
 
@@ -148,7 +174,9 @@ def submit(run_node, success_callback=None, settings=None):
     settings["inference_time"] = time()
 
     if not settings["INPUT_DIRECTORY"] or not settings["OUTPUT_DIRECTORY"]:
-        nuke.message("INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!")
+        nuke.message(
+            "INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!"
+        )
         return
 
     pbar_status = {"title": "Inferencing", "progress": 0, "message": ""}
@@ -171,7 +199,9 @@ def submit(run_node, success_callback=None, settings=None):
 
         if message:
             if "Loop" in message:
-                message = "{} - {}".format(message.count("Loop") + 1, message.split(".")[-1])
+                message = "{} - {}".format(
+                    message.count("Loop") + 1, message.split(".")[-1]
+                )
 
             message = "{} ({}) ".format(message, ip) if ip else message
             pbar[0].setMessage(message)
@@ -210,7 +240,12 @@ def submit(run_node, success_callback=None, settings=None):
     user = os.path.basename(get_user_path())
     client_id = f"{user}:{get_project_name()}:{prompt_counter}".replace(" ", "-")
 
-    body = {"client_id": client_id, "number": resolve_queue_position(settings, user), "prompt": data, "extra_data": {}}
+    body = {
+        "client_id": client_id,
+        "number": resolve_queue_position(settings, user),
+        "prompt": data,
+        "extra_data": {},
+    }
 
     url = "{}/ws?clientId={}".format(settings["URL"].replace("http", "ws"), client_id)
     execution_error = [False]
@@ -269,7 +304,10 @@ def submit(run_node, success_callback=None, settings=None):
             if pbar:
                 del pbar[0]
 
-            execute_in_main_thread(error_node_style, args=(data.get("node_id"), True, execution_message, run_node))
+            execute_in_main_thread(
+                error_node_style,
+                args=(data.get("node_id"), True, execution_message, run_node),
+            )
             show_message(error)
 
     def on_error(ws, error):
@@ -291,7 +329,9 @@ def submit(run_node, success_callback=None, settings=None):
         while pbar:
             if pbar[0].isCancelled():
                 if nuke.executeInMainThreadWithResult(
-                    lambda: nuke.ask("Are you sure? This will stop the ComfyUI inference")
+                    lambda: nuke.ask(
+                        "Are you sure? This will stop the ComfyUI inference"
+                    )
                 ):
                     cancelled = True
                     break
@@ -355,7 +395,9 @@ def submit(run_node, success_callback=None, settings=None):
     if settings["BACKGROUND_SUBMIT"] and not error:
         read = create_empty_read(run_node, data, settings)
         success_callback_wrapper(read, run_node, execution_error[0])
-        show_message("Workflow sent to the ComfyUI Queue:\n\n{}".format(show_queue(False)))
+        show_message(
+            "Workflow sent to the ComfyUI Queue:\n\n{}".format(show_queue(False))
+        )
 
     if error:
         execution_error[0] = True
@@ -365,6 +407,10 @@ def submit(run_node, success_callback=None, settings=None):
 
     if not nuke.GUI:
         task_loop.join() if task_loop else None
-        print("\nPrompt executed in {} seconds".format(round(time() - settings["inference_time"], 1)))
+        print(
+            "\nPrompt executed in {} seconds".format(
+                round(time() - settings["inference_time"], 1)
+            )
+        )
 
     return settings

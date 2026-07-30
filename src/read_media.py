@@ -10,7 +10,12 @@ import nuke  # type: ignore
 from time import time
 
 from ..nuke_util.media_util import get_padding, get_name_no_padding
-from ..nuke_util.nuke_util import get_output_nodes, selected_node, set_tile_color, get_tile_color
+from ..nuke_util.nuke_util import (
+    get_output_nodes,
+    selected_node,
+    set_tile_color,
+    get_tile_color,
+)
 from .nodes import get_connected_comfyui_nodes, get_input
 from .common import get_date_code, jsonloads, jsondumps, show_message
 from .update_menu import normalize_nodename
@@ -287,7 +292,13 @@ def inference_register(run_node, read, filename, metadata):
     if filename in filenames:
         return
 
-    inferences.append({"filename": filename, "start_frame": read["frame"].value(), "metadata": metadata})
+    inferences.append(
+        {
+            "filename": filename,
+            "start_frame": read["frame"].value(),
+            "metadata": metadata,
+        }
+    )
 
     register["inferences"] = inferences
     register_knob.setValue(jsondumps(register))
@@ -299,7 +310,9 @@ def metadata_format(meta):
 
     label = "<center>"
     for key, value in meta:
-        label += '<font color="black" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(key, value)
+        label += '<font color="black" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
+            key, value
+        )
 
     return label
 
@@ -377,7 +390,9 @@ def create_read(run_node, data, settings, filename, already_exists=False):
         label = metadata_format(meta)
         read.knob("label").setValue(label)
 
-    comfyui_gizmo = run_node.parent() if run_node.parent().knob("comfyui_gizmo") else run_node
+    comfyui_gizmo = (
+        run_node.parent() if run_node.parent().knob("comfyui_gizmo") else run_node
+    )
 
     for i, onode in get_output_nodes(comfyui_gizmo):
         onode.setInput(i, read)
@@ -408,7 +423,11 @@ def backup_previous_generation(run_node=None):
     if is_geo:
         filename = read.knob("file").value()
     else:
-        filename = "{} {}-{}".format(read.knob("file").value(), read.knob("first").value(), read.knob("last").value())
+        filename = "{} {}-{}".format(
+            read.knob("file").value(),
+            read.knob("first").value(),
+            read.knob("last").value(),
+        )
 
     if is_geo:
         new_read = nuke.createNode("ReadGeo", inpanel=False)

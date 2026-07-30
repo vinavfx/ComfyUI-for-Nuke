@@ -69,7 +69,14 @@ def ansi(code, text):
 
 
 def transform_memory_values(data):
-    memory_keys = {"ram_total", "ram_free", "vram_total", "vram_free", "torch_vram_total", "torch_vram_free"}
+    memory_keys = {
+        "ram_total",
+        "ram_free",
+        "vram_total",
+        "vram_free",
+        "torch_vram_total",
+        "torch_vram_free",
+    }
 
     def bytes_to_gb(value):
         if isinstance(value, (int, float)):
@@ -77,7 +84,10 @@ def transform_memory_values(data):
         return value
 
     if isinstance(data, dict):
-        return {k: bytes_to_gb(v) if k in memory_keys else transform_memory_values(v) for k, v in data.items()}
+        return {
+            k: bytes_to_gb(v) if k in memory_keys else transform_memory_values(v)
+            for k, v in data.items()
+        }
 
     if isinstance(data, list):
         return [transform_memory_values(item) for item in data]
@@ -309,11 +319,15 @@ class toolbar_widget(QWidget):
         self.setLayout(layout)
 
         self.urls_box = QComboBox()
-        self.urls_box.addItems(["-"] + format_URLs(get_settings()["URL"], protocol=False))
+        self.urls_box.addItems(
+            ["-"] + format_URLs(get_settings()["URL"], protocol=False)
+        )
         self.urls_box.currentIndexChanged.connect(self.on_url_changed)
 
         self.endpoint_box = QComboBox()
-        self.endpoint_box.addItems([LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT, QUEUE_ENDPOINT])
+        self.endpoint_box.addItems(
+            [LOGS_ENDPOINT, SYSTEM_STATS_ENDPOINT, QUEUE_ENDPOINT]
+        )
         self.endpoint_box.currentIndexChanged.connect(self.on_endpoint_changed)
 
         self.log_button = QPushButton("Start")

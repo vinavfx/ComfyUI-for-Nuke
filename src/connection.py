@@ -120,7 +120,9 @@ def POST(endpoint, data, settings):
 
 def convert_to_utf8(data):
     if isinstance(data, dict):
-        return {convert_to_utf8(key): convert_to_utf8(value) for key, value in data.items()}
+        return {
+            convert_to_utf8(key): convert_to_utf8(value) for key, value in data.items()
+        }
     elif isinstance(data, list):
         return [convert_to_utf8(element) for element in data]
     elif isinstance(data, str):

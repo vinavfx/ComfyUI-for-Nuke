@@ -12,7 +12,14 @@ from collections import Counter
 import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
-from .common import image_inputs, mask_inputs, get_name_code, show_message, jsondumps, jsonloads
+from .common import (
+    image_inputs,
+    mask_inputs,
+    get_name_code,
+    show_message,
+    jsondumps,
+    jsonloads,
+)
 
 states = {}
 
@@ -45,7 +52,14 @@ def extract_data(run_node, settings):
             if n.knob("randomize").value():
                 random_value = random.randrange(1, 9999)
 
-                seed_knob = next((n.knob(k) for k in ("seed_", "noise_seed_", "value_") if n.knob(k)), None)
+                seed_knob = next(
+                    (
+                        n.knob(k)
+                        for k in ("seed_", "noise_seed_", "value_")
+                        if n.knob(k)
+                    ),
+                    None,
+                )
 
                 if seed_knob:
                     seed_knob.setValue(random_value)
@@ -76,9 +90,11 @@ def extract_data(run_node, settings):
                 continue
 
             if not input_node.name() in comfyui_nodes:
-                load_image_data, changed_node, execution_canceled = create_load_images_and_save(
-                    input_node, settings, rendered_nodes
-                )
+                (
+                    load_image_data,
+                    changed_node,
+                    execution_canceled,
+                ) = create_load_images_and_save(input_node, settings, rendered_nodes)
 
                 if execution_canceled:
                     return {}, None
@@ -94,7 +110,11 @@ def extract_data(run_node, settings):
                 data[input_node.name()] = load_image_data
 
         # nuke_attrs used in "copy_workflow"
-        node_data["nuke_attrs"] = {"xpos": n.xpos(), "ypos": n.ypos(), "tile_color": n["tile_color"].value()}
+        node_data["nuke_attrs"] = {
+            "xpos": n.xpos(),
+            "ypos": n.ypos(),
+            "tile_color": n["tile_color"].value(),
+        }
         data[n.name()] = node_data
 
     return data, input_node_changed
@@ -106,7 +126,9 @@ def state_node(node):
     connected_nodes.append(node)
     state = ""
 
-    ct = nuke.nodes.CurveTool(inputs=[node], operation="Avg Intensities", channels="rgba")
+    ct = nuke.nodes.CurveTool(
+        inputs=[node], operation="Avg Intensities", channels="rgba"
+    )
     ct["ROI"].setValue([0, 0, node.width(), node.height()])
     nuke.execute(ct, node.firstFrame(), node.firstFrame())
     rgba = [round(v, 5) for v in ct["intensitydata"].value()]
@@ -180,21 +202,39 @@ def create_load_images_and_save(node, settings, rendered_nodes):
         filepath_key = "directory"
         load_image_data = {
             "frame_range": frame_range,
-            "inputs": {"directory": "", "image_load_cap": 0, "skip_first_images": 0, "select_every_nth": 1},
+            "inputs": {
+                "directory": "",
+                "image_load_cap": 0,
+                "skip_first_images": 0,
+                "select_every_nth": 1,
+            },
             "class_type": "VHS_LoadImagesPath",
         }
 
-    if current_state.get("connected_nodes") == prev_state.get("connected_nodes") or node in rendered_nodes:
+    if (
+        current_state.get("connected_nodes") == prev_state.get("connected_nodes")
+        or node in rendered_nodes
+    ):
         sequence_dir = prev_state.get("sequence_dir", "none")
         filepath = prev_state.get("filepath", "none")
-        same_exr_setting = prev_state.get("USE_EXR_TO_LOAD_IMAGES") == USE_EXR_TO_LOAD_IMAGES
+        same_exr_setting = (
+            prev_state.get("USE_EXR_TO_LOAD_IMAGES") == USE_EXR_TO_LOAD_IMAGES
+        )
 
-        if os.path.isdir(sequence_dir) and os.listdir(sequence_dir) and same_exr_setting:
+        if (
+            os.path.isdir(sequence_dir)
+            and os.listdir(sequence_dir)
+            and same_exr_setting
+        ):
             load_image_data["inputs"][filepath_key] = filepath
             load_image_data["inputs"]["id"] = prev_state.get("state_id", 0)
             return load_image_data, False, False
 
-    dirname = get_name_code("{}{}{}{}".format(get_project_name(), node.fullName(), frame_range[0], frame_range[1]))
+    dirname = get_name_code(
+        "{}{}{}{}".format(
+            get_project_name(), node.fullName(), frame_range[0], frame_range[1]
+        )
+    )
 
     sequence_dir = os.path.join(settings["INPUT_DIRECTORY"], dirname)
     filepath = sequence_dir
@@ -345,7 +385,12 @@ def get_node_data(node):
     if not "class_type" in value:
         return {}
 
-    data = value.split("#")[0].replace("'", '"').replace("True", "true").replace("False", "false")
+    data = (
+        value.split("#")[0]
+        .replace("'", '"')
+        .replace("True", "true")
+        .replace("False", "false")
+    )
     return json.loads(data)
 
 
@@ -365,7 +410,11 @@ def extract_node_data(node):
             continue
 
         if hasattr(knob, "valueAt"):
-            value = knob.valueAt(1) if knob.isAnimated() and not knob.hasExpression() else knob.value()
+            value = (
+                knob.valueAt(1)
+                if knob.isAnimated() and not knob.hasExpression()
+                else knob.value()
+            )
         else:
             value = knob.value()
 
@@ -449,7 +498,9 @@ def check_node(node):
             continue
 
         if not inode:
-            show_message(node.name() + ' : "{}" input disconnected !'.format(input_name))
+            show_message(
+                node.name() + ' : "{}" input disconnected !'.format(input_name)
+            )
             return
 
         inode_data = get_node_data(inode)
@@ -466,7 +517,11 @@ def check_node(node):
                 continue
 
             else:
-                show_message('{}: "{}" does not support "{}" !'.format(node.name(), input_name, inode.name()))
+                show_message(
+                    '{}: "{}" does not support "{}" !'.format(
+                        node.name(), input_name, inode.name()
+                    )
+                )
                 return
 
         inode_outputs = inode_data["outputs"]
@@ -475,12 +530,19 @@ def check_node(node):
 
         if "*" not in allowed_outputs and "*" not in inode_outputs:
             if not any(o in allowed_outputs for o in inode_outputs):
-                show_message(node.name() + ' : "{}" connection not supported !'.format(input_name))
+                show_message(
+                    node.name()
+                    + ' : "{}" connection not supported !'.format(input_name)
+                )
                 return
 
         if requires_force_output(inode_outputs, allowed_outputs[0]):
             if _input.get("force_output") == None:
-                if nuke.ask("{}:\nConnected to node with duplicate outputs, Connect now?".format(node.name())):
+                if nuke.ask(
+                    "{}:\nConnected to node with duplicate outputs, Connect now?".format(
+                        node.name()
+                    )
+                ):
                     from .scripts.force_output_connection import force_output
 
                     force_output(node)

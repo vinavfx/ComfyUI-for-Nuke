@@ -191,7 +191,9 @@ def create_node(data, inpanel=True):
         if category == "loaders" and "name" in knob_name:
             refresh_models_knob = nuke.PyScript_Knob("refresh_models", "Refresh Models")
             refresh_models_knob.setValue(
-                'comfyui.update_menu.refresh_models(nuke.thisNode(), "{}", "{}")'.format(knob_name, data["name"])
+                'comfyui.update_menu.refresh_models(nuke.thisNode(), "{}", "{}")'.format(
+                    knob_name, data["name"]
+                )
             )
             n.addKnob(refresh_models_knob)
 
@@ -202,7 +204,9 @@ def create_node(data, inpanel=True):
 
     # Nuke no genera automaticamente una nueva entrada, asi que genera una entrada 2 cuando solo hay 1 !
     if inputs:
-        inputs.append(["input_2"] + inputs[0][1:]) if inputs[0][0] == "input_1" else None
+        inputs.append(["input_2"] + inputs[0][1:]) if inputs[0][
+            0
+        ] == "input_1" else None
 
     _inputs = []
 
@@ -258,7 +262,9 @@ def create_node(data, inpanel=True):
         show_knob = nuke.Multiline_Eval_String_Knob("text", "")
         n.addKnob(show_knob)
         n.knob("text").setFlag(nuke.READ_ONLY)
-        n.knob("onCreate").setValue('nuke.thisNode().knob("text").setFlag(nuke.READ_ONLY)')
+        n.knob("onCreate").setValue(
+            'nuke.thisNode().knob("text").setFlag(nuke.READ_ONLY)'
+        )
         output_text_node = nuke.createNode("StickyNote", inpanel=False)
         output_text_node.setName(display_name + "Output")
         output_text_node.setXYpos(n.xpos() - 100, n.ypos())
@@ -339,7 +345,9 @@ def build_menu(info, progress, callback=None):
         value_utf8 = convert_to_utf8(value)
 
         comfyui_nodes[value["name"]] = value_utf8
-        comfyui_menu.addCommand(fullname, partial(create_node, value_utf8), "", icon_gray)
+        comfyui_menu.addCommand(
+            fullname, partial(create_node, value_utf8), "", icon_gray
+        )
 
     del progress
 
