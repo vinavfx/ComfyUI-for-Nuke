@@ -1,6 +1,3 @@
 [submodule "nuke_util"]
 	path = nuke_util
 	url = https://github.com/vinavfx/nuke_util
-[submodule "harness"]
-	path = harness
-	url = https://github.com/vinavfx/harness.git
