@@ -212,7 +212,10 @@ def submit(run_node, success_callback=None, settings=None):
     if not resolve_submission_target(settings):
         return
 
-    update_images_and_mask_inputs(settings)
+    if not update_images_and_mask_inputs(settings):
+        show_message("Error connecting: the image and mask inputs were not refreshed!")
+        return
+
     exr_filepath_fixed(run_node)
     settings["project_name"] = nuke.root().name()
 

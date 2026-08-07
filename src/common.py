@@ -39,13 +39,13 @@ def update_images_and_mask_inputs(settings):
     global image_inputs, mask_inputs, updated_inputs
 
     if updated_inputs:
-        return
+        return True
 
     from .connection import GET
 
-    info = GET("object_info", settings)
+    info = GET("object_info", settings, timeout=10)
     if not info:
-        return
+        return False
 
     for _, data in info.items():
         input_data = data["input"]
@@ -65,6 +65,9 @@ def update_images_and_mask_inputs(settings):
 
     if len(image_inputs) > 50:
         updated_inputs = True
+        return True
+
+    return False
 
 
 def jsondumps(data):
