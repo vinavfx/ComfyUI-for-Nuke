@@ -47,8 +47,11 @@ def update_images_and_mask_inputs(settings):
     if os.path.exists(cache_path):
         try:
             cached_inputs = jread(cache_path)
-            image_inputs = cached_inputs["image_inputs"]
-            mask_inputs = cached_inputs["mask_inputs"]
+            image_inputs.clear()
+            image_inputs.extend(cached_inputs["image_inputs"])
+            mask_inputs.clear()
+            mask_inputs.extend(cached_inputs["mask_inputs"])
+
             updated_inputs = True
             return True
         except (OSError, KeyError, TypeError, json.JSONDecodeError):
