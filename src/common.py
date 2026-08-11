@@ -6,11 +6,13 @@
 import nuke  # type: ignore
 from datetime import datetime
 import json
+import os
 import hashlib
 import bz2
 import base64
 from ..settings import *
 from ..nuke_util.nuke_util import get_connected_nodes
+from ..nuke_util.python_util import jread, jwrite
 import threading
 
 image_inputs = []
@@ -41,9 +43,20 @@ def update_images_and_mask_inputs(settings):
     if updated_inputs:
         return True
 
+    cache_path = "/tmp/comfyui2nuke_inputs.json"
+    if os.path.exists(cache_path):
+        try:
+            cached_inputs = jread(cache_path)
+            image_inputs = cached_inputs["image_inputs"]
+            mask_inputs = cached_inputs["mask_inputs"]
+            updated_inputs = True
+            return True
+        except (OSError, KeyError, TypeError, json.JSONDecodeError):
+            return False
+
     from .connection import GET
 
-    info = GET("object_info", settings, timeout=10)
+    info = GET("object_info", settings, timeout=120)
     if not info:
         return False
 
@@ -62,6 +75,14 @@ def update_images_and_mask_inputs(settings):
             if class_type in ["*", "MASK"]:
                 if not name in mask_inputs:
                     mask_inputs.append(name)
+
+    try:
+        jwrite(
+            cache_path,
+            {"image_inputs": image_inputs, "mask_inputs": mask_inputs},
+        )
+    except OSError:
+        pass
 
     if len(image_inputs) > 50:
         updated_inputs = True
