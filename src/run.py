@@ -212,7 +212,7 @@ def submit(run_node, success_callback=None, settings=None):
     if not resolve_submission_target(settings):
         return
 
-    if not update_images_and_mask_inputs(settings):
+    if not update_images_and_mask_inputs():
         show_message("Error connecting: the image and mask inputs were not refreshed!")
         return
 

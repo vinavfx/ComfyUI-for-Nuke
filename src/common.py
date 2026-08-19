@@ -10,7 +10,15 @@ import os
 import hashlib
 import bz2
 import base64
-from ..settings import *
+from ..settings import (
+    COLLECT_DIRECTORY,
+    DISPLAY_META_IN_READ_NODE,
+    INPUT_DIRECTORY,
+    OUTPUT_DIRECTORY,
+    UPDATE_MENU_AT_START,
+    URL,
+    USE_EXR_TO_LOAD_IMAGES,
+)
 from ..nuke_util.nuke_util import get_connected_nodes
 from ..nuke_util.python_util import jread, jwrite
 import threading
@@ -18,6 +26,39 @@ import threading
 image_inputs = []
 mask_inputs = []
 updated_inputs = False
+object_info = None
+
+
+def init_scan_thread(force_scan=False):
+    from .connection import GET
+    from .queue_manager import resolve_submission_target
+
+    global object_info
+    cache_path = "/tmp/comfyui2nuke_object_info.json"
+
+    settings = get_settings()
+    resolve_submission_target(settings, 15)
+
+    if not force_scan and os.path.exists(cache_path):
+        try:
+            object_info = jread(cache_path)
+            return
+        except (OSError, TypeError, json.JSONDecodeError):
+            pass
+
+    object_info = GET("object_info", settings, timeout=120)
+
+    if object_info:
+        try:
+            jwrite(cache_path, object_info)
+        except OSError:
+            pass
+
+
+def get_object_info():
+    if object_info is None:
+        show_message("'object_info' has not been loaded yet.")
+    return object_info
 
 
 def show_message(msg):
@@ -37,29 +78,13 @@ def execute_in_main_thread(func, args=(), kwargs=None):
     return func(*args, **kwargs)
 
 
-def update_images_and_mask_inputs(settings):
+def update_images_and_mask_inputs():
     global image_inputs, mask_inputs, updated_inputs
 
     if updated_inputs:
         return True
 
-    cache_path = "/tmp/comfyui2nuke_inputs.json"
-    if os.path.exists(cache_path):
-        try:
-            cached_inputs = jread(cache_path)
-            image_inputs.clear()
-            image_inputs.extend(cached_inputs["image_inputs"])
-            mask_inputs.clear()
-            mask_inputs.extend(cached_inputs["mask_inputs"])
-
-            updated_inputs = True
-            return True
-        except (OSError, KeyError, TypeError, json.JSONDecodeError):
-            return False
-
-    from .connection import GET
-
-    info = GET("object_info", settings, timeout=120)
+    info = get_object_info()
     if not info:
         return False
 
@@ -72,20 +97,12 @@ def update_images_and_mask_inputs(settings):
             class_type = value[0]
 
             if class_type in ["*", "IMAGE"]:
-                if not name in image_inputs:
+                if name not in image_inputs:
                     image_inputs.append(name)
 
             if class_type in ["*", "MASK"]:
-                if not name in mask_inputs:
+                if name not in mask_inputs:
                     mask_inputs.append(name)
-
-    try:
-        jwrite(
-            cache_path,
-            {"image_inputs": image_inputs, "mask_inputs": mask_inputs},
-        )
-    except OSError:
-        pass
 
     if len(image_inputs) > 50:
         updated_inputs = True
@@ -105,7 +122,7 @@ def jsonloads(data):
         compressed_bytes = base64.b85decode(data.encode("utf-8"))
         json_bytes = bz2.decompress(compressed_bytes)
         return json.loads(json_bytes.decode("utf-8"))
-    except:
+    except Exception:
         return {}
 
 

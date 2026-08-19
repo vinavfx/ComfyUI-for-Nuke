@@ -12,15 +12,17 @@ from .common import show_message, get_settings
 
 blocked_urls = []
 primary_url = None
-scan_timeout = 3
+default_timeout = 3
 
 
-def scan_urls(settings):
+def scan_urls(settings, timeout=None):
+    timeout = default_timeout if timeout is None else timeout
     urls = format_URLs(settings["URL"])
 
     if not urls:
         show_message(
-            f"{settings['URL']}\nIt has to be an URL address or a list of URL addresses as JSON!"
+            f"{settings['URL']}\n"
+            "It has to be an URL address or a list of URL addresses as JSON!"
         )
         return [None] * 5
 
@@ -37,7 +39,7 @@ def scan_urls(settings):
     with ThreadPoolExecutor(max_workers=min(30, len(active_urls) or 1)) as executor:
         futures = {
             executor.submit(
-                GET, "queue", {"URL": url}, warning=False, timeout=scan_timeout
+                GET, "queue", {"URL": url}, warning=False, timeout=timeout
             ): (i, url)
             for i, url in enumerate(active_urls)
         }
@@ -122,8 +124,9 @@ def resolve_queue_position(settings, new_user):
         return (prev_prio + next_prio) / 2
 
 
-def resolve_submission_target(settings):
-    urls, available_url, lowest_load_url, _, _ = scan_urls(settings)
+def resolve_submission_target(settings, timeout=None):
+    timeout = default_timeout if timeout is None else timeout
+    urls, available_url, lowest_load_url, _, _ = scan_urls(settings, timeout)
     if not urls:
         return
 
@@ -137,7 +140,7 @@ def resolve_submission_target(settings):
     else:
         settings["URL"] = lowest_load_url
 
-    if not GET("system_stats", settings, timeout=scan_timeout):
+    if not GET("system_stats", settings, timeout=timeout):
         return
 
     return settings
@@ -147,7 +150,11 @@ def job_running_message(running_client, pending_client):
     def ellipsis(s, n):
         return s if len(s) <= n else s[: n - 3] + "..."
 
-    msgline = "    {} - <font color=orange>{}</font> : <font color=#4FC3F7>{}</font> : {} : <font color=#6cb56b>{}</font>\n"
+    msgline = (
+        "    {} - <font color=orange>{}</font> : "
+        "<font color=#4FC3F7>{}</font> : {} : "
+        "<font color=#6cb56b>{}</font>\n"
+    )
     msg = ""
 
     if running_client:
