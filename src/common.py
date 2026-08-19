@@ -57,7 +57,7 @@ def init_scan_thread(force_scan=False):
 
 def get_object_info():
     if object_info is None:
-        show_message("'object_info' has not been loaded yet.")
+        show_message("ComfyUI has not loaded yet. Please try again in a few seconds.")
     return object_info
 
 
