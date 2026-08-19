@@ -12,9 +12,9 @@ import threading
 from functools import partial
 
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
-from .connection import GET, convert_to_utf8
+from .connection import convert_to_utf8
 from ..settings import COMFYUI2NUKE
-from .common import get_settings, show_message, jsondumps
+from .common import get_settings, show_message, jsondumps, get_object_info
 from .queue_manager import resolve_submission_target
 
 comfyui_nodes = {}
@@ -363,7 +363,7 @@ def update(callback=None):
 
         settings = get_settings()
         resolve_submission_target(settings)
-        info = GET("object_info", settings, False)
+        info = get_object_info()
 
         if info:
             nuke.executeInMainThread(partial(build_menu, info, progress, callback))
