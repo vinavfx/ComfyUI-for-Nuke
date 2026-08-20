@@ -48,23 +48,21 @@ def create_comfyui_node(node_type, inpanel=True):
 
 
 def refresh_models(node, knob_name, class_type):
-    def refresh():
-        object_info = get_object_info()
-        if not object_info:
-            return
+    object_info = get_object_info()
+    if not object_info:
+        return
 
-        knob = node.knob(knob_name)
-        input_info = object_info[class_type]["input"]["required"][knob_name[:-1]]
-        models = input_info[0]
+    knob = node.knob(knob_name)
+    input_info = object_info[class_type]["input"]["required"][knob_name[:-1]]
+    models = input_info[0]
 
-        if models == "COMBO":
-            models = input_info[1].get("options", [])
+    if models == "COMBO":
+        models = input_info[1].get("options", [])
 
-        value = knob.value()
-        knob.setValues(models)
-        knob.setValue(value)
+    value = knob.value()
+    knob.setValues(models)
+    knob.setValue(value)
 
-    update(refresh)
 
 
 def create_node(data, inpanel=True):
