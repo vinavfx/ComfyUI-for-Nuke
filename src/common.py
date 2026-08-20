@@ -37,7 +37,11 @@ def init_scan_thread(force_scan=False):
     cache_path = "/tmp/comfyui2nuke_object_info.json"
 
     settings = get_settings()
-    resolve_submission_target(settings, 10)
+    settings = resolve_submission_target(settings, 10)
+    if not settings:
+        object_info = None
+        print("Could not load ComfyUI object_info.")
+        return
 
     if not force_scan and os.path.exists(cache_path):
         try:
