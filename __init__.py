@@ -6,16 +6,7 @@
 import os
 import threading
 import nuke  # type: ignore
-from .src import (
-    common,
-    console,
-    execute_runs,
-    queue_manager,
-    read_media,
-    scripts,
-    update_menu,
-    workflow_importer,
-)
+from .src import *
 from functools import partial
 from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
