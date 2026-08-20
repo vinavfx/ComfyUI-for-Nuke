@@ -1,4 +1,9 @@
-from . import knob2input, force_output_connection, export_workflow, reload_node
+from . import (
+    knob2input,
+    force_output_connection,
+    export_workflow,
+    reload_node,
+)
 
 
 import nuke  # type: ignore

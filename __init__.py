@@ -6,8 +6,16 @@
 import os
 import threading
 import nuke  # type: ignore
-from .src import *
-from .testing import *
+from .src import (
+    common,
+    console,
+    execute_runs,
+    queue_manager,
+    read_media,
+    scripts,
+    update_menu,
+    workflow_importer,
+)
 from functools import partial
 from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
@@ -66,6 +74,14 @@ def setup():
     comfyui_menu.addCommand(
         "Scripts/Force Output",
         scripts.force_output_connection.force_output,
+        icon=icon_gray,
+    )
+
+    comfyui_menu.addCommand(
+        "Scripts/Force ComfyUI Scan",
+        lambda: threading.Thread(
+            target=common.init_scan_thread, args=(True,), daemon=True
+        ).start(),
         icon=icon_gray,
     )
 
