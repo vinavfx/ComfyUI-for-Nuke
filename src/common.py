@@ -37,11 +37,12 @@ def init_scan_thread(force_scan=False):
     cache_path = "/tmp/comfyui2nuke_object_info.json"
 
     settings = get_settings()
-    resolve_submission_target(settings, 15)
+    resolve_submission_target(settings, 10)
 
     if not force_scan and os.path.exists(cache_path):
         try:
             object_info = jread(cache_path)
+            print("ComfyUI loaded successfully.")
             return
         except (OSError, TypeError, json.JSONDecodeError):
             pass
@@ -53,6 +54,9 @@ def init_scan_thread(force_scan=False):
             jwrite(cache_path, object_info)
         except OSError:
             pass
+        print("ComfyUI loaded successfully.")
+    else:
+        print("Could not load ComfyUI object_info.")
 
 
 def get_object_info():
