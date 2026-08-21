@@ -27,9 +27,11 @@ image_inputs = []
 mask_inputs = []
 updated_inputs = False
 object_info = None
+scan_thread_state = threading.local()
 
 
 def init_scan_thread(force_scan=False):
+    scan_thread_state.gui = threading.current_thread().name == "MainThread"
     from .connection import GET
     from .queue_manager import resolve_submission_target
 
@@ -70,7 +72,7 @@ def get_object_info():
 
 
 def show_message(msg):
-    if nuke.GUI:
+    if nuke.GUI and getattr(scan_thread_state, "gui", True):
         execute_in_main_thread(nuke.message, (msg,))
     else:
         print(msg)
