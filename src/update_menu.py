@@ -9,7 +9,6 @@ import re
 import json
 import nuke  # type: ignore
 import threading
-from functools import partial
 
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import convert_to_utf8
@@ -30,6 +29,26 @@ def normalize_nodename(name):
         name = "_" + name
 
     return name
+
+
+def get_autogrow_inputs(key, input_class, info, is_optional):
+    if input_class != "COMFY_AUTOGROW_V3":
+        return [[key, input_class, is_optional, key]]
+
+    template = info.get("template", {})
+    template_input = template.get("input", {})
+    prefix = template.get("prefix", "")
+    inputs = []
+
+    for group in ("required", "optional"):
+        for template_value in template_input.get(group, {}).values():
+            template_class = template_value[0]
+            for index in range(3):
+                display_name = "{}{}".format(prefix, index)
+                input_name = "{}.{}".format(key, display_name)
+                inputs.append([input_name, template_class, is_optional, display_name])
+
+    return inputs
 
 
 def get_nodes():
@@ -64,11 +83,10 @@ def refresh_models(node, knob_name, class_type):
     knob.setValue(value)
 
 
-
 def create_node(data, inpanel=True):
     try:
         selected_node = nuke.selectedNode()
-    except:
+    except Exception:
         selected_node = None
 
     n = nuke.createNode("Group", inpanel=inpanel)
@@ -107,16 +125,20 @@ def create_node(data, inpanel=True):
     knobs_class = {}
 
     for key in required_order + optional_order:
-        _input = required.get(key, [])
-        is_optional = not _input
+        input_value = required.get(key, [])
+        is_optional = not input_value
 
         if is_optional:
-            _input = optional.get(key)
+            input_value = optional.get(key)
 
-        _class = _input[0]
-        info = _input[1] if len(_input) == 2 else {}
+        input_class = input_value[0]
+        info = input_value[1] if len(input_value) == 2 else {}
 
         if not type(info) == dict:
+            continue
+
+        if input_class == "COMFY_AUTOGROW_V3":
+            inputs.extend(get_autogrow_inputs(key, input_class, info, is_optional))
             continue
 
         force_input = info.get("forceInput", False)
@@ -125,15 +147,15 @@ def create_node(data, inpanel=True):
         knob_name = key + "_"
 
         if force_input:
-            inputs.append([key, _class, is_optional])
+            inputs.extend(get_autogrow_inputs(key, input_class, info, is_optional))
             continue
 
-        elif _class == "INT":
+        elif input_class == "INT":
             knob = nuke.Int_Knob(knob_name, key)
             default_value = default_value if default_value < 1e9 else 1e9
             knob.setValue(int(default_value))
 
-        elif _class == "FLOAT":
+        elif input_class == "FLOAT":
             min_value = info.get("min", 0)
             max_value = info.get("max", 1)
 
@@ -141,10 +163,10 @@ def create_node(data, inpanel=True):
             knob.setRange(min_value, max_value)
             knob.setValue(default_value)
 
-        elif _class == "STRING" and key in ["filepath", "file", "directory"]:
+        elif input_class == "STRING" and key in ["filepath", "file", "directory"]:
             knob = nuke.File_Knob(knob_name, key)
 
-        elif _class == "STRING":
+        elif input_class == "STRING":
             multiline = info.get("multiline", False)
 
             if multiline:
@@ -155,16 +177,16 @@ def create_node(data, inpanel=True):
             default_string = info.get("default", "")
             knob.setText(str(default_string))
 
-        elif _class in ["BOOLEAN", [True, False], [[True, False]]]:
+        elif input_class in ["BOOLEAN", [True, False], [[True, False]]]:
             knob = nuke.Boolean_Knob(knob_name, key)
             knob.setFlag(nuke.STARTLINE)
             knob.setValue(default_value)
 
-        elif type(_class) == list or _class == "COMBO":
-            if _class == "COMBO":
+        elif type(input_class) == list or input_class == "COMBO":
+            if input_class == "COMBO":
                 options = info.get("options", [])
             else:
-                options = _class
+                options = input_class
 
             knob = nuke.Enumeration_Knob(knob_name, key, [str(i) for i in options])
 
@@ -174,14 +196,14 @@ def create_node(data, inpanel=True):
                 knob.setValue(default_item)
 
         else:
-            inputs.append([key, _class, is_optional])
+            inputs.extend(get_autogrow_inputs(key, input_class, info, is_optional))
             continue
 
         n.addKnob(knob)
         knobs_order.append(knob.name())
 
-        if _class in ["INT", "STRING", "BOOLEAN", "FLOAT"]:
-            knobs_class[knob.name()] = str(_class).lower()
+        if input_class in ["INT", "STRING", "BOOLEAN", "FLOAT"]:
+            knobs_class[knob.name()] = str(input_class).lower()
 
         if name in ["LoadAudio", "LoadImage"]:
             upload_knob = nuke.PyScript_Knob("upload", "+")
@@ -189,36 +211,36 @@ def create_node(data, inpanel=True):
             n.addKnob(upload_knob)
 
         if category == "loaders" and "name" in knob_name:
-            refresh_models_knob = nuke.PyScript_Knob("refresh_models", "Refresh Models")
-            refresh_models_knob.setValue(
-                'comfyui.update_menu.refresh_models(nuke.thisNode(), "{}", "{}")'.format(
-                    knob_name, data["name"]
-                )
+            refresh_models_label = "Refresh Models"
+            refresh_models_knob = nuke.PyScript_Knob(
+                "refresh_models", refresh_models_label
             )
+            refresh_models_command = (
+                "comfyui.update_menu.refresh_models(nuke.thisNode(), "
+            )
+            refresh_models_command += '"{}", "{}")'.format(knob_name, data["name"])
+            refresh_models_knob.setValue(refresh_models_command)
             n.addKnob(refresh_models_knob)
 
-        if "seed" in key or (data["name"] == "PrimitiveInt" and key == "value"):
+        is_primitive_value = data["name"] == "PrimitiveInt" and key == "value"
+        if "seed" in key or is_primitive_value:
             randomize_knob = nuke.Boolean_Knob("randomize")
             randomize_knob.setValue(False)
             n.addKnob(randomize_knob)
 
-    # Nuke no genera automaticamente una nueva entrada, asi que genera una entrada 2 cuando solo hay 1 !
-    if inputs:
-        inputs.append(["input_2"] + inputs[0][1:]) if inputs[0][
-            0
-        ] == "input_1" else None
-
-    _inputs = []
+    node_inputs = []
 
     n.begin()
-    for key, _class, is_optional in inputs:
-        if not _class:
+    for key, input_class, is_optional, display_name in inputs:
+        if not input_class:
             continue
 
         inode = nuke.createNode("Input", inpanel=False)
-        inode.setName(normalize_nodename(key))
+        inode.setName(normalize_nodename(display_name))
 
-        _inputs.append({"name": key, "outputs": [_class.lower()], "opt": is_optional})
+        node_inputs.append(
+            {"name": key, "outputs": [input_class.lower()], "opt": is_optional}
+        )
 
     nuke.createNode("Output", inpanel=False)
     n.end()
@@ -241,7 +263,7 @@ def create_node(data, inpanel=True):
                 "class_type": data["name"],
                 "output_name": data.get("output_name", False),
                 "output_node": data.get("output_node", False),
-                "inputs": _inputs,
+                "inputs": node_inputs,
                 "outputs": outputs,
             }
         )

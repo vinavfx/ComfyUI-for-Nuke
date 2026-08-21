@@ -114,6 +114,24 @@ def update_images_and_mask_inputs():
                 if name not in mask_inputs:
                     mask_inputs.append(name)
 
+            if class_type != "COMFY_AUTOGROW_V3":
+                continue
+
+            template = value[1].get("template", {})
+            template_input = template.get("input", {})
+            prefix = template.get("prefix", "")
+            for group in ("required", "optional"):
+                for template_value in template_input.get(group, {}).values():
+                    template_class = template_value[0]
+                    for index in range(3):
+                        input_name = "{}.{}{}".format(name, prefix, index)
+                        if template_class in ["*", "IMAGE"]:
+                            if input_name not in image_inputs:
+                                image_inputs.append(input_name)
+                        if template_class in ["*", "MASK"]:
+                            if input_name not in mask_inputs:
+                                mask_inputs.append(input_name)
+
     if len(image_inputs) > 50:
         updated_inputs = True
         return True
