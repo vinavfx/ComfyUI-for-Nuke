@@ -13,7 +13,13 @@ import threading
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import convert_to_utf8
 from ..settings import COMFYUI2NUKE
-from .common import get_settings, show_message, jsondumps, get_object_info
+from .common import (
+    AUTOGROW_INPUT_COUNT,
+    get_settings,
+    show_message,
+    jsondumps,
+    get_object_info,
+)
 from .queue_manager import resolve_submission_target
 
 comfyui_nodes = {}
@@ -43,7 +49,7 @@ def get_autogrow_inputs(key, input_class, info, is_optional):
     for group in ("required", "optional"):
         for template_value in template_input.get(group, {}).values():
             template_class = template_value[0]
-            for index in range(3):
+            for index in range(AUTOGROW_INPUT_COUNT):
                 display_name = "{}{}".format(prefix, index)
                 input_name = "{}.{}".format(key, display_name)
                 inputs.append([input_name, template_class, is_optional, display_name])

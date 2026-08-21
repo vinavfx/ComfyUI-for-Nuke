@@ -26,6 +26,7 @@ import threading
 image_inputs = []
 mask_inputs = []
 updated_inputs = False
+AUTOGROW_INPUT_COUNT = 3
 object_info = None
 scan_thread_state = threading.local()
 
@@ -123,7 +124,7 @@ def update_images_and_mask_inputs():
             for group in ("required", "optional"):
                 for template_value in template_input.get(group, {}).values():
                     template_class = template_value[0]
-                    for index in range(3):
+                    for index in range(AUTOGROW_INPUT_COUNT):
                         input_name = "{}.{}{}".format(name, prefix, index)
                         if template_class in ["*", "IMAGE"]:
                             if input_name not in image_inputs:
