@@ -212,7 +212,8 @@ def submit(run_node, success_callback=None, settings=None):
     set_task_progress(0, "Scanning ComfyUI servers...", False)
 
     if not resolve_submission_target(settings):
-        success_callback_wrapper(run_node=run_node, error=True)
+        message = "No ComfyUI server available!"
+        success_callback_wrapper(run_node=run_node, error=message)
         return
 
     if not update_images_and_mask_inputs():
