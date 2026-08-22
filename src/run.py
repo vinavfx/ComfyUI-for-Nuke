@@ -174,9 +174,11 @@ def submit(run_node, success_callback=None, settings=None):
     settings["inference_time"] = time()
 
     if not settings["INPUT_DIRECTORY"] or not settings["OUTPUT_DIRECTORY"]:
-        nuke.message(
+        message = (
             "INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!"
         )
+        nuke.message(message)
+        success_callback_wrapper(run_node=run_node, error=message)
         return
 
     pbar_status = {"title": "Inferencing", "progress": 0, "message": ""}
@@ -210,10 +212,13 @@ def submit(run_node, success_callback=None, settings=None):
     set_task_progress(0, "Scanning ComfyUI servers...", False)
 
     if not resolve_submission_target(settings):
+        success_callback_wrapper(run_node=run_node, error=True)
         return
 
     if not update_images_and_mask_inputs():
-        show_message("Error connecting: the image and mask inputs were not refreshed!")
+        message = "Error connecting: the image and mask inputs were not refreshed!"
+        show_message(message)
+        success_callback_wrapper(run_node=run_node, error=message)
         return
 
     exr_filepath_fixed(run_node)
@@ -223,7 +228,7 @@ def submit(run_node, success_callback=None, settings=None):
 
     data, input_node_changed = extract_data(run_node, settings)
     if not data:
-        success_callback_wrapper(error="data")
+        success_callback_wrapper(run_node=run_node, error="data")
         return
 
     global states
@@ -265,7 +270,7 @@ def submit(run_node, success_callback=None, settings=None):
                 return
 
             message = json.loads(message)
-        except:
+        except Exception:
             return
 
         data = message.get("data", None)
@@ -377,7 +382,7 @@ def submit(run_node, success_callback=None, settings=None):
                 remove_all_error_style(run_node)
                 states[run_node.fullName()] = state_data
 
-        except:
+        except Exception:
             print(traceback.format_exc())
             show_message(traceback.format_exc())
 
@@ -406,6 +411,8 @@ def submit(run_node, success_callback=None, settings=None):
         execution_error[0] = True
         if pbar:
             del pbar[0]
+        if settings["BACKGROUND_SUBMIT"]:
+            success_callback_wrapper(run_node=run_node, error=error)
         show_message(error)
 
     if not nuke.GUI:
