@@ -8,7 +8,6 @@ from functools import partial
 import re
 import json
 import nuke  # type: ignore
-import threading
 
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import convert_to_utf8
@@ -382,17 +381,12 @@ def build_menu(info, progress, callback=None):
 
 
 def update(callback=None):
-    def fetch_in_background():
-        info = get_object_info()
+    info = get_object_info()
 
-        if info:
-            progress = nuke.ProgressTask("Updating ComfyUI")
-            progress.setMessage("Loading data from server...")
-            progress.setProgress(0)
-            nuke.executeInMainThread(partial(build_menu, info, progress, callback))
-
-    thread = threading.Thread(target=fetch_in_background)
-    thread.daemon = True
-    thread.start()
+    if info:
+        progress = nuke.ProgressTask("Updating ComfyUI")
+        progress.setMessage("Loading data from server...")
+        progress.setProgress(0)
+        build_menu(info, progress, callback)
 
     return True

@@ -66,9 +66,19 @@ def init_scan_thread(force_scan=False):
         print("Could not load ComfyUI object_info.")
 
 
+def force_comfyui_scan():
+    threading.Thread(target=init_scan_thread, args=(True,), daemon=True).start()
+
+
 def get_object_info():
     if object_info is None:
-        show_message("ComfyUI has not loaded yet. Please try again in a few seconds.")
+        message = "ComfyUI has not loaded yet. Would you like to force a ComfyUI scan?"
+        if nuke.GUI:
+            scan = execute_in_main_thread(nuke.ask, (message,))
+            if scan:
+                force_comfyui_scan()
+        else:
+            print(message)
     return object_info
 
 

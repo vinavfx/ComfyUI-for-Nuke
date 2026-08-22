@@ -70,9 +70,7 @@ def setup():
 
     comfyui_menu.addCommand(
         "Scripts/Force ComfyUI Scan",
-        lambda: threading.Thread(
-            target=common.init_scan_thread, args=(True,), daemon=True
-        ).start(),
+        common.force_comfyui_scan,
         icon=icon_gray,
     )
 
