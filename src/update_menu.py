@@ -15,12 +15,10 @@ from .connection import convert_to_utf8
 from ..settings import COMFYUI2NUKE
 from .common import (
     AUTOGROW_INPUT_COUNT,
-    get_settings,
     show_message,
     jsondumps,
     get_object_info,
 )
-from .queue_manager import resolve_submission_target
 
 comfyui_nodes = {}
 menu_updated = False
@@ -385,18 +383,13 @@ def build_menu(info, progress, callback=None):
 
 def update(callback=None):
     def fetch_in_background():
-        progress = nuke.ProgressTask("Updating ComfyUI")
-        progress.setMessage("Loading data from server...")
-        progress.setProgress(0)
-
-        settings = get_settings()
-        resolve_submission_target(settings)
         info = get_object_info()
 
         if info:
+            progress = nuke.ProgressTask("Updating ComfyUI")
+            progress.setMessage("Loading data from server...")
+            progress.setProgress(0)
             nuke.executeInMainThread(partial(build_menu, info, progress, callback))
-        else:
-            del progress
 
     thread = threading.Thread(target=fetch_in_background)
     thread.daemon = True
