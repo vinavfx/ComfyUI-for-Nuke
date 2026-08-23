@@ -23,6 +23,27 @@ def get_run(run):
     return run
 
 
+def sequential_execution(gizmos=None, error=None, callback=None, index=0):
+    if gizmos is None:
+        gizmos = []
+
+    if error:
+        if callback:
+            callback(error)
+        return
+
+    if index >= len(gizmos):
+        if callback:
+            callback(None)
+        return
+
+    run = get_run(gizmos[index])
+    submit(
+        run,
+        success_callback=lambda _, __, e: sequential_execution(
+            gizmos, e, callback, index + 1))
+
+
 def multi_runs(runs, success_callback=None, settings=None, distribute_load=False):
     if len(runs) > 10:
         if not nuke.ask("Are you sure you want to queue {} tasks?".format(len(runs))):
@@ -135,7 +156,7 @@ def execute_runs_plus():
     p.addButton("Cancel")
     p.addButton("Run")
 
-    if not "No inference" in queue:
+    if "No inference" not in queue:
         p.setWidth(500)
 
     if not p.show():
