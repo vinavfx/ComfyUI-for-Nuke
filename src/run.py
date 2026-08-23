@@ -176,7 +176,7 @@ def submit(run_node, success_callback=None, settings=None):
         message = (
             "INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!"
         )
-        nuke.message(message)
+        show_message(message)
         success_callback_wrapper(run_node=run_node, error=message)
         return
 
@@ -226,9 +226,9 @@ def submit(run_node, success_callback=None, settings=None):
 
     set_task_progress(0, "Rendering Nuke images...")
 
-    data, input_node_changed = extract_data(run_node, settings)
+    data, input_node_changed, error_message = extract_data(run_node, settings)
     if not data:
-        success_callback_wrapper(run_node=run_node, error="data")
+        success_callback_wrapper(run_node=run_node, error=error_message)
         return
 
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:

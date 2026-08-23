@@ -114,7 +114,7 @@ def get_workflow():
 
     settings = get_settings(node)
     update_images_and_mask_inputs()
-    data, _ = extract_data(node, settings)
+    data, _, _ = extract_data(node, settings)
 
     return data, settings
 

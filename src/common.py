@@ -29,6 +29,25 @@ updated_inputs = False
 AUTOGROW_INPUT_COUNT = 3
 object_info = None
 scan_thread_state = threading.local()
+gui_lock = threading.Lock()
+gui_disabled_requests = 0
+
+
+def disable_gui():
+    global gui_disabled_requests
+    with gui_lock:
+        gui_disabled_requests += 1
+
+
+def enable_gui():
+    global gui_disabled_requests
+    with gui_lock:
+        gui_disabled_requests -= 1
+
+
+def gui_available():
+    with gui_lock:
+        return nuke.GUI and not gui_disabled_requests
 
 
 def init_scan_thread(force_scan=False):
@@ -73,7 +92,7 @@ def force_comfyui_scan():
 def get_object_info():
     if object_info is None:
         message = "ComfyUI has not loaded yet. Would you like to force a ComfyUI scan?"
-        if nuke.GUI:
+        if gui_available():
             scan = execute_in_main_thread(nuke.ask, (message,))
             if scan:
                 force_comfyui_scan()
@@ -83,7 +102,7 @@ def get_object_info():
 
 
 def show_message(msg):
-    if nuke.GUI and getattr(scan_thread_state, "gui", True):
+    if gui_available() and getattr(scan_thread_state, "gui", True):
         execute_in_main_thread(nuke.message, (msg,))
     else:
         print(msg)
@@ -100,7 +119,7 @@ def execute_in_main_thread(func, args=(), kwargs=None):
 
 
 def update_images_and_mask_inputs():
-    global image_inputs, mask_inputs, updated_inputs
+    global updated_inputs
 
     if updated_inputs:
         return True

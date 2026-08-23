@@ -28,13 +28,15 @@ def extract_data(run_node, settings):
     output_node = get_input(run_node, 0)
 
     if not output_node:
-        show_message("Run is not connected!")
-        return {}, None
+        message = "Run is not connected!"
+        show_message(message)
+        return {}, None, message
 
     output_node_data = get_node_data(output_node)
     if not output_node_data.get("output_node", False):
-        show_message("Connect only to output nodes like SaveImage or SaveEXR !")
-        return {}, None
+        message = "Connect only to output nodes like SaveImage or SaveEXR !"
+        show_message(message)
+        return {}, None, message
 
     nodes = get_connected_comfyui_nodes(run_node)
     nuke.root().knob("proxy").setValue(False)
@@ -46,7 +48,7 @@ def extract_data(run_node, settings):
 
     for n, node_data in nodes:
         if not check_node(n):
-            return {}, None
+            return {}, None, "Invalid node connection!"
 
         if n.knob("randomize"):
             if n.knob("randomize").value():
@@ -97,7 +99,7 @@ def extract_data(run_node, settings):
                 ) = create_load_images_and_save(input_node, settings, rendered_nodes)
 
                 if execution_canceled:
-                    return {}, None
+                    return {}, None, "Image rendering was canceled!"
 
                 # nuke_attrs used in "copy_workflow"
                 load_image_data["nuke_attrs"] = {
@@ -117,7 +119,7 @@ def extract_data(run_node, settings):
         }
         data[n.name()] = node_data
 
-    return data, input_node_changed
+    return data, input_node_changed, ""
 
 
 def state_node(node):
