@@ -43,7 +43,6 @@ from .read_media import (
     create_empty_read,
 )
 
-
 states = {}
 prompt_counter = 0
 
@@ -232,7 +231,6 @@ def submit(run_node, success_callback=None, settings=None):
         success_callback_wrapper(run_node=run_node, error="data")
         return
 
-    global states
     if data == states.get(run_node.fullName(), {}) and not input_node_changed:
         settings["filename_prefix"] = update_filename_prefix(run_node, False)
         filename = resolve_filename(settings, True)
@@ -257,7 +255,7 @@ def submit(run_node, success_callback=None, settings=None):
     }
 
     url = "{}/ws?clientId={}".format(settings["URL"].replace("http", "ws"), client_id)
-    execution_error = [False]
+    execution_error = [""]
     settings["pre_inference_time"] = time() - settings["pre_inference_time"]
 
     set_task_progress(0, "Waiting in Queue ...")
@@ -308,7 +306,7 @@ def submit(run_node, success_callback=None, settings=None):
             for tb in data.get("traceback"):
                 error += tb + "\n"
 
-            execution_error[0] = True
+            execution_error[0] = error
 
             if pbar:
                 del pbar[0]
@@ -327,8 +325,8 @@ def submit(run_node, success_callback=None, settings=None):
         if "connected" in str(error):
             return
 
-        execution_error[0] = True
-        show_message("error: " + str(error))
+        execution_error[0] = "Error: {}".format(error)
+        show_message(execution_error[0])
 
     def progress_task_loop():
         cancelled = False
@@ -409,7 +407,7 @@ def submit(run_node, success_callback=None, settings=None):
         )
 
     if error:
-        execution_error[0] = True
+        execution_error[0] = error
         if pbar:
             del pbar[0]
         if settings["BACKGROUND_SUBMIT"]:
