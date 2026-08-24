@@ -11,7 +11,11 @@ import traceback
 from collections import Counter
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import get_connected_nodes, get_project_name
+from ..nuke_util.nuke_util import (
+    get_connected_nodes,
+    get_project_name,
+    get_user_path,
+)
 from .common import (
     image_inputs,
     mask_inputs,
@@ -69,7 +73,7 @@ def extract_data(run_node, settings):
 
         for key in image_inputs + mask_inputs:
             input_key = node_data["inputs"].get(key)
-            if not input_key or not type(input_key) == list:
+            if not input_key or type(input_key) is not list:
                 continue
 
             input_fullname = "{}.{}".format(n.parent().fullName(), input_key[0])
@@ -165,7 +169,7 @@ def state_node(node):
             if k.hasExpression() or k.isAnimated():
                 try:
                     value = k.valueAt(0)
-                except:
+                except Exception:
                     value = k.toScript()
             else:
                 value = k.toScript()
@@ -178,7 +182,6 @@ def state_node(node):
 
 
 def create_load_images_and_save(node, settings, rendered_nodes):
-    global states
     state = state_node(node)
 
     current_state = {"connected_nodes": state.strip(), "state_id": 0}
@@ -233,8 +236,12 @@ def create_load_images_and_save(node, settings, rendered_nodes):
             return load_image_data, False, False
 
     dirname = get_name_code(
-        "{}{}{}{}".format(
-            get_project_name(), node.fullName(), frame_range[0], frame_range[1]
+        "{}{}{}{}{}".format(
+            os.path.basename(get_user_path()),
+            get_project_name(),
+            node.fullName(),
+            frame_range[0],
+            frame_range[1],
         )
     )
 
@@ -302,7 +309,7 @@ def create_load_images_and_save(node, settings, rendered_nodes):
 
     try:
         nuke.execute(write, node.firstFrame(), node.lastFrame())
-    except:
+    except Exception:
         clean()
         show_message(traceback.format_exc())
         return {}, False, True
@@ -384,7 +391,7 @@ def get_node_data(node):
 
     # Codigo para nodos viejos, borrar mas adelante!
     value = data_knob.value()
-    if not "class_type" in value:
+    if "class_type" not in value:
         return {}
 
     data = (
@@ -420,16 +427,16 @@ def extract_node_data(node):
         else:
             value = knob.value()
 
-        if type(knob) == nuke.Enumeration_Knob:
+        if type(knob) is nuke.Enumeration_Knob:
             try:
                 value = float(value)
-            except:
+            except Exception:
                 pass
 
-        elif type(knob) == nuke.Multiline_Eval_String_Knob:
+        elif type(knob) is nuke.Multiline_Eval_String_Knob:
             value = knob.toScript()
 
-        if type(value) in [float, int]:
+        if type(value) is float or type(value) is int:
             value = int(value) if int(value) == value else value
 
         name = knob.name()[:-1]
@@ -475,7 +482,7 @@ def get_output_index(node, node_data, input_index):
     allowed_outputs = node_data["inputs"][input_index]["outputs"]
 
     force_output = node_data["inputs"][input_index].get("force_output")
-    if not force_output == None:
+    if force_output is not None:
         return force_output
 
     for allowed_output in allowed_outputs:
@@ -510,11 +517,11 @@ def check_node(node):
         if not inode_data:
             if input_name in image_inputs + mask_inputs:
                 if inode.bbox().w() < 10 or inode.bbox().h() < 10:
-                    show_message(
-                        '{}: input "{}" not connected or bbox without information in some frame !'.format(
-                            node.name(), input_name
-                        )
-                    )
+                    message = (
+                        '{}: input "{}" not connected or bbox without '
+                        "information in some frame !"
+                    ).format(node.name(), input_name)
+                    show_message(message)
                     return
                 continue
 
@@ -527,8 +534,8 @@ def check_node(node):
                 return
 
         inode_outputs = inode_data["outputs"]
-        _input = node_data["inputs"][i]
-        allowed_outputs = _input["outputs"]
+        input_data = node_data["inputs"][i]
+        allowed_outputs = input_data["outputs"]
 
         if "*" not in allowed_outputs and "*" not in inode_outputs:
             if not any(o in allowed_outputs for o in inode_outputs):
@@ -539,11 +546,10 @@ def check_node(node):
                 return
 
         if requires_force_output(inode_outputs, allowed_outputs[0]):
-            if _input.get("force_output") == None:
+            if input_data.get("force_output") is None:
                 if nuke.ask(
-                    "{}:\nConnected to node with duplicate outputs, Connect now?".format(
-                        node.name()
-                    )
+                    "{}:\nConnected to node with duplicate outputs, "
+                    "Connect now?".format(node.name())
                 ):
                     from .scripts.force_output_connection import force_output
 
@@ -563,8 +569,8 @@ def requires_force_output(outputs, input_class):
         if not repeated:
             return False
 
-        if not "*" in repeated:
-            if not input_class in repeated:
+        if "*" not in repeated:
+            if input_class not in repeated:
                 return False
 
     return True
