@@ -91,7 +91,9 @@ def force_comfyui_scan():
 
 def get_object_info():
     if object_info is None:
-        message = "ComfyUI has not loaded yet. Would you like to force a ComfyUI scan?"
+        message = (
+            "ComfyUI did not load correctly. Would you like to force a ComfyUI scan?"
+        )
         if gui_available():
             scan = execute_in_main_thread(nuke.ask, (message,))
             if scan:

@@ -8,19 +8,12 @@ import nuke  # type: ignore
 import json
 from ..nuke_util.nuke_util import selected_node
 from .run import submit
-from .cmd import inference_end, inference_start
+from .cmd import get_run, inference_end, inference_start, wait_for_comfyui
 from .common import get_settings, override_settings
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
 from .connection import format_URLs, get_ip_from_url
 from ..settings import ALLOW_ALL_IPS_SUBMIT
-
-
-def get_run(run):
-    if run.knob("comfyui_gizmo"):
-        return nuke.toNode(run.fullName() + ".Run")
-
-    return run
 
 
 def sequential_execution(gizmos=None, error=None, callback=None, index=0):
@@ -45,6 +38,11 @@ def sequential_execution(gizmos=None, error=None, callback=None, index=0):
 
 
 def multi_runs(runs, success_callback=None, settings=None, distribute_load=False):
+    if wait_for_comfyui(
+        lambda: multi_runs(runs, success_callback, settings, distribute_load)
+    ):
+        return
+
     if len(runs) > 10:
         if not nuke.ask("Are you sure you want to queue {} tasks?".format(len(runs))):
             return
