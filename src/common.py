@@ -159,6 +159,8 @@ def wait_for_comfyui(callback):
     if object_info is not None:
         return False
 
+    threading.Thread(target=init_scan_thread, daemon=True).start()
+
     progress = [nuke.ProgressTask("Waiting for ComfyUI")]
     progress[0].setMessage("Waiting for ComfyUI to load...")
     progress[0].setProgress(0)
