@@ -12,12 +12,12 @@ import nuke  # type: ignore
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import convert_to_utf8
 from ..settings import COMFYUI2NUKE
-from .cmd import wait_for_comfyui
 from .common import (
     AUTOGROW_INPUT_COUNT,
     show_message,
     jsondumps,
     get_object_info,
+    wait_for_comfyui,
 )
 
 comfyui_nodes = {}

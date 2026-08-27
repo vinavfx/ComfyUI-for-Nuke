@@ -22,6 +22,7 @@ from ..settings import (
 from ..nuke_util.nuke_util import get_connected_nodes
 from ..nuke_util.python_util import jread, jwrite
 import threading
+from time import monotonic, sleep
 
 image_inputs = []
 mask_inputs = []
@@ -31,6 +32,8 @@ object_info = None
 scan_thread_state = threading.local()
 gui_lock = threading.Lock()
 gui_disabled_requests = 0
+COMFYUI_LOAD_TIMEOUT = 120
+COMFYUI_LOAD_INTERVAL = 0.1
 
 
 def disable_gui():
@@ -118,6 +121,53 @@ def execute_in_main_thread(func, args=(), kwargs=None):
         return nuke.executeInMainThread(func, args=args, kwargs=kwargs)
 
     return func(*args, **kwargs)
+
+
+def close_waiting_progress(progress):
+    if progress:
+        del progress[0]
+
+
+def comfyui_load_timed_out(progress):
+    close_waiting_progress(progress)
+    get_object_info()
+
+
+def start_after_comfyui(callback, progress):
+    close_waiting_progress(progress)
+    callback()
+
+
+def wait_for_comfyui_load(callback, progress):
+    started_at = monotonic()
+    while object_info is None:
+        if nuke.executeInMainThreadWithResult(progress[0].isCancelled):
+            execute_in_main_thread(close_waiting_progress, (progress,))
+            return
+
+        elapsed = monotonic() - started_at
+        if elapsed >= COMFYUI_LOAD_TIMEOUT:
+            execute_in_main_thread(comfyui_load_timed_out, (progress,))
+            return
+
+        sleep(COMFYUI_LOAD_INTERVAL)
+
+    execute_in_main_thread(start_after_comfyui, (callback, progress))
+
+
+def wait_for_comfyui(callback):
+    if object_info is not None:
+        return False
+
+    progress = [nuke.ProgressTask("Waiting for ComfyUI")]
+    progress[0].setMessage("Waiting for ComfyUI to load...")
+    progress[0].setProgress(0)
+    threading.Thread(
+        target=wait_for_comfyui_load,
+        args=(callback, progress),
+        daemon=True,
+    ).start()
+    return True
 
 
 def update_images_and_mask_inputs():

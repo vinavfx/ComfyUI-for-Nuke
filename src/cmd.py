@@ -5,15 +5,9 @@
 # -----------------------------------------------------------
 import nuke  # type: ignore
 import __main__
-import threading
-from time import monotonic, sleep
 
-from . import common
-from .common import execute_in_main_thread, get_object_info
+from .common import wait_for_comfyui
 from .run import submit
-
-COMFYUI_LOAD_TIMEOUT = 120
-COMFYUI_LOAD_INTERVAL = 0.1
 
 
 def get_run(run):
@@ -60,56 +54,9 @@ def inference_end(_, run_node):
         callback.execute()
 
 
-def close_waiting_progress(progress):
-    if progress:
-        del progress[0]
-
-
 def submit_run(run_node):
     with run_node:
         submit(run_node, inference_end)
-
-
-def start_after_comfyui(callback, progress):
-    close_waiting_progress(progress)
-    callback()
-
-
-def comfyui_load_timed_out(progress):
-    close_waiting_progress(progress)
-    get_object_info()
-
-
-def wait_for_comfyui_load(callback, progress):
-    started_at = monotonic()
-    while common.object_info is None:
-        if nuke.executeInMainThreadWithResult(progress[0].isCancelled):
-            execute_in_main_thread(close_waiting_progress, (progress,))
-            return
-
-        elapsed = monotonic() - started_at
-        if elapsed >= COMFYUI_LOAD_TIMEOUT:
-            execute_in_main_thread(comfyui_load_timed_out, (progress,))
-            return
-
-        sleep(COMFYUI_LOAD_INTERVAL)
-
-    execute_in_main_thread(start_after_comfyui, (callback, progress))
-
-
-def wait_for_comfyui(callback):
-    if common.object_info is not None:
-        return False
-
-    progress = [nuke.ProgressTask("Waiting for ComfyUI")]
-    progress[0].setMessage("Waiting for ComfyUI to load...")
-    progress[0].setProgress(0)
-    threading.Thread(
-        target=wait_for_comfyui_load,
-        args=(callback, progress),
-        daemon=True,
-    ).start()
-    return True
 
 
 def run():

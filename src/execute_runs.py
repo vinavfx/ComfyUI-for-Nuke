@@ -8,8 +8,8 @@ import nuke  # type: ignore
 import json
 from ..nuke_util.nuke_util import selected_node
 from .run import submit
-from .cmd import get_run, inference_end, inference_start, wait_for_comfyui
-from .common import get_settings, override_settings
+from .cmd import get_run, inference_end, inference_start
+from .common import get_settings, override_settings, wait_for_comfyui
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
 from .connection import format_URLs, get_ip_from_url
