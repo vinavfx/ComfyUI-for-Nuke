@@ -12,6 +12,7 @@ import nuke  # type: ignore
 from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
 from .connection import convert_to_utf8
 from ..settings import COMFYUI2NUKE
+from .cmd import wait_for_comfyui
 from .common import (
     AUTOGROW_INPUT_COUNT,
     show_message,
@@ -70,6 +71,9 @@ def create_comfyui_node(node_type, inpanel=True):
 
 
 def refresh_models(node, knob_name, class_type):
+    if wait_for_comfyui(lambda: refresh_models(node, knob_name, class_type)):
+        return
+
     object_info = get_object_info()
     if not object_info:
         return
@@ -137,7 +141,7 @@ def create_node(data, inpanel=True):
         input_class = input_value[0]
         info = input_value[1] if len(input_value) == 2 else {}
 
-        if not type(info) == dict:
+        if not isinstance(info, dict):
             continue
 
         if input_class == "COMFY_AUTOGROW_V3":
@@ -185,7 +189,7 @@ def create_node(data, inpanel=True):
             knob.setFlag(nuke.STARTLINE)
             knob.setValue(default_value)
 
-        elif type(input_class) == list or input_class == "COMBO":
+        elif isinstance(input_class, list) or input_class == "COMBO":
             if input_class == "COMBO":
                 options = info.get("options", [])
             else:
@@ -253,7 +257,7 @@ def create_node(data, inpanel=True):
 
     outputs = []
     for output, output_name in zip(data["output"], data["output_name"]):
-        if type(output) == list:
+        if isinstance(output, list):
             outputs.append(output_name)
         else:
             outputs.append(output.lower())
@@ -381,6 +385,9 @@ def build_menu(info, progress, callback=None):
 
 
 def update(callback=None):
+    if wait_for_comfyui(lambda: update(callback)):
+        return True
+
     info = get_object_info()
 
     if info:
