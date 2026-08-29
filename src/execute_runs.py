@@ -51,13 +51,17 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
 
     stop = [False]
     last_error = [""]
+    iterations = {}
     for i, run in enumerate(runs):
         if stop[0]:
             break
 
+        node_name = run.name()
+        iteration = iterations.get(node_name, 0)
+        iterations[node_name] = iteration + 1
         run = get_run(run)
 
-        ret, halt = inference_start(run, i)
+        ret, halt = inference_start(run, i, iteration)
         if halt:
             break
         if not ret:

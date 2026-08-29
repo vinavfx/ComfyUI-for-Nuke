@@ -29,7 +29,7 @@ def get_read(group=None):
             return n
 
 
-def inference_start(run_node, iteration=0):
+def inference_start(run_node, iteration=0, node_iteration=0):
     gizmo = run_node.parent()
     callback = gizmo.knob("inferenceStart")
 
@@ -42,6 +42,7 @@ def inference_start(run_node, iteration=0):
         context["ret"] = True
         context["halt"] = False
         context["iter"] = iteration
+        context["node_iter"] = node_iteration
         exec(code, context)
         return context.get("ret"), context.get("halt")
 
