@@ -57,7 +57,10 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
 
         run = get_run(run)
 
-        if not inference_start(run, i):
+        ret, halt = inference_start(run, i)
+        if halt:
+            break
+        if not ret:
             continue
 
         def on_success(read, _, error):

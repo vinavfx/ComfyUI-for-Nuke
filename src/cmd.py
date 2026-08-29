@@ -34,15 +34,16 @@ def inference_start(run_node, iteration=0):
     callback = gizmo.knob("inferenceStart")
 
     if not callback:
-        return True
+        return True, False
 
     with gizmo:
         code = callback.value()
         context = __main__.__dict__.copy()
         context["ret"] = True
+        context["halt"] = False
         context["iter"] = iteration
         exec(code, context)
-        return context.get("ret")
+        return context.get("ret"), context.get("halt")
 
 
 def inference_end(_, run_node):
@@ -61,7 +62,8 @@ def submit_run(run_node):
 
 def run():
     run_node = get_run(nuke.thisNode())
-    if not inference_start(run_node):
+    ret, _ = inference_start(run_node)
+    if not ret:
         return
 
     if wait_for_comfyui(lambda: submit_run(run_node)):
