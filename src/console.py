@@ -11,31 +11,30 @@ import threading
 import urllib.request as urllib_request
 
 import nuke  # type: ignore
-import nukescripts  # type: ignore
 from ..nuke_util.panels import panel_widget
 from ..nuke_util import panels
 from ..nuke_util.pyside import (
-    QVBoxLayout,
-    QTextEdit,
-    QWidget,
-    QTimer,
-    QHBoxLayout,
-    QPushButton,
-    Qt,
-    QComboBox,
-    QFont,
-    QTextCursor,
-    QTextCharFormat,
-    QColor,
-    QIcon,
-    QSize,
+    QVBoxLayout,  # type: ignore
+    QTextEdit,  # type: ignore
+    QWidget,  # type: ignore
+    QTimer,  # type: ignore
+    QHBoxLayout,  # type: ignore
+    QPushButton,  # type: ignore
+    Qt,  # type: ignore
+    QComboBox,  # type: ignore
+    QFont,  # type: ignore
+    QTextCursor,  # type: ignore
+    QTextCharFormat,  # type: ignore
+    QColor,  # type: ignore
+    QIcon,  # type: ignore
+    QSize,  # type: ignore
 )
 from .. import settings
 from .connection import format_URLs
 from .common import get_settings
 from .queue_manager import scan_urls, job_running_message
 
-panels.init("comfyui.console.console_panel", "ComfyUI Console")
+console_panel_instance = panels.init("comfyui.console.console_panel", "ComfyUI Console")
 
 LOGS_ENDPOINT = "Logs"
 SYSTEM_STATS_ENDPOINT = "System Stats"
@@ -47,13 +46,11 @@ TIMEOUT_THRESHOLD = 5
 
 
 def show_console():
-    console = nuke.panels["comfyui_console"]()
-
-    if not console.isVisible():
-        console_pane = nukescripts.restorePanel("comfyui_console")
-        pane = nuke.getPaneFor("Properties.1")
-        if pane:
-            console_pane.addToPane(pane)
+    console = panels.show_panel(
+        "comfyui_console", console_panel_instance, (1000, 700)
+    )
+    if console is None:
+        return
 
     if console.toolbar.urls_box.currentIndex() == 0:
         console.toolbar.urls_box.setCurrentIndex(1)
