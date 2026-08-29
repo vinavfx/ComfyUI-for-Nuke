@@ -153,7 +153,7 @@ def preview_image_update(node_name, data, settings):
     preview_node.end()
 
 
-def submit(run_node, success_callback=None, settings=None):
+def submit(run_node, success_callback=None, settings=None, last_error=None):
     def success_callback_wrapper(read=None, run_node=None, error=None):
         if not success_callback:
             return
@@ -164,6 +164,17 @@ def submit(run_node, success_callback=None, settings=None):
             success_callback(read, run_node, error)
         else:
             success_callback(read)
+
+    def show_error(message):
+        if last_error is None:
+            show_message(message)
+            return
+
+        if message == last_error[0]:
+            return
+
+        last_error[0] = message
+        show_message(message)
 
     if not settings:
         settings = get_settings(run_node)
@@ -176,7 +187,7 @@ def submit(run_node, success_callback=None, settings=None):
         message = (
             "INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!"
         )
-        show_message(message)
+        show_error(message)
         success_callback_wrapper(run_node=run_node, error=message)
         return
 
@@ -217,7 +228,7 @@ def submit(run_node, success_callback=None, settings=None):
 
     if not update_images_and_mask_inputs():
         message = "Error connecting: the image and mask inputs were not refreshed!"
-        show_message(message)
+        show_error(message)
         success_callback_wrapper(run_node=run_node, error=message)
         return
 
@@ -315,7 +326,7 @@ def submit(run_node, success_callback=None, settings=None):
                 error_node_style,
                 args=(data.get("node_id"), True, execution_message, run_node),
             )
-            show_message(error)
+            show_error(error)
 
     def on_error(ws, error):
         ws.close()
@@ -326,7 +337,7 @@ def submit(run_node, success_callback=None, settings=None):
             return
 
         execution_error[0] = "Error: {}".format(error)
-        show_message(execution_error[0])
+        show_error(execution_error[0])
 
     def progress_task_loop():
         cancelled = False
@@ -383,7 +394,7 @@ def submit(run_node, success_callback=None, settings=None):
 
         except Exception:
             print(traceback.format_exc())
-            show_message(traceback.format_exc())
+            show_error(traceback.format_exc())
 
     ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
 
@@ -412,7 +423,7 @@ def submit(run_node, success_callback=None, settings=None):
             del pbar[0]
         if settings["BACKGROUND_SUBMIT"]:
             success_callback_wrapper(run_node=run_node, error=error)
-        show_message(error)
+        show_error(error)
 
     if not nuke.GUI:
         task_loop.join() if task_loop else None

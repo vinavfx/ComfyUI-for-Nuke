@@ -34,7 +34,9 @@ def sequential_execution(gizmos=None, error=None, callback=None, index=0):
     submit(
         run,
         success_callback=lambda _, __, e: sequential_execution(
-            gizmos, e, callback, index + 1))
+            gizmos, e, callback, index + 1
+        ),
+    )
 
 
 def multi_runs(runs, success_callback=None, settings=None, distribute_load=False):
@@ -48,6 +50,7 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
             return
 
     stop = [False]
+    last_error = [""]
     for i, run in enumerate(runs):
         if stop[0]:
             break
@@ -74,6 +77,7 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
                 run,
                 success_callback=on_success,
                 settings=copy.deepcopy(settings) if settings else None,
+                last_error=last_error,
             )
 
         if distribute_load:
