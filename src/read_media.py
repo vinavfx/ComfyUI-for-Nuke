@@ -104,11 +104,11 @@ def extract_meta(data, settings):
 
         if seed == -1:
             seed = inputs.get("noise_seed", -1)
-            seed = seed if type(seed) == int else -1
+            seed = seed if type(seed) is int else -1
 
         if seed == -1:
             seed = inputs.get("seed", -1)
-            seed = seed if type(seed) == int else -1
+            seed = seed if type(seed) is int else -1
 
         if steps == -1:
             steps = inputs.get("steps", -1)
@@ -292,10 +292,13 @@ def inference_register(run_node, read, filename, metadata):
     if filename in filenames:
         return
 
+    frame_knob = read.knob("frame")
+    start_frame = frame_knob.value() if frame_knob else 1
+
     inferences.append(
         {
             "filename": filename,
-            "start_frame": read["frame"].value(),
+            "start_frame": start_frame,
             "metadata": metadata,
         }
     )
@@ -310,9 +313,11 @@ def metadata_format(meta):
 
     label = "<center>"
     for key, value in meta:
-        label += '<font color="black" size=1>{}:</font><font color="white" size=1> {}</>\n'.format(
-            key, value
+        label_format = (
+            '<font color="black" size=1>{}:</font>'
+            '<font color="white" size=1> {}</>\n'
         )
+        label += label_format.format(key, value)
 
     return label
 
@@ -553,9 +558,9 @@ def restore_run_generations():
 
         set_correct_colorspace(read)
 
-        h, s, l = get_tile_color(main_node)
-        if l > 0:
-            set_tile_color(read, [h, s / 2, l])
+        hue, saturation, lightness = get_tile_color(main_node)
+        if lightness > 0:
+            set_tile_color(read, [hue, saturation / 2, lightness])
 
         message += f"{read['file'].value()}\n"
 
