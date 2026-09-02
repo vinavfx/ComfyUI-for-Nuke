@@ -6,7 +6,17 @@
 import os
 import threading
 import nuke  # type: ignore
-from .src import *
+from .src import (
+    common,
+    console,
+    execute_runs,
+    queue_manager,
+    queue_recovery,
+    read_media,
+    scripts,
+    update_menu,
+    workflow_importer,
+)
 from functools import partial
 from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
@@ -97,6 +107,12 @@ def setup():
 
     comfyui_menu.addCommand(
         "Scripts/Show Queue", queue_manager.show_queue, icon=icon_gray
+    )
+
+    comfyui_menu.addCommand(
+        "Scripts/Restore Queue Progress",
+        queue_recovery.restore_queue_progress,
+        icon=icon_gray,
     )
 
     comfyui_menu.addCommand("Scripts/Show Data", scripts.show_data, icon=icon_gray)

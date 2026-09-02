@@ -8,7 +8,7 @@ import nuke  # type: ignore
 
 from .connection import GET, POST, format_URLs, get_ip_from_url
 from .common import show_message, get_settings
-
+from ..nuke_util.nuke_util import get_project_name
 
 blocked_urls = []
 primary_url = None
@@ -188,6 +188,44 @@ def show_queue(nuke_message=True):
         nuke.message(queue)
 
     return queue
+
+
+def get_project_jobs():
+    project_name = get_project_name().replace(" ", "-")
+    settings = get_settings()
+    jobs = []
+
+    for url in format_URLs(settings["URL"]):
+        queue = GET("queue", {"URL": url}, warning=False)
+        if not queue:
+            continue
+
+        for status, key in (
+            ("running", "queue_running"),
+            ("pending", "queue_pending"),
+        ):
+            for item in queue.get(key, []):
+                if len(item) < 4 or not isinstance(item[3], dict):
+                    continue
+
+                extra_data = item[3]
+                client_id = extra_data.get("client_id", "")
+                client_parts = client_id.split(":")
+                if len(client_parts) < 2 or client_parts[1] != project_name:
+                    continue
+
+                jobs.append(
+                    {
+                        "url": url,
+                        "status": status,
+                        "prompt_id": item[1],
+                        "prompt": item[2],
+                        "extra_data": extra_data,
+                        "client_id": client_id,
+                    }
+                )
+
+    return jobs
 
 
 def find_prompt_id(queue_list, client_id):

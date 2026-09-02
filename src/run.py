@@ -258,16 +258,20 @@ def submit(run_node, success_callback=None, settings=None, last_error=None):
     user = os.path.basename(get_user_path())
     client_id = f"{user}:{get_project_name()}:{prompt_counter}".replace(" ", "-")
 
+    url = "{}/ws?clientId={}".format(settings["URL"].replace("http", "ws"), client_id)
+    execution_error = [""]
+    settings["pre_inference_time"] = time() - settings["pre_inference_time"]
+
+    recovery_data = {
+        "run_node": run_node.fullName(),
+        "settings": dict(settings),
+    }
     body = {
         "client_id": client_id,
         "number": resolve_queue_position(settings, user),
         "prompt": data,
-        "extra_data": {},
+        "extra_data": {"comfyui2nuke": recovery_data},
     }
-
-    url = "{}/ws?clientId={}".format(settings["URL"].replace("http", "ws"), client_id)
-    execution_error = [""]
-    settings["pre_inference_time"] = time() - settings["pre_inference_time"]
 
     set_task_progress(0, "Waiting in Queue ...")
 
