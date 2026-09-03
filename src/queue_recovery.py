@@ -1,18 +1,16 @@
 import copy
-import json
-import threading
 import traceback
 from time import time
 
 import nuke  # type: ignore
-import websocket
 
 from . import run
 from .cmd import get_run
-from .common import execute_in_main_thread, get_settings, show_message
-from .connection import GET, get_ip_from_url
+from .common import get_settings, show_message
+from .comfy_job import ComfyJob
+from .connection import get_ip_from_url
 from .nodes import get_input
-from .queue_manager import get_project_jobs, interrupt
+from .queue_manager import get_project_jobs
 from .read_media import create_read, resolve_filename
 
 active_recoveries = set()
@@ -57,31 +55,71 @@ def get_recovery_settings(job, run_node):
     return settings
 
 
-def finish_recovered_job(run_node, data, settings):
-    filename = resolve_filename(settings)
-    if not filename:
-        show_message(
-            "The recovered ComfyUI job finished, but its output was not found."
+class RecoveryJob(ComfyJob):
+    def __init__(self, job, run_node):
+        settings = get_recovery_settings(job, run_node)
+        super().__init__(
+            run_node,
+            settings,
+            run.update_node,
+            client_id=job["client_id"],
+            prompt_id=job["prompt_id"],
         )
-        return
+        self.job = job
+        self.data = job["prompt"]
+        self.recovery_key = (job["url"], job["prompt_id"])
 
-    try:
-        read = create_read(run_node, data, settings, filename)
-        if not read:
+    def format_connection_error(self, error):
+        return "Error restoring ComfyUI progress: {}".format(error)
+
+    def cleanup(self):
+        active_recoveries.discard(self.recovery_key)
+
+    def finish(self):
+        if self.execution_error:
+            show_message(self.execution_error)
+            return
+
+        filename = resolve_filename(self.settings)
+        if not filename:
             show_message(
-                "The recovered ComfyUI job finished, but no Read node was created."
+                "The recovered ComfyUI job finished, but its output was not found."
             )
             return
 
-        run.remove_all_error_style(run_node)
-        run.states[run_node.fullName()] = copy.deepcopy(data)
-        callback = run_node.parent().knob("inferenceEnd")
-        if callback:
-            callback.execute()
-    except Exception:
-        error = traceback.format_exc()
-        print(error)
-        show_message(error)
+        try:
+            read = create_read(
+                self.run_node,
+                self.data,
+                self.settings,
+                filename,
+            )
+            if not read:
+                show_message(
+                    "The recovered ComfyUI job finished, but no Read node was "
+                    "created."
+                )
+                return
+
+            run.remove_all_error_style(self.run_node)
+            run.states[self.run_node.fullName()] = copy.deepcopy(self.data)
+            callback = self.run_node.parent().knob("inferenceEnd")
+            if callback:
+                callback.execute()
+        except Exception:
+            error = traceback.format_exc()
+            print(error)
+            show_message(error)
+
+    def start(self):
+        active_recoveries.add(self.recovery_key)
+        message = "Restored {} job ({})".format(
+            self.job["status"],
+            get_ip_from_url(self.job["url"]),
+        )
+        self.set_progress(0, message, include_ip=False)
+        self.start_monitor()
+        return True
 
 
 def restore_job_progress(job, run_node):
@@ -89,128 +127,8 @@ def restore_job_progress(job, run_node):
     if recovery_key in active_recoveries:
         return False
 
-    active_recoveries.add(recovery_key)
-    settings = get_recovery_settings(job, run_node)
-    data = job["prompt"]
-    progress = [nuke.ProgressTask("Inferencing")]
-    progress[0].setProgress(0)
-    progress[0].setMessage(
-        "Restored {} job ({})".format(job["status"], get_ip_from_url(job["url"]))
-    )
-    finished = threading.Event()
-    cancelled = [False]
-    execution_error = [""]
-
-    def close_progress():
-        if progress:
-            del progress[0]
-
-    def on_message(ws, message):
-        try:
-            if len(message) > 1024 * 200:
-                return
-            message = json.loads(message)
-        except Exception:
-            return
-
-        message_data = message.get("data") or {}
-        prompt_id = message_data.get("prompt_id")
-        if prompt_id and prompt_id != job["prompt_id"]:
-            return
-
-        message_type = message.get("type")
-        if message_type == "execution_start":
-            settings["inference_time"] = time()
-        elif message_type == "executed":
-            node_name = message_data.get("node")
-            execute_in_main_thread(
-                run.update_node,
-                args=(node_name, message_data, run_node, settings),
-            )
-        elif message_type == "progress" and progress:
-            maximum = float(message_data.get("max") or 0.01)
-            value = int(message_data.get("value", 0) * 100 / maximum)
-            progress[0].setProgress(value)
-        elif message_type == "executing":
-            node_name = message_data.get("node")
-            if node_name and progress:
-                progress[0].setProgress(0)
-                progress[0].setMessage(node_name)
-            elif not node_name:
-                close_progress()
-                finished.set()
-        elif message_type == "execution_error":
-            execution_error[0] = message_data.get(
-                "exception_message", "ComfyUI execution failed."
-            )
-            close_progress()
-            finished.set()
-
-    def on_error(ws, error):
-        if "connected" in str(error):
-            return
-        execution_error[0] = "Error restoring ComfyUI progress: {}".format(error)
-        close_progress()
-        finished.set()
-
-    url = "{}/ws?clientId={}".format(job["url"].replace("http", "ws"), job["client_id"])
-    ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
-
-    def monitor_job():
-        check_count = 0
-        while not finished.wait(0.1):
-            if progress and progress[0].isCancelled():
-                confirm = nuke.executeInMainThreadWithResult(
-                    lambda: nuke.ask(
-                        "Are you sure? This will stop the ComfyUI inference"
-                    )
-                )
-                if confirm:
-                    cancelled[0] = True
-                    interrupt(settings, job["client_id"])
-                    close_progress()
-                    finished.set()
-                    break
-
-                if progress:
-                    progress[0] = nuke.ProgressTask("Inferencing")
-                    progress[0].setMessage("Restored ComfyUI job")
-
-            check_count += 1
-            if check_count < 10:
-                continue
-
-            check_count = 0
-            queue = GET("queue", settings, warning=False)
-            if queue is None:
-                continue
-
-            queued_ids = {
-                item[1]
-                for key in ("queue_running", "queue_pending")
-                for item in queue.get(key, [])
-            }
-            if job["prompt_id"] not in queued_ids:
-                close_progress()
-                finished.set()
-
-        ws.close()
-        active_recoveries.discard(recovery_key)
-
-        if cancelled[0]:
-            return
-        if execution_error[0]:
-            show_message(execution_error[0])
-            return
-
-        execute_in_main_thread(
-            finish_recovered_job,
-            args=(run_node, data, settings),
-        )
-
-    threading.Thread(target=ws.run_forever, daemon=True).start()
-    threading.Thread(target=monitor_job, daemon=True).start()
-    return True
+    recovery = RecoveryJob(job, run_node)
+    return recovery.start()
 
 
 def restore_queue_progress():
