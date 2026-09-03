@@ -190,9 +190,12 @@ def show_queue(nuke_message=True):
     return queue
 
 
-def get_project_jobs():
-    project_name = get_project_name().replace(" ", "-")
-    settings = get_settings()
+def get_project_jobs(project_name=None, settings=None):
+    if project_name is None:
+        project_name = get_project_name().replace(" ", "-")
+    if settings is None:
+        settings = get_settings()
+
     jobs = []
 
     for url in format_URLs(settings["URL"]):

@@ -7,7 +7,7 @@ import os
 import threading
 import nuke  # type: ignore
 from .src import (
-    cmd,
+    cmd as cmd_module,
     common,
     console,
     execute_runs,
@@ -21,9 +21,12 @@ from .src import (
 from functools import partial
 from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
+cmd = cmd_module
+
 
 def setup():
-    threading.Thread(target=common.init_scan_thread, daemon=True).start()
+    threading.Thread(target=common.init_startup_scan, daemon=True).start()
+    nuke.addOnScriptLoad(queue_recovery.start_queue_recovery)
 
     icon = "{}/icons/comfyui_icon.png".format(COMFYUI2NUKE)
     comfyui_menu = nuke.menu("Nodes").addMenu("ComfyUI", icon=icon)

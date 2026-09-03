@@ -1,13 +1,20 @@
+import threading
 from time import time
 
 import nuke  # type: ignore
 
 from .cmd import get_run
-from .common import get_settings, show_message
+from .common import (
+    execute_in_main_thread,
+    get_settings,
+    show_message,
+    wait_for_startup_scan,
+)
 from .comfy_job import ComfyJob
 from .connection import get_ip_from_url
 from .nodes import get_input
 from .queue_manager import get_project_jobs
+from ..nuke_util.nuke_util import get_project_name
 
 active_recoveries = set()
 
@@ -98,10 +105,43 @@ def restore_job_progress(job, run_node):
     return recovery.start()
 
 
+def start_queue_recovery():
+    project_name = get_project_name().replace(" ", "-")
+    settings = get_settings()
+    threading.Thread(
+        target=restore_queue_progress_after_startup_scan,
+        args=(project_name, settings),
+        daemon=True,
+        ).start()
+
+
+def restore_queue_progress_after_startup_scan(project_name, settings):
+    if not wait_for_startup_scan():
+        return
+
+    jobs = get_project_jobs(project_name, settings)
+    execute_in_main_thread(
+        restore_project_jobs_progress,
+        (jobs, project_name),
+    )
+
+
+def restore_project_jobs_progress(jobs, project_name):
+    current_project = get_project_name().replace(" ", "-")
+    if current_project != project_name:
+        return
+
+    restore_jobs_progress(jobs, False)
+
+
 def restore_queue_progress():
-    jobs = get_project_jobs()
+    restore_jobs_progress(get_project_jobs(), True)
+
+
+def restore_jobs_progress(jobs, show_empty_message):
     if not jobs:
-        show_message("No queued ComfyUI jobs match the current Nuke project.")
+        if show_empty_message:
+            show_message("No queued ComfyUI jobs match the current Nuke project.")
         return
 
     restored = 0

@@ -30,6 +30,8 @@ updated_inputs = False
 AUTOGROW_INPUT_COUNT = 3
 object_info = None
 scan_thread_state = threading.local()
+startup_scan_finished = threading.Event()
+startup_scan_succeeded = False
 gui_lock = threading.Lock()
 gui_disabled_requests = 0
 COMFYUI_LOAD_TIMEOUT = 120
@@ -55,6 +57,23 @@ def gui_available():
 
 def init_scan_thread(force_scan=False):
     scan_thread_state.gui = threading.current_thread().name == "MainThread"
+    return scan_comfyui(force_scan)
+
+
+def init_startup_scan():
+    global startup_scan_succeeded
+    try:
+        startup_scan_succeeded = init_scan_thread()
+    finally:
+        startup_scan_finished.set()
+
+
+def wait_for_startup_scan():
+    startup_scan_finished.wait()
+    return startup_scan_succeeded
+
+
+def scan_comfyui(force_scan):
     from .connection import GET
     from .queue_manager import resolve_submission_target
 
@@ -66,13 +85,13 @@ def init_scan_thread(force_scan=False):
     if not settings:
         object_info = None
         print("Could not load ComfyUI object_info.")
-        return
+        return False
 
     if not force_scan and os.path.exists(cache_path):
         try:
             object_info = jread(cache_path)
             print("ComfyUI loaded successfully.")
-            return
+            return True
         except (OSError, TypeError, json.JSONDecodeError):
             pass
 
@@ -86,6 +105,8 @@ def init_scan_thread(force_scan=False):
         print("ComfyUI loaded successfully.")
     else:
         print("Could not load ComfyUI object_info.")
+
+    return bool(object_info)
 
 
 def force_comfyui_scan():
