@@ -1,27 +1,33 @@
+import copy
 import json
+import sys
+import textwrap
 import threading
+import traceback
 from time import time
 
 import nuke  # type: ignore
 import websocket
 
-from .common import execute_in_main_thread
+from ..nuke_util.nuke_util import get_connected_nodes, set_tile_color
+from .common import execute_in_main_thread, show_message
 from .connection import GET, get_ip_from_url
 from .queue_manager import find_prompt_id, interrupt
+from .read_media import create_read, resolve_filename
 
 
 class ComfyJob:
+    states = {}
+
     def __init__(
         self,
         run_node,
         settings,
-        node_update,
         client_id="",
         prompt_id=None,
     ):
         self.run_node = run_node
         self.settings = settings
-        self.node_update = node_update
         self.client_id = client_id
         self.prompt_id = prompt_id
         self.data = None
@@ -36,6 +42,104 @@ class ComfyJob:
         self.websocket = None
         self.websocket_thread = None
         self.monitor_thread = None
+
+    @staticmethod
+    def error_node_style(node_name, enable, message="", run_node=None):
+        if run_node:
+            node = run_node.parent().node(node_name)
+        else:
+            node = nuke.toNode(node_name)
+
+        if not node:
+            return
+
+        if enable:
+            set_tile_color(node, [0, 1, 1])
+            message = " ".join(message.split()[:30])
+            formatted_message = "\n".join(textwrap.wrap(message, width=30))
+            node.knob("label").setValue("ERROR:\n" + formatted_message)
+        else:
+            node["tile_color"].setValue(0)
+            node.knob("label").setValue("")
+
+    @staticmethod
+    def remove_all_error_style(root_node):
+        for node in get_connected_nodes(root_node):
+            label_knob = node.knob("label")
+            if "ERROR" in label_knob.value():
+                ComfyJob.error_node_style(node.fullName(), False)
+
+    @staticmethod
+    def update_node(node_name, data, run_node, settings):
+        with run_node.parent():
+            if "ShowText" in node_name:
+                ComfyJob.show_text_update(node_name, data)
+            elif "PreviewImage" in node_name:
+                ComfyJob.preview_image_update(node_name, data, settings)
+            elif "PyScript" in node_name:
+                print(data["output"]["stdout"][0])
+
+    @staticmethod
+    def show_text_update(node_name, data):
+        output = data.get("output", {})
+        texts = output.get("text", [])
+        text = texts[0] if texts else ""
+        show_text_node = nuke.toNode(node_name)
+
+        if not show_text_node or not text:
+            return
+
+        text = text.replace("\n", "")
+        text = text.encode("utf-8") if sys.version_info[0] < 3 else text
+        formatted_text = "\n".join(textwrap.wrap(text, width=50))
+
+        text_knob = show_text_node.knob("text")
+        if text_knob:
+            text_knob.setValue(text)
+
+        output_text_node = nuke.toNode(node_name + "Output")
+        if not output_text_node:
+            return
+
+        label = "( [value {}.name] )\n{}\n\n".format(
+            node_name,
+            formatted_text,
+        )
+        output_text_node.knob("label").setValue(label)
+        xpos = show_text_node.xpos() - output_text_node.screenWidth() - 50
+        ypos = (
+            show_text_node.ypos()
+            - (output_text_node.screenHeight() / 2)
+            + (show_text_node.screenHeight() / 2)
+        )
+        output_text_node.setXYpos(xpos, ypos)
+
+    @staticmethod
+    def preview_image_update(node_name, data, settings):
+        output = data.get("output", {})
+        images = output.get("images", [])
+        if not images:
+            return
+
+        filename = images[0].get("filename")
+        if not filename:
+            return
+
+        preview_node = nuke.toNode(node_name)
+        if not preview_node:
+            return
+
+        preview_node.begin()
+        filename = "{}/temp/{}".format(settings["COMFYUI_DIR"], filename)
+        read = nuke.toNode("read")
+        if not read:
+            read = nuke.createNode("Read", inpanel=False)
+            read.setName("read")
+
+        read.knob("file").setValue(filename)
+        nuke.toNode("Output1").setInput(0, read)
+        preview_node.knob("postage_stamp").setValue(True)
+        preview_node.end()
 
     def set_progress(self, value, message="", include_ip=True):
         if not nuke.GUI:
@@ -121,7 +225,7 @@ class ComfyJob:
         elif message_type == "executed":
             node_name = message_data.get("node")
             execute_in_main_thread(
-                self.node_update,
+                self.update_node,
                 args=(node_name, message_data, self.run_node, self.settings),
             )
         elif message_type == "progress":
@@ -161,7 +265,19 @@ class ComfyJob:
         return "Error: {}".format(error)
 
     def report_error(self, message, message_data=None):
-        return None
+        if not message_data:
+            return
+
+        execution_message = message_data.get("exception_message") or message
+        execute_in_main_thread(
+            self.error_node_style,
+            args=(
+                message_data.get("node_id"),
+                True,
+                execution_message,
+                self.run_node,
+            ),
+        )
 
     def handle_cancellation(self):
         progress = self.progress
@@ -241,4 +357,52 @@ class ComfyJob:
         return None
 
     def finish(self):
-        raise NotImplementedError("ComfyJob subclasses must implement finish().")
+        error = self.execution_error
+        read = None
+
+        if not error:
+            try:
+                filename = resolve_filename(self.settings)
+                if not filename:
+                    error = "The ComfyUI job finished, but its output was not found."
+                else:
+                    read = create_read(
+                        self.run_node,
+                        self.data,
+                        self.settings,
+                        filename,
+                    )
+                    if not read:
+                        error = (
+                            "The ComfyUI job finished, but no Read node was " "created."
+                        )
+                    else:
+                        self.remove_all_error_style(self.run_node)
+                        node_name = self.run_node.fullName()
+                        self.states[node_name] = copy.deepcopy(self.data)
+            except Exception:
+                error = traceback.format_exc()
+                print(error)
+
+        if error:
+            self.finish_with_error(error)
+            return
+
+        try:
+            self.finish_succeeded(read)
+        except Exception:
+            error = traceback.format_exc()
+            print(error)
+            show_message(error)
+
+    def finish_with_error(self, error):
+        self.execution_error = error
+        self.finish_failed(error)
+
+    def finish_succeeded(self, read):
+        raise NotImplementedError(
+            "ComfyJob subclasses must implement finish_succeeded()."
+        )
+
+    def finish_failed(self, error):
+        show_message(error)

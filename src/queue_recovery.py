@@ -1,17 +1,13 @@
-import copy
-import traceback
 from time import time
 
 import nuke  # type: ignore
 
-from . import run
 from .cmd import get_run
 from .common import get_settings, show_message
 from .comfy_job import ComfyJob
 from .connection import get_ip_from_url
 from .nodes import get_input
 from .queue_manager import get_project_jobs
-from .read_media import create_read, resolve_filename
 
 active_recoveries = set()
 
@@ -61,7 +57,6 @@ class RecoveryJob(ComfyJob):
         super().__init__(
             run_node,
             settings,
-            run.update_node,
             client_id=job["client_id"],
             prompt_id=job["prompt_id"],
         )
@@ -75,41 +70,13 @@ class RecoveryJob(ComfyJob):
     def cleanup(self):
         active_recoveries.discard(self.recovery_key)
 
-    def finish(self):
-        if self.execution_error:
-            show_message(self.execution_error)
+    def finish_succeeded(self, read):
+        if not read:
             return
 
-        filename = resolve_filename(self.settings)
-        if not filename:
-            show_message(
-                "The recovered ComfyUI job finished, but its output was not found."
-            )
-            return
-
-        try:
-            read = create_read(
-                self.run_node,
-                self.data,
-                self.settings,
-                filename,
-            )
-            if not read:
-                show_message(
-                    "The recovered ComfyUI job finished, but no Read node was "
-                    "created."
-                )
-                return
-
-            run.remove_all_error_style(self.run_node)
-            run.states[self.run_node.fullName()] = copy.deepcopy(self.data)
-            callback = self.run_node.parent().knob("inferenceEnd")
-            if callback:
-                callback.execute()
-        except Exception:
-            error = traceback.format_exc()
-            print(error)
-            show_message(error)
+        callback = self.run_node.parent().knob("inferenceEnd")
+        if callback:
+            callback.execute()
 
     def start(self):
         active_recoveries.add(self.recovery_key)
