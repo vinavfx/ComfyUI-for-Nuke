@@ -7,6 +7,7 @@ import os
 import threading
 import nuke  # type: ignore
 from .src import (
+    cmd,
     common,
     console,
     execute_runs,
