@@ -91,28 +91,10 @@ class ComfyJob:
 
         text = text.replace("\n", "")
         text = text.encode("utf-8") if sys.version_info[0] < 3 else text
-        formatted_text = "\n".join(textwrap.wrap(text, width=50))
 
         text_knob = show_text_node.knob("text")
         if text_knob:
             text_knob.setValue(text)
-
-        output_text_node = nuke.toNode(node_name + "Output")
-        if not output_text_node:
-            return
-
-        label = "( [value {}.name] )\n{}\n\n".format(
-            node_name,
-            formatted_text,
-        )
-        output_text_node.knob("label").setValue(label)
-        xpos = show_text_node.xpos() - output_text_node.screenWidth() - 50
-        ypos = (
-            show_text_node.ypos()
-            - (output_text_node.screenHeight() / 2)
-            + (show_text_node.screenHeight() / 2)
-        )
-        output_text_node.setXYpos(xpos, ypos)
 
     @staticmethod
     def preview_image_update(node_name, data, settings):

@@ -376,11 +376,6 @@ def create_node(data, inpanel=True):
         n.knob("onCreate").setValue(
             'nuke.thisNode().knob("text").setFlag(nuke.READ_ONLY)'
         )
-        output_text_node = nuke.createNode("StickyNote", inpanel=False)
-        output_text_node.setName(display_name + "Output")
-        output_text_node.setXYpos(n.xpos() - 100, n.ypos())
-        output_text_node.knob("label").setText("[value {}.name]".format(n.name()))
-        n.setSelected(True)
 
     return n
 
