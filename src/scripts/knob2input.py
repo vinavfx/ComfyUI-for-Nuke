@@ -15,12 +15,16 @@ def get_swapped_knobs(node):
         return None, None
 
     swapped_knobs = {}
+    knobs_input_names = data.get("knobs_input_names", {})
 
     for nuke_knob_name in data.get("knobs_order", []):
-        if not nuke_knob_name in data.get("knobs_class", {}):
+        if nuke_knob_name not in data.get("knobs_class", {}):
             continue
 
-        knob_name = nuke_knob_name[:-1]
+        knob_name = knobs_input_names.get(
+            nuke_knob_name,
+            nuke_knob_name[:-1],
+        )
 
         if any(v.get("name") == knob_name for v in data["inputs"]):
             swapped_knob = True
@@ -59,9 +63,19 @@ def knob_to_input():
 
 
 def convert_knobs(node, data, swapped_knobs):
-    for knob_name, knob in swapped_knobs.items():
-        nuke_knob_name = knob_name + "_"
+    knobs_input_names = data.get("knobs_input_names", {})
 
+    for knob_name, knob in swapped_knobs.items():
+        nuke_knob_name = next(
+            (
+                name
+                for name, input_name in knobs_input_names.items()
+                if input_name == knob_name
+            ),
+            knob_name + "_",
+        )
+
+        hidden_knob_name = nuke_knob_name[:-1] + "_hide"
         knob_data = {"opt": False, "outputs": [knob["class"]], "name": knob_name}
 
         exists_konb = any(i.get("name") == knob_name for i in data["inputs"])
@@ -69,11 +83,11 @@ def convert_knobs(node, data, swapped_knobs):
         if knob["swapped_knob"]:
             if not exists_konb:
                 data["inputs"].append(knob_data)
-                _knob = node.knob(nuke_knob_name)
-                if _knob is None:
+                nuke_knob = node.knob(nuke_knob_name)
+                if nuke_knob is None:
                     continue
-                _knob.setName(knob_name + "_hide")
-                _knob.setVisible(False)
+                nuke_knob.setName(hidden_knob_name)
+                nuke_knob.setVisible(False)
                 node.begin()
                 input_node = nuke.createNode("Input", inpanel=False)
                 input_node.setSelected(False)
@@ -86,11 +100,11 @@ def convert_knobs(node, data, swapped_knobs):
             node.end()
             data["inputs"] = [i for i in data["inputs"] if i.get("name") != knob_name]
 
-            _knob = node.knob(knob_name + "_hide")
-            if _knob is None:
+            nuke_knob = node.knob(hidden_knob_name)
+            if nuke_knob is None:
                 continue
-            _knob.setName(nuke_knob_name)
-            _knob.setVisible(True)
+            nuke_knob.setName(nuke_knob_name)
+            nuke_knob.setVisible(True)
             node.knob("label").setValue("")
 
     save_node_data(node, data)

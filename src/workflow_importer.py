@@ -104,7 +104,7 @@ def import_workflow():
 
         pos = attrs["pos"]
 
-        if type(pos) == list:
+        if isinstance(pos, list):
             xpos, ypos = attrs["pos"]
         else:
             xpos = attrs["pos"]["0"]
@@ -146,6 +146,7 @@ def import_workflow():
                     return node
 
     for node, attrs, knobs_to_inputs_names in created_nodes.values():
+        node_data = {}
 
         if attrs["type"] in ("Reroute", "easy setNode"):
             knobs_order = []
@@ -164,9 +165,15 @@ def import_workflow():
             knobs_order = node_data["knobs_order"]
 
         widgets_values = attrs.get("widgets_values")
+        widgets_values_named = attrs.get("widgets_values_named")
+        knobs_input_names = node_data.get("knobs_input_names", {})
         values = []
 
-        if type(widgets_values) == list:
+        if isinstance(widgets_values_named, dict) and widgets_values_named:
+            for knob_name in knobs_order:
+                input_name = knobs_input_names.get(knob_name, knob_name[:-1])
+                values.append(widgets_values_named.get(input_name))
+        elif isinstance(widgets_values, list):
             for value in widgets_values:
                 if value in ["fixed", "increment", "decrement", "randomize"]:
                     if any("seed" in s for s in knobs_order):
@@ -176,14 +183,12 @@ def import_workflow():
                         continue
                 values.append(value)
         else:
-            for key in knobs_order:
-                values.append(widgets_values[key[:-1]])
-
-        if not len(values) == len(knobs_order):
-            values = [v for v in values if v is not None]
+            for knob_name in knobs_order:
+                input_name = knobs_input_names.get(knob_name, knob_name[:-1])
+                values.append(widgets_values[input_name])
 
         for i, value in enumerate(values):
-            if i >= len(knobs_order):
+            if i >= len(knobs_order) or value is None:
                 continue
 
             value = convert_to_utf8(value)
@@ -191,7 +196,7 @@ def import_workflow():
             if not knob:
                 continue
 
-            if type(value) == int:
+            if type(value) is int:
                 value = value if value < 1e9 else 1e9
                 knob.setValue(int(value))
             else:

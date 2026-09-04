@@ -413,6 +413,7 @@ def extract_node_data(node):
         return {}
 
     inputs = {}
+    knobs_input_names = data.get("knobs_input_names", {})
 
     for knob in node.knobs().values():
         if not knob.name()[-1:] == "_":
@@ -439,7 +440,7 @@ def extract_node_data(node):
         if type(value) is float or type(value) is int:
             value = int(value) if int(value) == value else value
 
-        name = knob.name()[:-1]
+        name = knobs_input_names.get(knob.name(), knob.name()[:-1])
         inputs[name] = value
 
     for i in range(node.maxInputs()):

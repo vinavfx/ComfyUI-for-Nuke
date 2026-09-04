@@ -55,6 +55,53 @@ def get_autogrow_inputs(key, input_class, info, is_optional):
     return inputs
 
 
+def get_dynamic_combo_inputs(key, info, is_optional, display_name=None):
+    options = info.get("options", [])
+    option_names = [option["key"] for option in options]
+    combo_info = dict(info)
+    combo_info["options"] = option_names
+
+    if "default" not in combo_info and option_names:
+        combo_info["default"] = option_names[0]
+
+    inputs = [
+        [
+            key,
+            ["COMBO", combo_info],
+            is_optional,
+            display_name or key,
+        ]
+    ]
+    added_keys = set()
+
+    for option in options:
+        option_inputs = option.get("inputs", {})
+        for group in ("required", "optional"):
+            for nested_key, input_value in option_inputs.get(group, {}).items():
+                full_key = "{}.{}".format(key, nested_key)
+                if full_key in added_keys:
+                    continue
+
+                added_keys.add(full_key)
+                nested_class = input_value[0]
+                nested_info = input_value[1] if len(input_value) == 2 else {}
+                nested_optional = group == "optional"
+
+                if nested_class == "COMFY_DYNAMICCOMBO_V3":
+                    inputs.extend(
+                        get_dynamic_combo_inputs(
+                            full_key,
+                            nested_info,
+                            nested_optional,
+                            nested_key,
+                        )
+                    )
+                else:
+                    inputs.append([full_key, input_value, nested_optional, nested_key])
+
+    return inputs
+
+
 def get_nodes():
     if not comfyui_nodes:
         update()
@@ -130,6 +177,9 @@ def create_node(data, inpanel=True):
 
     knobs_order = []
     knobs_class = {}
+    knobs_input_names = {}
+    has_dynamic_combo = False
+    ordered_inputs = []
 
     for key in required_order + optional_order:
         input_value = required.get(key, [])
@@ -138,6 +188,16 @@ def create_node(data, inpanel=True):
         if is_optional:
             input_value = optional.get(key)
 
+        input_class = input_value[0]
+        info = input_value[1] if len(input_value) == 2 else {}
+
+        if input_class == "COMFY_DYNAMICCOMBO_V3":
+            has_dynamic_combo = True
+            ordered_inputs.extend(get_dynamic_combo_inputs(key, info, is_optional))
+        else:
+            ordered_inputs.append([key, input_value, is_optional, key])
+
+    for key, input_value, is_optional, display_name in ordered_inputs:
         input_class = input_value[0]
         info = input_value[1] if len(input_value) == 2 else {}
 
@@ -151,14 +211,14 @@ def create_node(data, inpanel=True):
         force_input = info.get("forceInput", False)
         default_value = info.get("default", 0)
 
-        knob_name = key + "_"
+        knob_name = normalize_nodename(key.replace(".", "__")) + "_"
 
         if force_input:
             inputs.extend(get_autogrow_inputs(key, input_class, info, is_optional))
             continue
 
         elif input_class == "INT":
-            knob = nuke.Int_Knob(knob_name, key)
+            knob = nuke.Int_Knob(knob_name, display_name)
             default_value = default_value if default_value < 1e9 else 1e9
             knob.setValue(int(default_value))
 
@@ -166,26 +226,26 @@ def create_node(data, inpanel=True):
             min_value = info.get("min", 0)
             max_value = info.get("max", 1)
 
-            knob = nuke.Double_Knob(knob_name, key)
+            knob = nuke.Double_Knob(knob_name, display_name)
             knob.setRange(min_value, max_value)
             knob.setValue(default_value)
 
         elif input_class == "STRING" and key in ["filepath", "file", "directory"]:
-            knob = nuke.File_Knob(knob_name, key)
+            knob = nuke.File_Knob(knob_name, display_name)
 
         elif input_class == "STRING":
             multiline = info.get("multiline", False)
 
             if multiline:
-                knob = nuke.Multiline_Eval_String_Knob(knob_name, key)
+                knob = nuke.Multiline_Eval_String_Knob(knob_name, display_name)
             else:
-                knob = nuke.String_Knob(knob_name, key)
+                knob = nuke.String_Knob(knob_name, display_name)
 
             default_string = info.get("default", "")
             knob.setText(str(default_string))
 
         elif input_class in ["BOOLEAN", [True, False], [[True, False]]]:
-            knob = nuke.Boolean_Knob(knob_name, key)
+            knob = nuke.Boolean_Knob(knob_name, display_name)
             knob.setFlag(nuke.STARTLINE)
             knob.setValue(default_value)
 
@@ -195,7 +255,11 @@ def create_node(data, inpanel=True):
             else:
                 options = input_class
 
-            knob = nuke.Enumeration_Knob(knob_name, key, [str(i) for i in options])
+            knob = nuke.Enumeration_Knob(
+                knob_name,
+                display_name,
+                [str(i) for i in options],
+            )
 
             default_item = str(info.get("default", None))
 
@@ -208,6 +272,9 @@ def create_node(data, inpanel=True):
 
         n.addKnob(knob)
         knobs_order.append(knob.name())
+
+        if knob.name() != key + "_":
+            knobs_input_names[knob.name()] = key
 
         if input_class in ["INT", "STRING", "BOOLEAN", "FLOAT"]:
             knobs_class[knob.name()] = str(input_class).lower()
@@ -262,21 +329,36 @@ def create_node(data, inpanel=True):
         else:
             outputs.append(output.lower())
 
-    data_knob.setValue(
-        jsondumps(
-            {
-                "knobs_order": knobs_order,
-                "knobs_class": knobs_class,
-                "class_type": data["name"],
-                "output_name": data.get("output_name", False),
-                "output_node": data.get("output_node", False),
-                "inputs": node_inputs,
-                "outputs": outputs,
-            }
-        )
-    )
+    node_data = {
+        "knobs_order": knobs_order,
+        "knobs_class": knobs_class,
+        "class_type": data["name"],
+        "output_name": data.get("output_name", False),
+        "output_node": data.get("output_node", False),
+        "inputs": node_inputs,
+        "outputs": outputs,
+    }
+
+    if knobs_input_names:
+        node_data["knobs_input_names"] = knobs_input_names
+
+    data_knob.setValue(jsondumps(node_data))
 
     n.addKnob(data_knob)
+
+    if has_dynamic_combo:
+        knob_changed = (
+            "node = nuke.thisNode()\n"
+            "knob = nuke.thisKnob()\n"
+            "data = comfyui.src.nodes.get_node_data(node)\n"
+            "names = data.get('knobs_input_names', {})\n"
+            "input_name = names.get(knob.name(), knob.name()[:-1])\n"
+            "for name, child_name in names.items():\n"
+            "    child_knob = node.knob(name)\n"
+            "    if child_knob and child_name.startswith(input_name + '.'):\n"
+            "        child_knob.setEnabled(knob.value() != 'off')"
+        )
+        n.knob("knobChanged").setValue(knob_changed)
 
     if n.knob("User"):
         n.knob("User").setName("Controls")
