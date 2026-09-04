@@ -89,9 +89,6 @@ class ComfyJob:
         if not show_text_node or not text:
             return
 
-        text = text.replace("\n", "")
-        text = text.encode("utf-8") if sys.version_info[0] < 3 else text
-
         text_knob = show_text_node.knob("text")
         if text_knob:
             text_knob.setValue(text)
