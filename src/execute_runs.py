@@ -9,11 +9,16 @@ import json
 from ..nuke_util.nuke_util import selected_node
 from .run import submit
 from .cmd import get_run, inference_end, inference_start
-from .common import get_settings, override_settings, wait_for_comfyui
+from .common import get_settings, override_settings, wait_for_comfyui, init_scan_thread
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
 from .connection import format_URLs, get_ip_from_url
 from ..settings import ALLOW_ALL_IPS_SUBMIT
+
+
+def cli_submit(gizmos, callback=None):
+    init_scan_thread()
+    sequential_execution(gizmos, None, callback)
 
 
 def sequential_execution(gizmos=None, error=None, callback=None, index=0):
