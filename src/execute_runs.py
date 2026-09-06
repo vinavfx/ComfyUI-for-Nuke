@@ -18,18 +18,38 @@ from ..settings import ALLOW_ALL_IPS_SUBMIT
 
 def cli_submit(gizmos, callback=None, validate_prompt=False):
     init_scan_thread()
-    if not validate_prompt:
-        sequential_execution(gizmos, None, callback)
-        return
+    sequential_execution(gizmos, callback=callback, validate_prompt=validate_prompt)
 
-    for gizmo in gizmos:
+
+def sequential_execution(
+    gizmos=None, error=None, callback=None, index=0, validate_prompt=False
+):
+    if gizmos is None:
+        gizmos = []
+
+    while not error and index < len(gizmos):
+        gizmo = gizmos[index]
+        run = get_run(gizmo)
+        ret, halt = inference_start(run, index, gizmos[:index].count(gizmo))
+        if halt or not ret:
+            error = "Inference start halted or rejected execution."
+            break
+
+        if not validate_prompt:
+
+            def execution_finished(read, run_node, execution_error):
+                del read, run_node
+                sequential_execution(gizmos, execution_error, callback, index + 1)
+
+            submit(run, success_callback=execution_finished)
+            return
+
         validation_errors = []
 
         def validation_finished(read, run_node, validation_error):
             del read, run_node
             validation_errors.append(validation_error)
 
-        run = get_run(gizmo)
         with run:
             submit(
                 run,
@@ -37,41 +57,11 @@ def cli_submit(gizmos, callback=None, validate_prompt=False):
                 validate_prompt=True,
             )
         run.end()
-
         error = validation_errors[0] if validation_errors else None
-        if error:
-            if callback:
-                callback(error)
-            return
+        index += 1
 
     if callback:
-        callback(None)
-
-
-def sequential_execution(gizmos=None, error=None, callback=None, index=0):
-    if gizmos is None:
-        gizmos = []
-
-    if error:
-        if callback:
-            callback(error)
-        return
-
-    if index >= len(gizmos):
-        if callback:
-            callback(None)
-        return
-
-    run = get_run(gizmos[index])
-    submit(
-        run,
-        success_callback=lambda _, __, e: sequential_execution(
-            gizmos,
-            e,
-            callback,
-            index + 1,
-        ),
-    )
+        callback(error or None)
 
 
 def multi_runs(runs, success_callback=None, settings=None, distribute_load=False):
