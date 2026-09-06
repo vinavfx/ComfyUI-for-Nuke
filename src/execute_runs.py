@@ -30,9 +30,17 @@ def sequential_execution(
     while not error and index < len(gizmos):
         gizmo = gizmos[index]
         run = get_run(gizmo)
-        ret, halt = inference_start(run, index, gizmos[:index].count(gizmo))
+        ret, halt, start_error = inference_start(
+            run, index, gizmos[:index].count(gizmo)
+        )
         if halt or not ret:
-            error = "Inference start halted or rejected execution."
+            if start_error:
+                error = start_error
+            else:
+                status = "halted" if halt else "rejected"
+                error = "Inference start {} execution for node '{}'.".format(
+                    status, run.parent().fullName()
+                )
             break
 
         if not validate_prompt:
@@ -86,7 +94,7 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
         iterations[node_name] = iteration + 1
         run = get_run(run)
 
-        ret, halt = inference_start(run, i, iteration)
+        ret, halt, _ = inference_start(run, i, iteration)
         if halt:
             break
         if not ret:

@@ -34,17 +34,37 @@ def inference_start(run_node, iteration=0, node_iteration=0):
     callback = gizmo.knob("inferenceStart")
 
     if not callback:
-        return True, False
+        return True, False, None
+
+    messages = []
+    original_message = nuke.message
+
+    def capture_message(message):
+        messages.append(str(message))
 
     with gizmo:
         code = callback.value()
         context = __main__.__dict__.copy()
         context["ret"] = True
         context["halt"] = False
+        context["error"] = None
         context["iter"] = iteration
         context["node_iter"] = node_iteration
-        exec(code, context)
-        return context.get("ret"), context.get("halt")
+        nuke.message = capture_message
+        try:
+            exec(code, context)
+        except Exception:
+            for message in messages:
+                original_message(message)
+            raise
+        finally:
+            nuke.message = original_message
+
+    error = context.get("error")
+    if not error and messages:
+        error = "\n".join(messages)
+
+    return context.get("ret"), context.get("halt"), error
 
 
 def inference_end(_, run_node):
@@ -63,7 +83,7 @@ def submit_run(run_node):
 
 def run():
     run_node = get_run(nuke.thisNode())
-    ret, _ = inference_start(run_node)
+    ret, _, _ = inference_start(run_node)
     if not ret:
         return
 
