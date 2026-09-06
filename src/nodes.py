@@ -137,7 +137,11 @@ def state_node(node):
     )
     ct["ROI"].setValue([0, 0, node.width(), node.height()])
     nuke.execute(ct, node.firstFrame(), node.firstFrame())
-    rgba = [round(v, 5) for v in ct["intensitydata"].value()]
+    intensity_data = ct["intensitydata"]
+    rgba = [
+        round(intensity_data.value(index), 5)
+        for index in range(intensity_data.arraySize())
+    ]
     nuke.delete(ct)
 
     attrs = [
