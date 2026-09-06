@@ -1,6 +1,5 @@
 import copy
 import json
-import sys
 import textwrap
 import threading
 import traceback
@@ -141,8 +140,9 @@ class ComfyJob:
             )
 
         ip = ""
-        if include_ip and "127" not in self.settings["URL"]:
-            ip = get_ip_from_url(self.settings["URL"])
+        url = self.settings["URL"][0]
+        if include_ip and "127" not in url:
+            ip = get_ip_from_url(url)
 
         message = "{} ({}) ".format(message, ip) if ip else message
         progress.setMessage(message)
@@ -158,7 +158,7 @@ class ComfyJob:
 
     def start_monitor(self):
         url = "{}/ws?clientId={}".format(
-            self.settings["URL"].replace("http", "ws"),
+            self.settings["URL"][0].replace("http", "ws"),
             self.client_id,
         )
         self.websocket = websocket.WebSocketApp(

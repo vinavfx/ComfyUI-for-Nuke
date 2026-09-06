@@ -6,7 +6,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import nuke  # type: ignore
 
-from .connection import GET, POST, format_URLs, get_ip_from_url
+from .connection import GET, POST, get_ip_from_url
 from .common import show_message, get_settings
 from ..nuke_util.nuke_util import get_project_name
 
@@ -17,7 +17,7 @@ default_timeout = 15
 
 def scan_urls(settings, timeout=None):
     timeout = default_timeout if timeout is None else timeout
-    urls = format_URLs(settings["URL"])
+    urls = settings["URL"]
 
     if not urls:
         show_message(
@@ -39,7 +39,7 @@ def scan_urls(settings, timeout=None):
     with ThreadPoolExecutor(max_workers=min(30, len(active_urls) or 1)) as executor:
         futures = {
             executor.submit(
-                GET, "queue", {"URL": url}, warning=False, timeout=timeout
+                GET, "queue", {"URL": [url]}, warning=False, timeout=timeout
             ): (i, url)
             for i, url in enumerate(active_urls)
         }
@@ -135,10 +135,10 @@ def resolve_submission_target(settings, timeout=None):
         return
 
     elif available_url:
-        settings["URL"] = available_url
+        settings["URL"] = [available_url]
 
     else:
-        settings["URL"] = lowest_load_url
+        settings["URL"] = [lowest_load_url]
 
     if not GET("system_stats", settings, timeout=timeout):
         return
@@ -198,8 +198,8 @@ def get_project_jobs(project_name=None, settings=None):
 
     jobs = []
 
-    for url in format_URLs(settings["URL"]):
-        queue = GET("queue", {"URL": url}, warning=False)
+    for url in settings["URL"]:
+        queue = GET("queue", {"URL": [url]}, warning=False)
         if not queue:
             continue
 

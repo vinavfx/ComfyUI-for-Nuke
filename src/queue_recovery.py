@@ -40,7 +40,7 @@ def get_recovery_settings(job, run_node):
     recovery_data = job["extra_data"].get("comfyui2nuke", {})
     settings = get_settings(run_node)
     settings.update(recovery_data.get("settings", {}))
-    settings["URL"] = job["url"]
+    settings["URL"] = [job["url"]]
     settings["project_name"] = nuke.root().name()
     settings["pre_inference_time"] = settings.get("pre_inference_time", 0)
     settings["inference_time"] = time()
@@ -112,7 +112,7 @@ def start_queue_recovery():
         target=restore_queue_progress_after_startup_scan,
         args=(project_name, settings),
         daemon=True,
-        ).start()
+    ).start()
 
 
 def restore_queue_progress_after_startup_scan(project_name, settings):

@@ -93,10 +93,10 @@ def copy_workflow():
         "echo '{}' | {} -selection clipboard".format(api_to_workflow(workflow), xclip)
     )
 
-    url = json.loads(settings["URL"])[0]
+    url = settings["URL"][0]
 
     if nuke.ask("Workflow copied to clipboard\nOpen ComfyUI and paste ?"):
-        os.system("xdg-open http://" + url)
+        os.system("xdg-open " + url)
 
 
 def get_workflow():

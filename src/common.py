@@ -294,6 +294,46 @@ def override_settings(run_node, settings):
         override("use_exr_to_load_images")
         override("display_meta_in_read_node")
 
+    settings["URL"] = normalize_urls(settings["URL"])
+
+
+def normalize_urls(url, protocol=True):
+    if isinstance(url, list):
+        urls = url
+    elif not isinstance(url, str):
+        urls = []
+    else:
+        try:
+            parsed_urls = json.loads(url)
+        except (TypeError, ValueError):
+            urls = url.split(",")
+        else:
+            urls = parsed_urls if isinstance(parsed_urls, list) else [parsed_urls]
+
+    result = []
+    for value in urls:
+        if not isinstance(value, str):
+            continue
+
+        value = value.strip().strip("\"'")
+        if not value:
+            continue
+
+        if "://" not in value:
+            value = "http://{}".format(value)
+
+        protocol_name, address = value.split("://", 1)
+        host, separator, path = address.partition("/")
+        if host.count(":") > 1 and not host.startswith("["):
+            host = "[{}]".format(host)
+        if not host.rsplit(":", 1)[-1].isdigit():
+            host += ":8188"
+
+        value = "{}://{}{}{}".format(protocol_name, host, separator, path)
+        result.append(value if protocol else value.split("://", 1)[1])
+
+    return result
+
 
 def get_settings(run_node=None):
     settings = {

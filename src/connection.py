@@ -7,7 +7,6 @@ import sys
 import json
 import traceback
 from collections import OrderedDict
-import re
 
 if sys.version_info.major == 2:
     import urllib2 as urllib2  # type: ignore
@@ -27,33 +26,8 @@ def get_ip_from_url(url):
     return rest.split(":")[0].split("/")[0]
 
 
-def format_URLs(url, protocol=True):
-    urls = []
-    pattern = r"^(https?://)?([a-zA-Z0-9.-]+|\d{1,3}(\.\d{1,3}){3})(:\d{1,5})?$"
-
-    if re.match(pattern, url):
-        urls = [url]
-    else:
-        try:
-            urls = json.loads(url)
-        except (TypeError, ValueError):
-            pass
-
-    result = []
-    for u in urls:
-        if "://" not in u:
-            u = "http://{}".format(u)
-        if re.search(r":\d+$", u) is None:
-            u += ":8188"
-        if not protocol:
-            u = u.split("://")[1]
-        result.append(u)
-
-    return result
-
-
 def GET(endpoint, settings, warning=True, timeout=30):
-    url = format_URLs(settings["URL"])[0]
+    url = settings["URL"][0]
 
     url = "{}/{}".format(url, endpoint)
     request = urllib2.Request(url)
@@ -75,7 +49,7 @@ def check_connection():
 
 
 def POST(endpoint, data, settings):
-    url = "{}/{}".format(settings["URL"], endpoint)
+    url = "{}/{}".format(settings["URL"][0], endpoint)
 
     bytes_data = json.dumps(data).encode("utf-8")
     request = urllib2.Request(url, bytes_data)

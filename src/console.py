@@ -10,7 +10,6 @@ import queue
 import threading
 import urllib.request as urllib_request
 
-import nuke  # type: ignore
 from ..nuke_util.panels import panel_widget
 from ..nuke_util import panels
 from ..nuke_util.pyside import (
@@ -30,7 +29,6 @@ from ..nuke_util.pyside import (
     QSize,  # type: ignore
 )
 from .. import settings
-from .connection import format_URLs
 from .common import get_settings
 from .queue_manager import scan_urls, job_running_message
 
@@ -46,9 +44,7 @@ TIMEOUT_THRESHOLD = 5
 
 
 def show_console():
-    console = panels.show_panel(
-        "comfyui_console", console_panel_instance, (1000, 700)
-    )
+    console = panels.show_panel("comfyui_console", console_panel_instance, (1000, 700))
     if console is None:
         return
 
@@ -140,8 +136,8 @@ def format_json_ansi(data, indent=0):
 class Poller:
     POLL_INTERVAL = 1
 
-    def __init__(self, url="127.0.0.1:8188", maxsize=1):
-        self.url = format_URLs(url)[0]
+    def __init__(self, url="http://127.0.0.1:8188", maxsize=1):
+        self.url = url
         self.queue = queue.Queue(maxsize=maxsize)
         self.stop_event = threading.Event()
         self.thread = None
@@ -282,7 +278,7 @@ class StatsPoller(Poller):
 class QueuePoller(Poller):
     def fetch(self):
         settings = get_settings()
-        settings["URL"] = self.url
+        settings["URL"] = [self.url]
         _, _, _, running_client, pending_client = scan_urls(settings)
         text = job_running_message(running_client, pending_client)
         if text != self.last_text:
@@ -316,9 +312,7 @@ class toolbar_widget(QWidget):
         self.setLayout(layout)
 
         self.urls_box = QComboBox()
-        self.urls_box.addItems(
-            ["-"] + format_URLs(get_settings()["URL"], protocol=False)
-        )
+        self.urls_box.addItems(["-"] + get_settings()["URL"])
         self.urls_box.currentIndexChanged.connect(self.on_url_changed)
 
         self.endpoint_box = QComboBox()

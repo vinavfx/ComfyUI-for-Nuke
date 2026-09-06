@@ -5,14 +5,13 @@
 # -----------------------------------------------------------
 import copy
 import nuke  # type: ignore
-import json
 from ..nuke_util.nuke_util import selected_node
 from .run import submit
 from .cmd import get_run, inference_end, inference_start
 from .common import get_settings, override_settings, wait_for_comfyui, init_scan_thread
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
-from .connection import format_URLs, get_ip_from_url
+from .connection import get_ip_from_url
 from ..settings import ALLOW_ALL_IPS_SUBMIT
 
 
@@ -173,7 +172,7 @@ def execute_runs_plus():
     all_urls = settings["URL"]
 
     urls = ["-", "{%s}" % "Distribute on all IPs"]
-    urls.extend(json.loads(settings["URL"]))
+    urls.extend(settings["URL"])
 
     _, _, _, running_client, pending_client = scan_urls(settings)
     queue = job_running_message(running_client, pending_client)
@@ -212,9 +211,9 @@ def execute_runs_plus():
     elif distribute_load:
         settings["URL"] = all_urls
     else:
-        settings["URL"] = url
+        settings["URL"] = [url]
         if p.value(keys[1]):
-            queue_manager.primary_url = format_URLs(url)[0]
+            queue_manager.primary_url = url
 
     settings["USE_EXR_TO_LOAD_IMAGES"] = p.value(keys[2])
     settings["DISPLAY_META_IN_READ_NODE"] = p.value(keys[3])
@@ -225,7 +224,7 @@ def execute_runs_plus():
 
     current_ips = {
         get_ip_from_url(u)
-        for u in format_URLs(settings["URL"])
+        for u in settings["URL"]
         if not get_ip_from_url(u).startswith("127")
     }
 
@@ -233,7 +232,7 @@ def execute_runs_plus():
     for node in nodes:
         node_settings = copy.deepcopy(settings)
         override_settings(get_run(node), node_settings)
-        allowed = {get_ip_from_url(u) for u in format_URLs(node_settings["URL"])}
+        allowed = {get_ip_from_url(u) for u in node_settings["URL"]}
         non_permitted |= current_ips - allowed
 
     if non_permitted and not ALLOW_ALL_IPS_SUBMIT:
