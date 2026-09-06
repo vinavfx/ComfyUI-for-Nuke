@@ -311,6 +311,7 @@ def normalize_urls(url, protocol=True):
             urls = parsed_urls if isinstance(parsed_urls, list) else [parsed_urls]
 
     result = []
+    seen_urls = set()
     for value in urls:
         if not isinstance(value, str):
             continue
@@ -330,6 +331,10 @@ def normalize_urls(url, protocol=True):
             host += ":8188"
 
         value = "{}://{}{}{}".format(protocol_name, host, separator, path)
+        if value in seen_urls:
+            continue
+
+        seen_urls.add(value)
         result.append(value if protocol else value.split("://", 1)[1])
 
     return result
