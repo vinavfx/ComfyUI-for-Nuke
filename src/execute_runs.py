@@ -16,9 +16,36 @@ from .connection import format_URLs, get_ip_from_url
 from ..settings import ALLOW_ALL_IPS_SUBMIT
 
 
-def cli_submit(gizmos, callback=None):
+def cli_submit(gizmos, callback=None, validate_prompt=False):
     init_scan_thread()
-    sequential_execution(gizmos, None, callback)
+    if not validate_prompt:
+        sequential_execution(gizmos, None, callback)
+        return
+
+    for gizmo in gizmos:
+        validation_errors = []
+
+        def validation_finished(read, run_node, validation_error):
+            del read, run_node
+            validation_errors.append(validation_error)
+
+        run = get_run(gizmo)
+        with run:
+            submit(
+                run,
+                success_callback=validation_finished,
+                validate_prompt=True,
+            )
+        run.end()
+
+        error = validation_errors[0] if validation_errors else None
+        if error:
+            if callback:
+                callback(error)
+            return
+
+    if callback:
+        callback(None)
 
 
 def sequential_execution(gizmos=None, error=None, callback=None, index=0):
@@ -39,7 +66,10 @@ def sequential_execution(gizmos=None, error=None, callback=None, index=0):
     submit(
         run,
         success_callback=lambda _, __, e: sequential_execution(
-            gizmos, e, callback, index + 1
+            gizmos,
+            e,
+            callback,
+            index + 1,
         ),
     )
 

@@ -42,11 +42,13 @@ class SubmissionJob(ComfyJob):
         success_callback=None,
         settings=None,
         last_error=None,
+        validate_prompt=False,
     ):
         settings = settings or get_settings(run_node)
         super().__init__(run_node, settings)
         self.success_callback = success_callback
         self.last_error = last_error
+        self.validate_prompt = validate_prompt
 
     def run_success_callback(self, read=None, run_node=None, error=None):
         if not self.success_callback:
@@ -155,7 +157,11 @@ class SubmissionJob(ComfyJob):
             return
 
         node_name = self.run_node.fullName()
-        if data == states.get(node_name, {}) and not input_node_changed:
+        if (
+            not self.validate_prompt
+            and data == states.get(node_name, {})
+            and not input_node_changed
+        ):
             settings["filename_prefix"] = update_filename_prefix(
                 self.run_node,
                 False,
@@ -179,6 +185,20 @@ class SubmissionJob(ComfyJob):
         self.data = data
         settings["pre_inference_time"] = time() - settings["pre_inference_time"]
         body = self.create_request_body()
+
+        if self.validate_prompt:
+            self.set_progress(0, "Validating workflow...")
+            error = POST(
+                "comfyui_nuke/validate_prompt",
+                body,
+                settings,
+            )
+            self.close_progress()
+            if error:
+                self.finish_with_error(error)
+            else:
+                self.run_success_callback(run_node=self.run_node)
+            return settings
 
         self.set_progress(0, "Waiting in Queue ...")
         if not settings["BACKGROUND_SUBMIT"]:
@@ -215,11 +235,18 @@ class SubmissionJob(ComfyJob):
         return settings
 
 
-def submit(run_node, success_callback=None, settings=None, last_error=None):
+def submit(
+    run_node,
+    success_callback=None,
+    settings=None,
+    last_error=None,
+    validate_prompt=False,
+):
     job = SubmissionJob(
         run_node,
         success_callback,
         settings,
         last_error,
+        validate_prompt,
     )
     return job.start()

@@ -36,7 +36,7 @@ def format_URLs(url, protocol=True):
     else:
         try:
             urls = json.loads(url)
-        except:
+        except (TypeError, ValueError):
             pass
 
     result = []
@@ -62,7 +62,7 @@ def GET(endpoint, settings, warning=True, timeout=30):
         response = urllib2.urlopen(request, timeout=timeout)
         data = response.read().decode()
         return json.loads(data, object_pairs_hook=OrderedDict)
-    except:
+    except Exception:
         if warning:
             show_message(f"Error connecting to ComfyUI server {settings['URL']}!")
 
@@ -92,8 +92,11 @@ def POST(endpoint, data, settings):
             try:
                 error = json.loads(error_str)
             except json.JSONDecodeError:
-                show_message("Error parsing JSON from server")
-                return "ERROR: JSON parsing"
+                message = "ERROR: HTTP {} FROM {}".format(e.code, url)
+                if error_str:
+                    message += "\n\n{}".format(error_str)
+                show_message(message)
+                return message
 
             errors = "ERROR: {}\n\n".format(error["error"]["message"].upper())
             node_errors = error["node_errors"] if error["node_errors"] else {}
@@ -111,7 +114,7 @@ def POST(endpoint, data, settings):
                 errors += "\n"
 
             return errors
-        except:
+        except Exception:
             show_message(traceback.format_exc())
 
     except Exception as e:
@@ -127,7 +130,7 @@ def convert_to_utf8(data):
         return [convert_to_utf8(element) for element in data]
     elif isinstance(data, str):
         return data.encode("utf-8") if sys.version_info[0] < 3 else data
-    elif sys.version_info[0] < 3 and isinstance(data, unicode):
+    elif sys.version_info[0] < 3 and data.__class__.__name__ == "unicode":
         return data.encode("utf-8")
     else:
         return data
