@@ -261,15 +261,17 @@ def resolve_filename(settings, already_generated=False):
 
 
 def register_temporary_inference(run_node, data, settings):
+    first_frame, last_frame = get_frame_range(data)
+    frame_count = last_frame - first_frame + 1
     filename = os.path.join(settings["OUTPUT_DIRECTORY"], settings["filename_prefix"])
-    filename += "_#####_.png"
+    filename += "_#####_.png 1-{}".format(frame_count)
     settings["temporary_inference_filename"] = filename
     inference_register(
         run_node,
         None,
         filename,
         [],
-        start_frame=get_frame_range(data)[0],
+        start_frame=first_frame,
     )
 
 
