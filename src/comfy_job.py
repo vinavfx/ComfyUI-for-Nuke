@@ -12,7 +12,7 @@ from ..nuke_util.nuke_util import get_connected_nodes, set_tile_color
 from .common import execute_in_main_thread, show_message
 from .connection import GET, get_ip_from_url
 from .queue_manager import find_prompt_id, interrupt
-from .read_media import create_read, resolve_filename
+from .read_media import create_read, inference_unregister, resolve_filename
 
 
 class ComfyJob:
@@ -272,6 +272,7 @@ class ComfyJob:
 
         self.cancelled = True
         interrupt(self.settings, self.client_id)
+        execute_in_main_thread(inference_unregister, (self.run_node, self.settings))
         self.close_progress()
         self.finished.set()
         return True

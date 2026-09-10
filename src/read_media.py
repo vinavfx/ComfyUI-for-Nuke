@@ -336,6 +336,21 @@ def inference_register(
     register_knob.setValue(jsondumps(register))
 
 
+def inference_unregister(run_node, settings):
+    register_knob = run_node.knob("register")
+    filename = settings.get("temporary_inference_filename")
+    if not register_knob or not filename:
+        return
+
+    register = jsonloads(register_knob.toScript())
+    register["inferences"] = [
+        inference
+        for inference in register.get("inferences", [])
+        if inference["filename"] != filename
+    ]
+    register_knob.setValue(jsondumps(register))
+
+
 def metadata_format(meta):
     if not meta:
         return ""
