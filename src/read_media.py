@@ -260,9 +260,21 @@ def resolve_filename(settings, already_generated=False):
     return filename
 
 
+def register_temporary_inference(run_node, data, settings):
+    filename = os.path.join(settings["OUTPUT_DIRECTORY"], settings["filename_prefix"])
+    filename += "_#####_.png"
+    settings["temporary_inference_filename"] = filename
+    inference_register(
+        run_node,
+        None,
+        filename,
+        [],
+        start_frame=get_frame_range(data)[0],
+    )
+
+
 def create_empty_read(run_node, data, settings):
     filename = os.path.join(settings["OUTPUT_DIRECTORY"], settings["filename_prefix"])
-
     filename += "_#####_.png"
     read = create_read(run_node, data, settings, filename)
 
@@ -278,7 +290,14 @@ def create_empty_read(run_node, data, settings):
     return read
 
 
-def inference_register(run_node, read, filename, metadata):
+def inference_register(
+    run_node,
+    read,
+    filename,
+    metadata,
+    temporary_filename=None,
+    start_frame=1,
+):
     register_knob = run_node.knob("register")
     if not register_knob:
         register_knob = nuke.String_Knob("register")
@@ -289,19 +308,29 @@ def inference_register(run_node, read, filename, metadata):
     inferences = register.get("inferences", [])
 
     filenames = [i["filename"] for i in inferences]
-    if filename in filenames:
+
+    if read:
+        frame_knob = read.knob("frame")
+        start_frame = frame_knob.value() if frame_knob else 1
+
+    inference = {
+        "filename": filename,
+        "start_frame": start_frame,
+        "metadata": metadata,
+    }
+    if temporary_filename in filenames:
+        temporary_index = filenames.index(temporary_filename)
+        if filename in filenames:
+            filename_index = filenames.index(filename)
+            inferences[filename_index] = inference
+            if temporary_index != filename_index:
+                inferences.pop(temporary_index)
+        else:
+            inferences[temporary_index] = inference
+    elif filename not in filenames:
+        inferences.append(inference)
+    else:
         return
-
-    frame_knob = read.knob("frame")
-    start_frame = frame_knob.value() if frame_knob else 1
-
-    inferences.append(
-        {
-            "filename": filename,
-            "start_frame": start_frame,
-            "metadata": metadata,
-        }
-    )
 
     register["inferences"] = inferences
     register_knob.setValue(jsondumps(register))
@@ -402,7 +431,13 @@ def create_read(run_node, data, settings, filename, already_exists=False):
     for i, onode in get_output_nodes(comfyui_gizmo):
         onode.setInput(i, read)
 
-    inference_register(run_node, read, filename, meta)
+    inference_register(
+        run_node,
+        read,
+        filename,
+        meta,
+        temporary_filename=settings.get("temporary_inference_filename"),
+    )
     return read
 
 

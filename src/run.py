@@ -24,6 +24,7 @@ from .read_media import (
     exr_filepath_fixed,
     resolve_filename,
     create_empty_read,
+    register_temporary_inference,
 )
 
 error_node_style = ComfyJob.error_node_style
@@ -183,6 +184,9 @@ class SubmissionJob(ComfyJob):
             data=data,
         )
         self.data = data
+        if not self.validate_prompt:
+            register_temporary_inference(self.run_node, data, settings)
+
         settings["pre_inference_time"] = time() - settings["pre_inference_time"]
         body = self.create_request_body()
 
