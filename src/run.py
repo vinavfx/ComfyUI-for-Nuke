@@ -169,14 +169,16 @@ class SubmissionJob(ComfyJob):
                 self.run_node,
                 False,
             )
-            filename = resolve_filename(settings, True)
-            read = create_read(
-                self.run_node,
-                data,
-                settings,
-                filename,
-                already_exists=True,
-            )
+            read = None
+            if settings["filename_prefix"]:
+                filename = resolve_filename(settings, True)
+                read = create_read(
+                    self.run_node,
+                    data,
+                    settings,
+                    filename,
+                    already_exists=True,
+                )
             self.close_progress()
             self.run_success_callback(read, self.run_node)
             return
@@ -186,7 +188,7 @@ class SubmissionJob(ComfyJob):
             data=data,
         )
         self.data = data
-        if not self.validate_prompt:
+        if not self.validate_prompt and settings["filename_prefix"]:
             register_temporary_inference(self.run_node, data, settings)
 
         settings["pre_inference_time"] = time() - settings["pre_inference_time"]
@@ -213,7 +215,9 @@ class SubmissionJob(ComfyJob):
         error = POST("prompt", body, settings)
         if settings["BACKGROUND_SUBMIT"] and not error:
             self.close_progress()
-            read = create_empty_read(self.run_node, data, settings)
+            read = None
+            if settings["filename_prefix"]:
+                read = create_empty_read(self.run_node, data, settings)
             self.run_success_callback(
                 read,
                 self.run_node,

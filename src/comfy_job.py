@@ -340,7 +340,7 @@ class ComfyJob:
         error = self.execution_error
         read = None
 
-        if not error:
+        if not error and self.settings.get("filename_prefix"):
             try:
                 filename = resolve_filename(self.settings)
                 if not filename:
@@ -356,13 +356,14 @@ class ComfyJob:
                         error = (
                             "The ComfyUI job finished, but no Read node was " "created."
                         )
-                    else:
-                        self.remove_all_error_style(self.run_node)
-                        node_name = self.run_node.fullName()
-                        self.states[node_name] = copy.deepcopy(self.data)
             except Exception:
                 error = traceback.format_exc()
                 print(error)
+
+        if not error:
+            self.remove_all_error_style(self.run_node)
+            node_name = self.run_node.fullName()
+            self.states[node_name] = copy.deepcopy(self.data)
 
         if error:
             self.finish_with_error(error)
