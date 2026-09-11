@@ -92,8 +92,8 @@ def get_gizmo_group(run_node):
 
 
 def extract_meta(data, settings):
-    seed = steps = denoise = -1
-    lora = lora2 = lora3 = ""
+    seed = denoise = -1
+    lora = lora2 = ""
 
     for name, node in data.items():
         inputs = node["inputs"]
@@ -110,31 +110,23 @@ def extract_meta(data, settings):
             seed = inputs.get("seed", -1)
             seed = seed if type(seed) is int else -1
 
-        if steps == -1:
-            steps = inputs.get("steps", -1)
-
         if denoise == -1:
             denoise = inputs.get("denoise", -1)
 
-        if name in ("extra_lora1", "extra_lora2", "extra_lora3"):
+        if name in ("lora1_model", "lora2_model"):
             lora_name = inputs.get("lora_name", "").split("/")[-1].rsplit(".", 1)[0]
             lora_strength = inputs.get("strength_model", 0)
             formatted = "{}:{}".format(lora_name, lora_strength)
 
-            if name == "extra_lora1":
+            if name == "lora1_model":
                 lora = formatted
-            elif name == "extra_lora2":
+            elif name == "lora2_model":
                 lora2 = formatted
-            elif name == "extra_lora3":
-                lora3 = formatted
 
     meta = []
 
     if not seed == -1:
         meta.append(("seed", seed))
-
-    if not steps == -1:
-        meta.append(("steps", steps))
 
     if not denoise == -1:
         meta.append(("denoise", denoise))
@@ -144,9 +136,6 @@ def extract_meta(data, settings):
 
     if lora2:
         meta.append(("lora2", lora2))
-
-    if lora3:
-        meta.append(("lora3", lora3))
 
     total_time = settings["pre_inference_time"] + (time() - settings["inference_time"])
     itime = "%02d:%02d" % divmod(int(total_time), 60)
