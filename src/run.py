@@ -44,8 +44,10 @@ class SubmissionJob(ComfyJob):
         settings=None,
         last_error=None,
         validate_prompt=False,
+        custom_metadata=None,
     ):
         settings = settings or get_settings(run_node)
+        settings["custom_metadata"] = custom_metadata or {}
         super().__init__(run_node, settings)
         self.success_callback = success_callback
         self.last_error = last_error
@@ -245,6 +247,7 @@ def submit(
     settings=None,
     last_error=None,
     validate_prompt=False,
+    custom_metadata=None,
 ):
     job = SubmissionJob(
         run_node,
@@ -252,5 +255,6 @@ def submit(
         settings,
         last_error,
         validate_prompt,
+        custom_metadata,
     )
     return job.start()

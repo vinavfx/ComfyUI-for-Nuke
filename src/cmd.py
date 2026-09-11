@@ -34,7 +34,7 @@ def inference_start(run_node, iteration=0, node_iteration=0):
     callback = gizmo.knob("inferenceStart")
 
     if not callback:
-        return True, False, None
+        return True, False, None, {}
 
     messages = []
     original_message = nuke.message
@@ -48,6 +48,7 @@ def inference_start(run_node, iteration=0, node_iteration=0):
         context["ret"] = True
         context["halt"] = False
         context["error"] = None
+        context["metadata"] = {}
         context["iter"] = iteration
         context["node_iter"] = node_iteration
         nuke.message = capture_message
@@ -64,7 +65,7 @@ def inference_start(run_node, iteration=0, node_iteration=0):
     if not error and messages:
         error = "\n".join(messages)
 
-    return context.get("ret"), context.get("halt"), error
+    return context.get("ret"), context.get("halt"), error, context["metadata"]
 
 
 def inference_end(_, run_node):
@@ -76,18 +77,18 @@ def inference_end(_, run_node):
         callback.execute()
 
 
-def submit_run(run_node):
+def submit_run(run_node, metadata):
     with run_node:
-        submit(run_node, inference_end)
+        submit(run_node, inference_end, custom_metadata=metadata)
 
 
 def run():
     run_node = get_run(nuke.thisNode())
-    ret, _, _ = inference_start(run_node)
+    ret, _, _, metadata = inference_start(run_node)
     if not ret:
         return
 
-    if wait_for_comfyui(lambda: submit_run(run_node)):
+    if wait_for_comfyui(lambda: submit_run(run_node, metadata)):
         return
 
-    submit_run(run_node)
+    submit_run(run_node, metadata)

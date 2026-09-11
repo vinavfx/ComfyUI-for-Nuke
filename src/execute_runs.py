@@ -29,7 +29,7 @@ def sequential_execution(
     while not error and index < len(gizmos):
         gizmo = gizmos[index]
         run = get_run(gizmo)
-        ret, halt, start_error = inference_start(
+        ret, halt, start_error, metadata = inference_start(
             run, index, gizmos[:index].count(gizmo)
         )
         if halt or not ret:
@@ -48,7 +48,11 @@ def sequential_execution(
                 del read, run_node
                 sequential_execution(gizmos, execution_error, callback, index + 1)
 
-            submit(run, success_callback=execution_finished)
+            submit(
+                run,
+                success_callback=execution_finished,
+                custom_metadata=metadata,
+            )
             return
 
         validation_errors = []
@@ -62,6 +66,7 @@ def sequential_execution(
                 run,
                 success_callback=validation_finished,
                 validate_prompt=True,
+                custom_metadata=metadata,
             )
         run.end()
         error = validation_errors[0] if validation_errors else None
@@ -93,7 +98,7 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
         iterations[node_name] = iteration + 1
         run = get_run(run)
 
-        ret, halt, _ = inference_start(run, i, iteration)
+        ret, halt, _, metadata = inference_start(run, i, iteration)
         if halt:
             break
         if not ret:
@@ -117,6 +122,7 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
                 success_callback=on_success,
                 settings=copy.deepcopy(settings) if settings else None,
                 last_error=last_error,
+                custom_metadata=metadata,
             )
 
         if distribute_load:
