@@ -387,8 +387,8 @@ def create_read(run_node, data, settings, filename, already_exists=False):
 
     meta = []
     if data and not already_exists:
-        meta = extract_meta(data, settings)
-        meta.extend(settings.get("custom_metadata", {}).items())
+        meta = list(settings.get("custom_metadata", {}).items())
+        meta.extend(extract_meta(data, settings))
 
     main_node = get_gizmo_group(run_node)
     if not main_node:
