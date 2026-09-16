@@ -11,8 +11,6 @@ from .cmd import get_run, inference_end, inference_start
 from .common import get_settings, override_settings, wait_for_comfyui, init_scan_thread
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
-from .connection import get_ip_from_url
-from ..settings import ALLOW_ALL_IPS_SUBMIT
 
 
 def cli_submit(gizmos, callback=None, validate_prompt=False):
@@ -227,27 +225,5 @@ def execute_runs_plus():
 
     if p.value(keys[5]):
         blocked_urls.clear()
-
-    current_ips = {
-        get_ip_from_url(u)
-        for u in settings["URL"]
-        if not get_ip_from_url(u).startswith("127")
-    }
-
-    non_permitted = set()
-    for node in nodes:
-        node_settings = copy.deepcopy(settings)
-        override_settings(get_run(node), node_settings)
-        allowed = {get_ip_from_url(u) for u in node_settings["URL"]}
-        non_permitted |= current_ips - allowed
-
-    if non_permitted and not ALLOW_ALL_IPS_SUBMIT:
-        node_names = ", ".join([n.name() for n in nodes])
-        nuke.message(
-            "These IPs are not allowed for nodes [{}]:\n{}".format(
-                node_names, "\n".join(sorted(non_permitted))
-            )
-        )
-        return
 
     execute_runs(settings, distribute_load)
