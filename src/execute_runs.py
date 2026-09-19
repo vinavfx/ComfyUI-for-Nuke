@@ -87,6 +87,27 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
     stop = [False]
     last_error = [""]
     iterations = {}
+
+    def create_success_callback(run_node, run_index, node_iteration):
+        def on_success(read, _, error):
+            if error:
+                stop[0] = True
+                if success_callback:
+                    success_callback()
+                return
+
+            inference_end(
+                read,
+                run_node,
+                iteration=run_index,
+                node_iteration=node_iteration,
+            )
+
+            if len(runs) == run_index + 1 and success_callback:
+                success_callback()
+
+        return on_success
+
     for i, run in enumerate(runs):
         if stop[0]:
             break
@@ -102,18 +123,7 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
         if not ret:
             continue
 
-        def on_success(read, _, error):
-            if error:
-                stop[0] = True
-                if success_callback:
-                    success_callback()
-                return
-
-            inference_end(read, run)
-
-            if len(runs) == i + 1 and success_callback:
-                success_callback()
-
+        on_success = create_success_callback(run, i, iteration)
         with run:
             settings = submit(
                 run,

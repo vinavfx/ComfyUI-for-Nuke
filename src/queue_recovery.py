@@ -3,7 +3,7 @@ from time import time
 
 import nuke  # type: ignore
 
-from .cmd import get_run
+from .cmd import get_run, inference_end
 from .common import (
     execute_in_main_thread,
     get_settings,
@@ -81,9 +81,7 @@ class RecoveryJob(ComfyJob):
         if not read:
             return
 
-        callback = self.run_node.parent().knob("inferenceEnd")
-        if callback:
-            callback.execute()
+        inference_end(read, self.run_node)
 
     def start(self):
         active_recoveries.add(self.recovery_key)

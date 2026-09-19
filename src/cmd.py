@@ -17,18 +17,6 @@ def get_run(run):
     return run
 
 
-def get_read(group=None):
-    if nuke.GUI:
-        return nuke.toNode(nuke.thisNode().fullName() + "Read")
-
-    if not group:
-        group = nuke.thisNode()
-
-    for n in group.parent().nodes():
-        if n.name() == group.name() + "Read":
-            return n
-
-
 def inference_start(run_node, iteration=0, node_iteration=0):
     gizmo = run_node.parent()
     callback = gizmo.knob("inferenceStart")
@@ -68,13 +56,21 @@ def inference_start(run_node, iteration=0, node_iteration=0):
     return context.get("ret"), context.get("halt"), error, context["metadata"]
 
 
-def inference_end(_, run_node):
+def inference_end(read, run_node, *, iteration=0, node_iteration=0):
     if not run_node:
         return
 
-    callback = run_node.parent().knob("inferenceEnd")
-    if callback:
-        callback.execute()
+    gizmo = run_node.parent()
+    callback = gizmo.knob("inferenceEnd")
+    if not callback:
+        return
+
+    context = __main__.__dict__.copy()
+    context["read"] = read
+    context["iter"] = iteration
+    context["node_iter"] = node_iteration
+    with gizmo:
+        exec(callback.value(), context)
 
 
 def submit_run(run_node, metadata):
