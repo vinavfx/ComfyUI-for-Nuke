@@ -7,7 +7,7 @@ import nuke  # type: ignore
 import os
 from ..nodes import extract_data
 from ...nuke_util.nuke_util import selected_node
-from ...python_util.util import jwrite
+from ...nuke_util.python_util import jwrite
 from ..common import update_images_and_mask_inputs, get_settings
 
 

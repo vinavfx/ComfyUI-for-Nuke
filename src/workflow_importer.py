@@ -7,7 +7,7 @@ import textwrap
 import os
 import nuke  # type: ignore
 from ..nuke_util.nuke_util import set_hex_color
-from ..python_util.util import jread
+from ..nuke_util.python_util import jread
 from .update_menu import create_comfyui_node, normalize_nodename, update_menu
 from .run import error_node_style
 from .nodes import get_node_data

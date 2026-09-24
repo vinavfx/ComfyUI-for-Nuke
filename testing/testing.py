@@ -5,7 +5,7 @@
 # -----------------------------------------------------------
 import nuke  # type: ignore
 import re
-from ..python_util.util import fwrite
+from ..nuke_util.python_util import fwrite
 import os
 
 
