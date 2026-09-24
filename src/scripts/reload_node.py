@@ -5,9 +5,26 @@ from ...nuke_util.nuke_util import (
     get_input_nodes,
     transfer_knobs,
 )
-from ..update_menu import create_comfyui_node, update_menu
+from ..update_menu import create_comfyui_node, update
 from ..nodes import get_node_data, save_node_data
 from .knob2input import convert_knobs, get_swapped_knobs
+
+
+def transfer_reload_knobs(source_node, new_node):
+    choices = {
+        knob.name(): knob.values()
+        for knob in new_node.allKnobs()
+        if isinstance(knob, nuke.Enumeration_Knob)
+    }
+
+    transfer_knobs(source_node, new_node, transfer_all=True)
+
+    for knob_name, values in choices.items():
+        knob = new_node.knob(knob_name)
+        value = knob.value()
+        knob.setValues(values)
+        if value in values:
+            knob.setValue(value)
 
 
 def reload_node():
@@ -20,10 +37,7 @@ def reload_node():
     nodes[0].parent().begin()
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
-    if update_menu(lambda: reload_node_action(nodes)):
-        return
-
-    reload_node_action(nodes)
+    update(lambda: reload_node_action(nodes))
 
 
 def reload_node_action(nodes):
@@ -62,7 +76,7 @@ def reload_node_action(nodes):
                     n["force_output"] = force_outputs[n["name"]]
             save_node_data(new_node, new_data)
 
-            transfer_knobs(node, new_node, transfer_all=True)
+            transfer_reload_knobs(node, new_node)
 
             if new_node:
                 new_node.setName(name)
