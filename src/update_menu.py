@@ -297,7 +297,8 @@ def create_node(data, inpanel=True):
             n.addKnob(refresh_models_knob)
 
         is_primitive_value = data["name"] == "PrimitiveInt" and key == "value"
-        if "seed" in key or is_primitive_value:
+        is_seed_value = input_class == "INT" and "seed" in key
+        if is_seed_value or is_primitive_value:
             randomize_knob = nuke.Boolean_Knob("randomize")
             randomize_knob.setValue(False)
             n.addKnob(randomize_knob)
