@@ -50,12 +50,20 @@ def save_order(node, names):
         knob.setValue(json.dumps(names))
 
 
+def widget_exists(widget):
+    try:
+        widget.tree.objectName()
+    except RuntimeError:
+        return False
+    return True
+
+
 def refresh_widgets(node):
     active_widget_refs = []
     node_name = node.fullName()
     for widget_ref in WIDGETS:
         widget = widget_ref()
-        if widget is None:
+        if widget is None or not widget_exists(widget):
             continue
         active_widget_refs.append(widget_ref)
         if widget.node_name == node_name:
@@ -133,6 +141,9 @@ class MetaGizmoWidget(QWidget):
         self.reload()
 
     def reload(self):
+        if not widget_exists(self):
+            return
+
         node = nuke.toNode(self.node_name)
         if not node:
             return
