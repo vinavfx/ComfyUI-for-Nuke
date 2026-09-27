@@ -1,21 +1,27 @@
 set cut_paste_input [stack 0]
-version 12.0 v8
+version 14.0 v8
 push $cut_paste_input
 Group {
  name MetaGizmo
  tile_color 0xa2b275ff
  selected true
+ xpos 190
+ ypos -34
  addUserKnob {20 controls l Controls}
  addUserKnob {26 meta_gizmo l MetaGizmo +INVISIBLE T "This knob identifies the MetaGizmo group."}
  addUserKnob {1 gizmo_order l "Gizmo Order" +HIDDEN}
- addUserKnob {22 run l "Run Gizmos" +HIDDEN T "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import run_gizmos\nrun_gizmos(nuke.thisNode())"}
- onCreate "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import install\ninstall(nuke.thisNode())"
+ addUserKnob {1 selected_gizmo l "" -STARTLINE +INVISIBLE}
+ addUserKnob {52 gizmo_tree l "" +STARTLINE T "__import__('nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo', fromlist=\['MetaGizmoKnob']).MetaGizmoKnob()" +STARTLINE}
+ addUserKnob {22 meta_update_content l "Update Content" T "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import update_content\nupdate_content(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 meta_move_down l "Move Down" -STARTLINE T "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import move_selected\nmove_selected(nuke.thisNode(), 1)"}
+ addUserKnob {22 meta_move_up l "Move Up" -STARTLINE T "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import move_selected\nmove_selected(nuke.thisNode(), -1)"}
+ addUserKnob {26 "" +STARTLINE}
+ addUserKnob {22 run l "Run Gizmos" T "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import run_gizmos\nrun_gizmos(nuke.thisNode())" +STARTLINE}
 }
  Input {
   inputs 0
   name Input
   xpos 0
-  ypos 0
  }
  Output {
   name Output
