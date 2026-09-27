@@ -71,9 +71,8 @@ def sequential_execution(
     while not error and index < len(gizmos):
         gizmo = gizmos[index]
         run = get_run(gizmo)
-        ret, halt, start_error, metadata = inference_start(
-            run, index, gizmos[:index].count(gizmo)
-        )
+        node_iteration = gizmos[:index].count(gizmo)
+        ret, halt, start_error, metadata = inference_start(run, index, node_iteration)
         if halt or not ret:
             if start_error:
                 error = start_error
@@ -87,7 +86,13 @@ def sequential_execution(
         if not validate_prompt:
 
             def execution_finished(read, run_node, execution_error):
-                del read, run_node
+                if not execution_error:
+                    inference_end(
+                        read,
+                        run_node,
+                        iteration=index,
+                        node_iteration=node_iteration,
+                        )
                 sequential_execution(gizmos, execution_error, callback, index + 1)
 
             submit(
