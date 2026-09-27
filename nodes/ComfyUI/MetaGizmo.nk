@@ -11,12 +11,12 @@ Group {
  addUserKnob {26 meta_gizmo l MetaGizmo +INVISIBLE T "This knob identifies the MetaGizmo group."}
  addUserKnob {1 gizmo_order l "Gizmo Order" +HIDDEN}
  addUserKnob {1 selected_gizmo l "" -STARTLINE +INVISIBLE}
- addUserKnob {52 gizmo_tree l "" +STARTLINE T "__import__('nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo', fromlist=\['MetaGizmoKnob']).MetaGizmoKnob()" +STARTLINE}
- addUserKnob {22 meta_update_content l "Update Content" T "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import update_content\nupdate_content(nuke.thisNode())" +STARTLINE}
- addUserKnob {22 meta_move_down l "Move Down" -STARTLINE T "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import move_selected\nmove_selected(nuke.thisNode(), 1)"}
- addUserKnob {22 meta_move_up l "Move Up" -STARTLINE T "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import move_selected\nmove_selected(nuke.thisNode(), -1)"}
+ addUserKnob {52 gizmo_tree l "" +STARTLINE T "comfyui.meta_gizmo.MetaGizmoKnob()" +STARTLINE}
+ addUserKnob {22 meta_update_content l "Update Content" T "comfyui.meta_gizmo.update_content(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 meta_move_down l "Move Down" -STARTLINE T "comfyui.meta_gizmo.move_selected(nuke.thisNode(), 1)"}
+ addUserKnob {22 meta_move_up l "Move Up" -STARTLINE T "comfyui.meta_gizmo.move_selected(nuke.thisNode(), -1)"}
  addUserKnob {26 "" +STARTLINE}
- addUserKnob {22 run l "Run Gizmos" T "from nukepath.comfyui2nuke.nodes.ComfyUI.MetaGizmo import run_gizmos\nrun_gizmos(nuke.thisNode())" +STARTLINE}
+ addUserKnob {22 run l "Run Gizmos" T "comfyui.meta_gizmo.run_gizmos(nuke.thisNode())" +STARTLINE}
 }
  Input {
   inputs 0
