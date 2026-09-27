@@ -4,6 +4,8 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import copy
+import json
+
 import nuke  # type: ignore
 from ..nuke_util.nuke_util import selected_node
 from .run import submit
@@ -18,11 +20,53 @@ def cli_submit(gizmos, callback=None, validate_prompt=False):
     sequential_execution(gizmos, callback=callback, validate_prompt=validate_prompt)
 
 
+def sequential_submit(gizmos, callback=None, validate_prompt=False):
+    if wait_for_comfyui(lambda: sequential_submit(gizmos, callback, validate_prompt)):
+        return
+    sequential_execution(gizmos, callback=callback, validate_prompt=validate_prompt)
+
+
+def expand_meta_gizmos(gizmos):
+    expanded_gizmos = []
+    for gizmo in gizmos:
+        if not gizmo.knob("meta_gizmo"):
+            expanded_gizmos.append(gizmo)
+            continue
+
+        children = [child for child in gizmo.nodes() if child.knob("comfyui_gizmo")]
+        children_by_name = {child.name(): child for child in children}
+        order_knob = gizmo.knob("gizmo_order")
+        try:
+            names = json.loads(order_knob.value() or "[]")
+        except (AttributeError, TypeError, ValueError):
+            names = []
+        if not isinstance(names, list) or any(
+            not isinstance(name, str) for name in names
+        ):
+            names = []
+
+        if len(names) != len(children) or set(names) != set(children_by_name):
+            raise RuntimeError(
+                "MetaGizmo content has changed. Click Update Content before running."
+            )
+        expanded_gizmos.extend(children_by_name[name] for name in names)
+
+    return expanded_gizmos
+
+
 def sequential_execution(
     gizmos=None, error=None, callback=None, index=0, validate_prompt=False
 ):
     if gizmos is None:
         gizmos = []
+
+    if index == 0:
+        try:
+            gizmos = expand_meta_gizmos(gizmos)
+        except RuntimeError as expansion_error:
+            if callback:
+                callback(str(expansion_error))
+            return
 
     while not error and index < len(gizmos):
         gizmo = gizmos[index]
@@ -160,18 +204,33 @@ def prepare_multiversions(node):
 
 def execute_runs(settings=None, distribute_load=False):
     runs = []
+    has_meta_gizmo = False
 
     for n in nuke.selectedNodes():
         if not n.knob("run"):
             continue
 
-        if n in runs:
-            continue
+        if n.knob("meta_gizmo"):
+            has_meta_gizmo = True
+            try:
+                nodes = expand_meta_gizmos([n])
+            except RuntimeError as error:
+                nuke.message(str(error))
+                return
+        else:
+            nodes = [n]
 
-        runs.extend(prepare_multiversions(n))
+        for node in nodes:
+            if node in runs:
+                continue
+            runs.extend(prepare_multiversions(node))
 
     if not runs:
         nuke.message("Select at least 1 Run node!")
+        return
+
+    if has_meta_gizmo:
+        sequential_submit(runs)
         return
 
     multi_runs(runs, settings=settings, distribute_load=distribute_load)

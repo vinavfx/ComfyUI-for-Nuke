@@ -3,9 +3,11 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
+import json
 import os
 import math
 import shutil
+
 import nuke  # type: ignore
 from time import time
 
@@ -89,6 +91,26 @@ def get_gizmo_group(run_node):
 
         if gizmo.knob("comfyui_gizmo"):
             return gizmo
+
+
+def get_read_owner(run_node):
+    gizmo = get_gizmo_group(run_node)
+    if not gizmo:
+        return run_node
+
+    meta_gizmo = gizmo.parent()
+    if not meta_gizmo.knob("meta_gizmo"):
+        return gizmo
+
+    order_knob = meta_gizmo.knob("gizmo_order")
+    try:
+        names = json.loads(order_knob.value() or "[]")
+    except (AttributeError, TypeError, ValueError):
+        return gizmo
+
+    if names and names[-1] == gizmo.name():
+        return meta_gizmo
+    return gizmo
 
 
 def extract_meta(data, settings):
@@ -349,8 +371,7 @@ def metadata_format(meta):
     label = "<center>"
     for key, value in meta:
         label_format = (
-            '<font color="black" size=1>{}:</font>'
-            '<font color="white" size=1> {}</>\n'
+            '<font color="black" size=1>{}:</font><font color="white" size=1> {}</>\n'
         )
         label += label_format.format(key, value)
 
@@ -379,9 +400,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
         meta = list(settings.get("custom_metadata", {}).items())
         meta.extend(extract_meta(data, settings))
 
-    main_node = get_gizmo_group(run_node)
-    if not main_node:
-        main_node = run_node
+    main_node = get_read_owner(run_node)
 
     main_node.parent().begin()
 
@@ -431,11 +450,13 @@ def create_read(run_node, data, settings, filename, already_exists=False):
         label = metadata_format(meta)
         read.knob("label").setValue(label)
 
-    comfyui_gizmo = (
-        run_node.parent() if run_node.parent().knob("comfyui_gizmo") else run_node
-    )
+    output_source = run_node
+    if main_node.knob("meta_gizmo"):
+        output_source = main_node
+    elif run_node.parent().knob("comfyui_gizmo"):
+        output_source = run_node.parent()
 
-    for i, onode in get_output_nodes(comfyui_gizmo):
+    for i, onode in get_output_nodes(output_source):
         onode.setInput(i, read)
 
     inference_register(
@@ -455,9 +476,7 @@ def backup_previous_generation(run_node=None):
     if not get_register(run_node):
         return
 
-    main_node = get_gizmo_group(run_node)
-    if not main_node:
-        main_node = run_node
+    main_node = get_read_owner(run_node)
 
     main_node.parent().begin()
 
@@ -562,9 +581,7 @@ def restore_run_generations():
         show_message("There are no generations before!")
         return
 
-    main_node = get_gizmo_group(run_node)
-    if not main_node:
-        main_node = run_node
+    main_node = get_read_owner(run_node)
 
     main_node.parent().begin()
     message = ""
