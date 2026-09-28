@@ -478,6 +478,12 @@ def extract_node_data(node):
     return {"inputs": inputs, "class_type": data["class_type"]}
 
 
+def connection_types_match(input_class, output_class):
+    input_types = {item.strip() for item in input_class.split(",")}
+    output_types = {item.strip() for item in output_class.split(",")}
+    return "*" in input_types or "*" in output_types or bool(input_types & output_types)
+
+
 def get_output_index(node, node_data, input_index):
     inode_data = get_node_data(get_input(node, input_index))
     if not inode_data:
@@ -492,7 +498,7 @@ def get_output_index(node, node_data, input_index):
 
     for allowed_output in allowed_outputs:
         for i, o in enumerate(inode_outputs):
-            if allowed_output in [o, "*"] or "*" == o:
+            if connection_types_match(allowed_output, o):
                 return i
 
     return -1
@@ -543,7 +549,11 @@ def check_node(node):
         allowed_outputs = input_data["outputs"]
 
         if "*" not in allowed_outputs and "*" not in inode_outputs:
-            if not any(o in allowed_outputs for o in inode_outputs):
+            if not any(
+                connection_types_match(allowed_output, output)
+                for allowed_output in allowed_outputs
+                for output in inode_outputs
+            ):
                 show_message(
                     node.name()
                     + ' : "{}" connection not supported !'.format(input_name)
@@ -568,14 +578,14 @@ def requires_force_output(outputs, input_class):
     contador = Counter(outputs)
     repeated = [item for item, count in contador.items() if count > 1]
 
-    if input_class == "*" and len(outputs) > 1:
+    if "*" in {item.strip() for item in input_class.split(",")} and len(outputs) > 1:
         pass
     else:
         if not repeated:
             return False
 
         if "*" not in repeated:
-            if input_class not in repeated:
+            if not any(connection_types_match(input_class, item) for item in repeated):
                 return False
 
     return True
