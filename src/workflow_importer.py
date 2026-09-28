@@ -3,234 +3,462 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
-import textwrap
 import os
+import textwrap
+from copy import deepcopy
+
 import nuke  # type: ignore
+
 from ..nuke_util.nuke_util import set_hex_color
 from ..nuke_util.python_util import jread
-from .update_menu import create_comfyui_node, normalize_nodename, update_menu
-from .run import error_node_style
-from .nodes import get_node_data
-from .connection import convert_to_utf8
-from .common import show_message
 from ..settings import COMFYUI2NUKE
+from .common import show_message, wait_for_comfyui
+from .connection import convert_to_utf8
+from .nodes import get_node_data, save_node_data
+from .run import error_node_style
 from .scripts.knob2input import convert_knobs
+from .update_menu import create_comfyui_node, normalize_nodename, update_menu
+from .workflow_connections import read_metadata, write_metadata
+from .workflow_templates import select_template
 
 
 def center_nodes(nodes):
-    min_x = min(node["xpos"].value() for node in nodes)
-    min_y = min(node["ypos"].value() for node in nodes)
-
+    if not nodes:
+        return
+    min_x = min(node.xpos() for node in nodes)
+    min_y = min(node.ypos() for node in nodes)
     for node in nodes:
-        new_x = node["xpos"].value() - min_x
-        new_y = node["ypos"].value() - min_y
-        node.setXYpos(int(new_x), int(new_y))
+        node.setXYpos(node.xpos() - min_x, node.ypos() - min_y)
+
+
+def workflow_links(data):
+    keys = ("id", "origin_id", "origin_slot", "target_id", "target_slot", "type")
+    return {
+        str(link["id"] if isinstance(link, dict) else link[0]): (
+            link if isinstance(link, dict) else dict(zip(keys, link))
+        )
+        for link in data.get("links", [])
+    }
+
+
+def run_imported_workflow():
+    from .workflow_execution import run_workflow
+
+    run_workflow(nuke.thisNode())
 
 
 def import_workflow():
-    workflow_path = nuke.getFilename("Workflow", "*.json")
-    if not workflow_path:
+    panel = nuke.Panel("Import Workflow")
+    panel.addEnumerationPulldown("Source", "JSON\\ file ComfyUI\\ templates")
+    if not panel.show():
         return
+    if panel.value("Source") == "ComfyUI templates":
+        data = select_template()
+    else:
+        workflow_path = nuke.getFilename("Workflow", "*.json")
+        if not workflow_path:
+            return
+        if not os.path.isfile(workflow_path):
+            show_message("Please select a JSON file, not a folder.")
+            return
+        try:
+            data = jread(workflow_path)
+        except (OSError, ValueError) as error:
+            show_message("Could not read the workflow: {}".format(error))
+            return
+    if data is not None:
+        import_workflow_data(data)
 
-    if not os.path.isfile(workflow_path):
-        show_message("Please select a JSON file, not a folder")
+
+def import_workflow_data(data):
+    if not isinstance(data, dict) or not isinstance(data.get("nodes"), list):
+        show_message("Incompatible workflow, perhaps exported from 'Export(API)'.")
         return
-
-    data = jread(workflow_path)
-    [n.setSelected(False) for n in nuke.selectedNodes()]
-
-    if "nodes" not in data:
-        show_message("Incompatible workflow, perhaps exported from 'Export(API)'")
+    if wait_for_comfyui(lambda: import_workflow_data(data)):
         return
+    update_menu()
+    definitions = {
+        definition["id"]: definition
+        for definition in data.get("definitions", {}).get("subgraphs", [])
+    }
+    not_installed = set()
+    for node in nuke.selectedNodes():
+        node.setSelected(False)
+    undo = nuke.Undo()
+    undo.begin("Import ComfyUI Workflow")
+    try:
+        _, nodes = build_graph(data, definitions, not_installed)
+        for node in nodes:
+            node.setSelected(True)
+    except (KeyError, ValueError, TypeError, RuntimeError) as error:
+        show_message(
+            "Could not import the workflow: {}. Use Undo to remove it.".format(error)
+        )
+    finally:
+        undo.end()
+    if not_installed:
+        show_message(
+            "You need to install these nodes in ComfyUI:\n\n"
+            + "\n".join(sorted(not_installed))
+        )
 
-    if not update_menu():
+
+def knob_for_input(node, name):
+    data = get_node_data(node)
+    names = data.get("knobs_input_names", {})
+    knob_name = next((key for key, value in names.items() if value == name), name + "_")
+    promoted = read_metadata(node, "comfyui_subgraph").get("widgets", {})
+    return node.knob(promoted.get(name, knob_name))
+
+
+def set_widget_value(node, knob, value):
+    if knob is None or value is None:
         return
+    try:
+        if knob.name() == "randomize":
+            value = value != "fixed"
+        if type(value) is int:
+            value = min(value, 999999999)
+        knob.setValue(convert_to_utf8(value))
+    except (TypeError, ValueError, RuntimeError):
+        show_message('Could not set "{}.{}".'.format(node.name(), knob.name()))
 
-    created_nodes = {}
-    not_installed = []
+
+def set_widgets(node, attrs):
+    data = get_node_data(node)
+    order = data.get("knobs_order", [])
+    names = data.get("knobs_input_names", {})
+    values = attrs.get("widgets_values") or []
+    named = attrs.get("widgets_values_named")
+    if isinstance(named, dict) and named:
+        values = named
+    if isinstance(values, dict):
+        values = [values.get(names.get(name, name[:-1])) for name in order]
+    else:
+        filtered = []
+        for value in values:
+            if value in ("fixed", "increment", "decrement", "randomize"):
+                if any("seed" in name for name in order):
+                    set_widget_value(node, node.knob("randomize"), value)
+                    continue
+            filtered.append(value)
+        values = filtered
+    for name, value in zip(order, values):
+        set_widget_value(node, node.knob(name), value)
+
+
+def create_workflow_node(attrs, not_installed):
+    node_type = attrs["type"]
+    node = create_comfyui_node(node_type, inpanel=False)
+    if node_type in ("Note", "MarkdownNote"):
+        node = nuke.createNode("StickyNote", inpanel=False)
+        values = attrs.get("widgets_values") or [""]
+        text = str(convert_to_utf8(values[0]))
+        node["label"].setValue("\n".join(textwrap.wrap(text, width=40)) + "\n\n")
+    elif node_type in ("Reroute", "easy getNode", "easy setNode"):
+        node = nuke.createNode("Dot", inpanel=False)
+        if node_type != "Reroute":
+            title = attrs.get("title", node_type)
+            prefix = "Get" if node_type == "easy getNode" else "Set"
+            node.setName(prefix + normalize_nodename(title))
+            node["label"].setValue(title)
+    elif not node:
+        node = nuke.createNode("NoOp", inpanel=False)
+        node.setName(normalize_nodename(node_type))
+        error_node_style(node.fullName(), True, "Node not installed!")
+        not_installed.add(node_type)
+    set_widgets(node, attrs)
+    swapped = {
+        item["widget"]["name"]: {
+            "class": str(item["type"]).lower(),
+            "swapped_knob": True,
+        }
+        for item in attrs.get("inputs", [])
+        if item.get("widget") and item.get("link") is not None
+    }
+    if swapped and get_node_data(node):
+        convert_knobs(node, get_node_data(node), swapped)
+    return node
+
+
+def input_index(node, item, fallback):
+    subgraph = read_metadata(node, "comfyui_subgraph")
+    if subgraph:
+        names = subgraph.get("inputs", [])
+        return names.index(item["name"]) if item["name"] in names else None
+    data = get_node_data(node)
+    if data:
+        return next(
+            (
+                index
+                for index, value in enumerate(data["inputs"])
+                if value["name"] == item["name"]
+            ),
+            None,
+        )
+    return fallback
+
+
+def connect_link(node, index, source, slot):
+    node.setInput(index, source)
+    metadata = read_metadata(node, "comfyui_import_links")
+    metadata[str(index)] = slot
+    write_metadata(node, "comfyui_import_links", metadata)
+    node_data = get_node_data(node)
+    if node_data and get_node_data(source) and slot is not None:
+        node_data["inputs"][index]["force_output"] = slot
+        save_node_data(node, node_data)
+
+
+def build_graph(data, definitions, not_installed, boundary=None, stack=()):
+    created = {}
     nodes = []
-    ignore_nodes = []
-
-    for attrs in data["nodes"]:
-        if attrs["type"] in ignore_nodes:
-            continue
-
-        node = create_comfyui_node(attrs["type"], inpanel=False)
-
-        swapped_knobs = {}
-        knobs_to_inputs_names = []
-
-        for input_item in attrs.get("inputs", []):
-            if "widget" in input_item and "name" in input_item["widget"]:
-                name = input_item["widget"]["name"]
-                knobs_to_inputs_names.append(name)
-
-                swapped_knobs[name] = {
-                    "class": input_item["type"].lower(),
-                    "swapped_knob": True,
-                }
-
-        if node and swapped_knobs:
-            convert_knobs(node, get_node_data(node), swapped_knobs)
-
-        if attrs["type"] in ["Note", "MarkdownNote"]:
-            node = nuke.createNode("StickyNote", inpanel=False)
-            text = str(convert_to_utf8(attrs["widgets_values"][0]))
-            formatted_note = "\n".join(textwrap.wrap(text, width=40))
-            node.knob("label").setValue(formatted_note + "\n\n")
-
-        elif attrs["type"] == "Reroute":
-            node = nuke.createNode("Dot", inpanel=False)
-
-        elif attrs["type"] in ("easy getNode", "easy setNode"):
-            node = nuke.createNode("Dot", inpanel=False)
-            prefix = "Get" if attrs["type"] == "easy getNode" else "Set"
-            name = prefix + normalize_nodename(attrs["title"])
-            node.setName(name)
-            node.knob("label").setValue(normalize_nodename(attrs["title"]))
-
-        elif not node:
-            node = nuke.createNode("NoOp", inpanel=False)
-            node.setName(normalize_nodename(attrs["type"]))
-            error_node_style(node.fullName(), True, "Node not installed !")
-            not_installed.append(attrs["type"])
-
-        if not node.knob("tile_color").value():
-            set_hex_color(node, attrs.get("bgcolor"))
-
-        created_nodes[attrs["id"]] = (node, attrs, knobs_to_inputs_names)
+    links = workflow_links(data)
+    for attrs in data.get("nodes", []):
+        definition = definitions.get(attrs["type"])
+        if definition:
+            if attrs["type"] in stack:
+                raise ValueError("Recursive subgraph definition")
+            node = create_subgraph(
+                attrs, definition, definitions, not_installed, stack + (attrs["type"],)
+            )
+        else:
+            node = create_workflow_node(attrs, not_installed)
+        created[str(attrs["id"])] = node
         nodes.append(node)
         node.setSelected(False)
-
-        pos = attrs["pos"]
-
-        if isinstance(pos, list):
-            xpos, ypos = attrs["pos"]
-        else:
-            xpos = attrs["pos"]["0"]
-            ypos = attrs["pos"]["1"]
-
-        node.setXYpos(int(xpos / 2), int(ypos / 2))
-
-    for attrs in data["groups"]:
-        bd = nuke.createNode("BackdropNode", inpanel=False)
-        bd.setName("GROUP")
-        text = convert_to_utf8(attrs["title"])
-        bd.knob("label").setValue(attrs["title"])
-        bd.knob("bdwidth").setValue(attrs["bounding"][2] / 2)
-        bd.knob("bdheight").setValue(attrs["bounding"][3] / 2)
-        bd.setXYpos(int(attrs["bounding"][0] / 2), int(attrs["bounding"][1] / 2))
-        bd.knob("z_order").setValue(0)
-        bd.knob("note_font_size").setValue(30)
-        set_hex_color(bd, attrs.get("color"))
-
-        nodes.append(bd)
-        bd.setSelected(False)
-
-    if not nodes:
-        return
-
+        if not node["tile_color"].value():
+            set_hex_color(node, attrs.get("bgcolor"))
+        pos = attrs.get("pos", [0, 0])
+        x, y = (pos["0"], pos["1"]) if isinstance(pos, dict) else pos
+        node.setXYpos(int(x / 2), int(y / 2))
+    for attrs in data.get("nodes", []):
+        node = created[str(attrs["id"])]
+        for fallback, item in enumerate(attrs.get("inputs", [])):
+            index = input_index(node, item, fallback)
+            if index is None:
+                continue
+            link = links.get(str(item.get("link")))
+            if not link:
+                node.setInput(index, None)
+                continue
+            source = created.get(str(link["origin_id"]))
+            input_id = data.get("inputNode", {}).get("id", -10)
+            if source is None and boundary and str(link["origin_id"]) == str(input_id):
+                source = boundary.get(link["origin_slot"])
+            if source:
+                connect_link(
+                    node,
+                    index,
+                    source,
+                    link["origin_slot"] if source in created.values() else None,
+                )
+        if attrs["type"] == "easy getNode":
+            title = attrs.get("title", attrs["type"])
+            source = next(
+                (
+                    created[str(other["id"])]
+                    for other in data["nodes"]
+                    if other["type"] == "easy setNode" and other.get("title") == title
+                ),
+                None,
+            )
+            node.setInput(0, source)
+            node["hide_input"].setValue(True)
+        if not stack and get_node_data(node).get("output_node"):
+            run_path = os.path.join(COMFYUI2NUKE, "nodes/ComfyUI/Run.nk")
+            run = nuke.nodePaste(run_path)
+            run.setInput(0, node)
+            if definitions:
+                run["run"].setValue("comfyui.workflow_importer.run_imported_workflow()")
+            run.setXYpos(node.xpos(), node.ypos() + 25)
+            run.setSelected(False)
+            nodes.append(run)
+    for attrs in data.get("groups", []):
+        backdrop = nuke.createNode("BackdropNode", inpanel=False)
+        backdrop.setName("GROUP")
+        backdrop["label"].setValue(convert_to_utf8(attrs.get("title", "")))
+        x, y, width, height = attrs["bounding"]
+        backdrop["bdwidth"].setValue(width / 2)
+        backdrop["bdheight"].setValue(height / 2)
+        backdrop.setXYpos(int(x / 2), int(y / 2))
+        backdrop["z_order"].setValue(0)
+        backdrop["note_font_size"].setValue(30)
+        set_hex_color(backdrop, attrs.get("color"))
+        backdrop.setSelected(False)
+        nodes.append(backdrop)
     center_nodes(nodes)
+    return created, nodes
 
-    def find_node_link(link):
-        if not link:
-            return
 
-        for node, attrs, _ in created_nodes.values():
-            for odata in attrs.get("outputs", {}):
-                links = odata["links"]
-                if not links:
-                    continue
-
-                if link in links:
-                    return node
-
-    for node, attrs, knobs_to_inputs_names in created_nodes.values():
-        node_data = {}
-
-        if attrs["type"] in ("Reroute", "easy setNode"):
-            knobs_order = []
-
-        elif attrs["type"] == "easy getNode":
-            knobs_order = []
-            node_name = node.name().replace("Get", "Set")
-            node.setInput(0, nuke.toNode(node_name))
-            node.knob("hide_input").setValue(True)
-
+def subgraph_boundary(definition, attrs):
+    links = workflow_links(definition)
+    external = {item["name"]: item for item in attrs.get("inputs", [])}
+    input_id = definition.get("inputNode", {}).get("id", -10)
+    sockets = []
+    promoted = []
+    for slot, item in enumerate(definition.get("inputs", [])):
+        host = external.get(item["name"])
+        is_socket = host and (not host.get("widget") or host.get("link") is not None)
+        targets = [
+            link
+            for link in links.values()
+            if str(link["origin_id"]) == str(input_id) and link["origin_slot"] == slot
+        ]
+        if is_socket:
+            sockets.append((slot, item))
         else:
-            node_data = get_node_data(node)
-            if not node_data:
-                continue
+            promoted.append((item, targets))
+            target_ids = {str(link["id"]) for link in targets}
+            for child in definition.get("nodes", []):
+                for child_input in child.get("inputs", []):
+                    if str(child_input.get("link")) in target_ids:
+                        child_input["link"] = None
+    return sockets, promoted
 
-            knobs_order = node_data["knobs_order"]
 
-        widgets_values = attrs.get("widgets_values")
-        widgets_values_named = attrs.get("widgets_values_named")
-        knobs_input_names = node_data.get("knobs_input_names", {})
-        values = []
+def expose_knob(group, knob, label, widgets):
+    if not knob:
+        return
+    base_label = label
+    suffix = 1
+    while label in widgets:
+        label = "{}_{}".format(base_label, suffix)
+        suffix += 1
+    name = normalize_nodename(label) or "control"
+    if name[0].isdigit() or name.startswith("_"):
+        name = "control" + name
+    base = name
+    suffix = 1
+    while group.knob(name):
+        name = "{}{}".format(base, suffix)
+        suffix += 1
+    link = nuke.Link_Knob(name, label)
+    prefix_length = len(group.fullName()) + 1
+    target_path = knob.node().fullName()[prefix_length:]
+    link.makeLink(target_path, knob.name())
+    group.addKnob(link)
+    widgets[label] = name
+    return name
 
-        if isinstance(widgets_values_named, dict) and widgets_values_named:
-            for knob_name in knobs_order:
-                input_name = knobs_input_names.get(knob_name, knob_name[:-1])
-                values.append(widgets_values_named.get(input_name))
-        elif isinstance(widgets_values, list):
-            for value in widgets_values:
-                if value in ["fixed", "increment", "decrement", "randomize"]:
-                    if any("seed" in s for s in knobs_order):
-                        randomize_knob = node.knob("randomize")
-                        if randomize_knob:
-                            randomize_knob.setValue(not value == "fixed")
-                        continue
-                values.append(value)
-        else:
-            for knob_name in knobs_order:
-                input_name = knobs_input_names.get(knob_name, knob_name[:-1])
-                values.append(widgets_values[input_name])
 
-        for i, value in enumerate(values):
-            if i >= len(knobs_order) or value is None:
-                continue
-
-            value = convert_to_utf8(value)
-            knob = node.knob(knobs_order[i])
-            if not knob:
-                continue
-
-            if type(value) is int:
-                value = value if value < 1e9 else 1e9
-                knob.setValue(int(value))
-            else:
-                try:
-                    knob.setValue(value)
-                except Exception:
-                    show_message(
-                        'Could not set the knob "{}" value for this node "{}" !'.format(
-                            knob.name(), node.name()
-                        )
-                    )
-
-        for i, idata in enumerate(attrs.get("inputs", {})):
-            link = idata["link"]
-
-            if (
-                idata["name"] + "_" in knobs_order
-                and not idata["name"] in knobs_to_inputs_names
+def create_subgraph(attrs, definition, definitions, not_installed, stack):
+    definition = deepcopy(definition)
+    sockets, promoted = subgraph_boundary(definition, attrs)
+    group = nuke.createNode("Group", inpanel=False)
+    group.setName(
+        normalize_nodename(attrs.get("title") or definition.get("name", "Subgraph"))
+    )
+    group.addKnob(nuke.Tab_Knob("Controls"))
+    boundary = {}
+    group.begin()
+    try:
+        for index, (slot, item) in enumerate(sockets):
+            node = nuke.createNode("Input", inpanel=False)
+            node.setName(normalize_nodename(item["name"]))
+            node["number"].setValue(index)
+            node.setXYpos(index * 140, -100)
+            node.setSelected(False)
+            boundary[slot] = node
+        created, _ = build_graph(
+            definition, definitions, not_installed, boundary, stack
+        )
+        links = workflow_links(definition)
+        output_id = definition.get("outputNode", {}).get("id", -20)
+        outputs = []
+        for slot, item in enumerate(definition.get("outputs", [])):
+            link = next(
+                (
+                    link
+                    for link in links.values()
+                    if str(link["target_id"]) == str(output_id)
+                    and link["target_slot"] == slot
+                ),
+                None,
+            )
+            source = created.get(str(link["origin_id"])) if link else None
+            output_slot = link["origin_slot"] if link else None
+            if link and str(link["origin_id"]) == str(
+                definition.get("inputNode", {}).get("id", -10)
             ):
+                source = boundary.get(link["origin_slot"])
+                output_slot = None
+            outputs.append([source.name(), output_slot] if source else None)
+            if source:
+                write_metadata(source, "comfyui_output_id", {"id": source.name()})
+            if slot == 0:
+                output = nuke.createNode("Output", inpanel=False)
+                output.setInput(0, source)
+                output.setSelected(False)
+        widgets = {}
+        exposed = set()
+        for item, targets in promoted:
+            for link in targets:
+                target = created.get(str(link["target_id"]))
+                child = next(
+                    (
+                        child
+                        for child in definition["nodes"]
+                        if str(child["id"]) == str(link["target_id"])
+                    ),
+                    None,
+                )
+                if not target or not child:
+                    continue
+                target_input = child.get("inputs", [])[link["target_slot"]]
+                knob = knob_for_input(
+                    target,
+                    target_input.get("widget", {}).get("name", target_input["name"]),
+                )
+                key = (str(child["id"]), target_input["name"])
+                if knob:
+                    exposed.add(key)
+                    if item["name"] not in widgets:
+                        expose_knob(group, knob, item["name"], widgets)
+                    else:
+                        owner = knob.node()
+                        depth = owner.fullName().count(".") - group.fullName().count(
+                            "."
+                        )
+                        alias = nuke.Link_Knob(knob.name(), knob.label())
+                        alias.makeLink(
+                            ".".join(["parent"] * depth), widgets[item["name"]]
+                        )
+                        owner.removeKnob(knob)
+                        owner.addKnob(alias)
+        proxies = attrs.get("properties", {}).get("proxyWidgets", [])
+        proxy_knobs = []
+        for node_id, widget_name in proxies:
+            target = created.get(str(node_id))
+            if not target:
+                proxy_knobs.append(None)
                 continue
-
-            onode = find_node_link(link)
-            node.setInput(i, onode)
-
-        if "Save" in attrs["type"]:
-            run_nk = os.path.join(COMFYUI2NUKE, "nodes/ComfyUI/Run.nk")
-            run_node = nuke.nodePaste(run_nk)
-            run_node.setInput(0, node)
-            run_node.setSelected(False)
-            run_node.setXYpos(node.xpos(), node.ypos() + 25)
-            nodes.append(run_node)
-
-    [n.setSelected(True) for n in nodes]
-
-    if not_installed:
-        nodes_list = "\n".join(not_installed)
-        show_message("You need to install these nodes in ComfyUI:\n\n" + nodes_list)
+            knob = (
+                target.knob("randomize")
+                if widget_name == "control_after_generate"
+                else knob_for_input(target, widget_name)
+            )
+            proxy_knobs.append((target, knob))
+            if (str(node_id), widget_name) not in exposed:
+                expose_knob(group, knob, widget_name, widgets)
+        values = attrs.get("widgets_values") or []
+        if proxies:
+            for target_knob, value in zip(proxy_knobs, values):
+                if target_knob:
+                    target, knob = target_knob
+                    set_widget_value(target, knob, value)
+        else:
+            for name, value in zip(widgets.values(), values):
+                set_widget_value(group, group.knob(name), value)
+        write_metadata(
+            group,
+            "comfyui_subgraph",
+            {
+                "inputs": [item["name"] for _, item in sockets],
+                "outputs": outputs,
+                "widgets": widgets,
+            },
+        )
+    finally:
+        group.end()
+    return group
