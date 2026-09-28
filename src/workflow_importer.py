@@ -124,6 +124,33 @@ def set_widget_value(node, knob, value):
         show_message('Could not set "{}.{}".'.format(node.name(), knob.name()))
 
 
+def active_widget_names(data, values):
+    order = data.get("knobs_order", [])
+    names = data.get("knobs_input_names", {})
+    dynamic_combos = data.get("dynamic_combos", {})
+    input_names = [names.get(name, name[:-1]) for name in order]
+    child_names = {
+        child
+        for options in dynamic_combos.values()
+        for children in options.values()
+        for child in children
+    }
+    active = []
+
+    def add_input(name):
+        if len(active) >= len(values):
+            return
+        value = values[len(active)]
+        active.append(name)
+        for child in dynamic_combos.get(name, {}).get(str(value), []):
+            add_input(child)
+
+    for name in input_names:
+        if name not in child_names:
+            add_input(name)
+    return active
+
+
 def set_widgets(node, attrs):
     data = get_node_data(node)
     order = data.get("knobs_order", [])
@@ -143,6 +170,13 @@ def set_widgets(node, attrs):
                     continue
             filtered.append(value)
         values = filtered
+        if data.get("dynamic_combos"):
+            knob_names = {names.get(name, name[:-1]): name for name in order}
+            order = [
+                knob_names[name]
+                for name in active_widget_names(data, values)
+                if name in knob_names
+            ]
     for name, value in zip(order, values):
         set_widget_value(node, node.knob(name), value)
 

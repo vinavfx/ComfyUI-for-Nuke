@@ -55,7 +55,16 @@ def get_autogrow_inputs(key, input_class, info, is_optional):
     return inputs
 
 
-def get_dynamic_combo_inputs(key, info, is_optional, display_name=None):
+def get_dynamic_combo_inputs(
+    key,
+    info,
+    is_optional,
+    display_name=None,
+    dynamic_combos=None,
+):
+    if dynamic_combos is None:
+        dynamic_combos = {}
+
     options = info.get("options", [])
     option_names = [option["key"] for option in options]
     combo_info = dict(info)
@@ -73,18 +82,23 @@ def get_dynamic_combo_inputs(key, info, is_optional, display_name=None):
         ]
     ]
     added_keys = set()
+    dynamic_combos[key] = {}
 
     for option in options:
+        option_keys = []
+        dynamic_combos[key][option["key"]] = option_keys
         option_inputs = option.get("inputs", {})
         for group in ("required", "optional"):
             for nested_key, input_value in option_inputs.get(group, {}).items():
                 full_key = "{}.{}".format(key, nested_key)
+                nested_class = input_value[0]
+                nested_info = input_value[1] if len(input_value) == 2 else {}
+                if not nested_info.get("forceInput", False):
+                    option_keys.append(full_key)
                 if full_key in added_keys:
                     continue
 
                 added_keys.add(full_key)
-                nested_class = input_value[0]
-                nested_info = input_value[1] if len(input_value) == 2 else {}
                 nested_optional = group == "optional"
 
                 if nested_class == "COMFY_DYNAMICCOMBO_V3":
@@ -94,6 +108,7 @@ def get_dynamic_combo_inputs(key, info, is_optional, display_name=None):
                             nested_info,
                             nested_optional,
                             nested_key,
+                            dynamic_combos,
                         )
                     )
                 else:
@@ -178,6 +193,7 @@ def create_node(data, inpanel=True):
     knobs_order = []
     knobs_class = {}
     knobs_input_names = {}
+    dynamic_combos = {}
     has_dynamic_combo = False
     ordered_inputs = []
 
@@ -193,7 +209,14 @@ def create_node(data, inpanel=True):
 
         if input_class == "COMFY_DYNAMICCOMBO_V3":
             has_dynamic_combo = True
-            ordered_inputs.extend(get_dynamic_combo_inputs(key, info, is_optional))
+            ordered_inputs.extend(
+                get_dynamic_combo_inputs(
+                    key,
+                    info,
+                    is_optional,
+                    dynamic_combos=dynamic_combos,
+                )
+            )
         else:
             ordered_inputs.append([key, input_value, is_optional, key])
 
@@ -342,6 +365,8 @@ def create_node(data, inpanel=True):
 
     if knobs_input_names:
         node_data["knobs_input_names"] = knobs_input_names
+    if dynamic_combos:
+        node_data["dynamic_combos"] = dynamic_combos
 
     data_knob.setValue(jsondumps(node_data))
 
