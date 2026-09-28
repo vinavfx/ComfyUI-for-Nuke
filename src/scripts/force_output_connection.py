@@ -28,7 +28,7 @@ def force_output(node=None):
             continue
 
         inputs_data = data["inputs"][i]
-        input_class = inputs_data["outputs"][0]
+        allowed_outputs = inputs_data["outputs"]
         force_output = inputs_data.get("force_output")
 
         inputs = list(reversed(nuke.allNodes(filter="Input", group=node)))
@@ -40,11 +40,11 @@ def force_output(node=None):
             continue
 
         outputs = dst_node_data["outputs"]
-        if not requires_force_output(outputs, input_class):
+        if not requires_force_output(outputs, allowed_outputs):
             data["inputs"][i].pop("force_output", None)
             continue
 
-        if not "output_name" in dst_node_data:
+        if "output_name" not in dst_node_data:
             nuke.message(
                 "{} obsolete node, generate node again".format(
                     dst_node_data["class_type"]
@@ -57,7 +57,7 @@ def force_output(node=None):
         outputs_items = " ".join([n.replace(" ", "\\ ") for n in output_name])
         outputs_items = "- " + outputs_items
 
-        if not force_output == None:
+        if force_output is not None:
             outputs_items = output_name[force_output] + " " + outputs_items
 
         p.addEnumerationPulldown(label, outputs_items)

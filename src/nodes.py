@@ -478,6 +478,24 @@ def extract_node_data(node):
     return {"inputs": inputs, "class_type": data["class_type"]}
 
 
+def get_connection_types(outputs):
+    return {
+        connection_type.strip()
+        for output in outputs
+        for connection_type in output.split(",")
+    }
+
+
+def outputs_are_compatible(outputs, allowed_outputs):
+    output_types = get_connection_types(outputs)
+    allowed_types = get_connection_types(allowed_outputs)
+    return (
+        "*" in output_types
+        or "*" in allowed_types
+        or bool(output_types & allowed_types)
+    )
+
+
 def get_output_index(node, node_data, input_index):
     inode_data = get_node_data(get_input(node, input_index))
     if not inode_data:
@@ -490,10 +508,9 @@ def get_output_index(node, node_data, input_index):
     if force_output is not None:
         return force_output
 
-    for allowed_output in allowed_outputs:
-        for i, o in enumerate(inode_outputs):
-            if allowed_output in [o, "*"] or "*" == o:
-                return i
+    for i, output in enumerate(inode_outputs):
+        if outputs_are_compatible([output], allowed_outputs):
+            return i
 
     return -1
 
@@ -542,15 +559,13 @@ def check_node(node):
         input_data = node_data["inputs"][i]
         allowed_outputs = input_data["outputs"]
 
-        if "*" not in allowed_outputs and "*" not in inode_outputs:
-            if not any(o in allowed_outputs for o in inode_outputs):
-                show_message(
-                    node.name()
-                    + ' : "{}" connection not supported !'.format(input_name)
-                )
-                return
+        if not outputs_are_compatible(inode_outputs, allowed_outputs):
+            show_message(
+                node.name() + ' : "{}" connection not supported !'.format(input_name)
+            )
+            return
 
-        if requires_force_output(inode_outputs, allowed_outputs[0]):
+        if requires_force_output(inode_outputs, allowed_outputs):
             if input_data.get("force_output") is None:
                 if nuke.ask(
                     "{}:\nConnected to node with duplicate outputs, "
@@ -564,21 +579,19 @@ def check_node(node):
     return True
 
 
-def requires_force_output(outputs, input_class):
-    contador = Counter(outputs)
-    repeated = [item for item, count in contador.items() if count > 1]
+def requires_force_output(outputs, allowed_outputs):
+    output_counts = Counter(outputs)
+    repeated = [item for item, count in output_counts.items() if count > 1]
+    allowed_types = get_connection_types(allowed_outputs)
 
-    if input_class == "*" and len(outputs) > 1:
-        pass
-    else:
-        if not repeated:
-            return False
+    if "*" in allowed_types and len(outputs) > 1:
+        return True
 
-        if "*" not in repeated:
-            if input_class not in repeated:
-                return False
+    if not repeated:
+        return False
 
-    return True
+    repeated_types = get_connection_types(repeated)
+    return "*" in repeated_types or bool(allowed_types & repeated_types)
 
 
 def update_input_nodes(node):
