@@ -4,6 +4,7 @@ import nuke  # type: ignore
 
 from .common import get_settings, show_message
 from .connection import GET
+from .queue_manager import resolve_submission_target
 
 
 def local_templates(categories):
@@ -24,7 +25,9 @@ def local_templates(categories):
 
 
 def select_template():
-    settings = get_settings()
+    settings = resolve_submission_target(get_settings(), timeout=10)
+    if not settings:
+        return
     categories = GET("templates/index.json", settings, timeout=10)
     if not isinstance(categories, list):
         show_message("The configured ComfyUI server did not return a template catalog.")
