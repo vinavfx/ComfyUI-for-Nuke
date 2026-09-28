@@ -42,12 +42,6 @@ def workflow_links(data):
     }
 
 
-def run_imported_workflow():
-    from .workflow_execution import run_workflow
-
-    run_workflow(nuke.thisNode())
-
-
 def import_workflow():
     panel = nuke.Panel("Import Workflow")
     panel.addEnumerationPulldown("Source", "JSON\\ file ComfyUI\\ templates")
@@ -340,8 +334,6 @@ def build_graph(data, definitions, not_installed, boundary=None, stack=()):
             run_path = os.path.join(COMFYUI2NUKE, "nodes/ComfyUI/Run.nk")
             run = nuke.nodePaste(run_path)
             run.setInput(0, node)
-            if definitions:
-                run["run"].setValue("comfyui.workflow_importer.run_imported_workflow()")
             run.setXYpos(node.xpos(), node.ypos() + 25)
             run.setSelected(False)
             nodes.append(run)
@@ -416,14 +408,22 @@ def expose_knob(group, knob, label, widgets):
 def create_subgraph(attrs, definition, definitions, not_installed, stack):
     definition = deepcopy(definition)
     sockets, promoted = subgraph_boundary(definition, attrs)
-    group = nuke.createNode("Group", inpanel=False)
+    gizmo_path = os.path.join(COMFYUI2NUKE, "nodes/ComfyUI/ComfyUIGizmo.nk")
+    group = nuke.nodePaste(gizmo_path)
     group.setName(
-        normalize_nodename(attrs.get("title") or definition.get("name", "Subgraph"))
+        normalize_nodename(definition.get("name") or attrs.get("title", "Subgraph"))
     )
-    group.addKnob(nuke.Tab_Knob("Controls"))
+    group.setSelected(False)
     boundary = {}
     group.begin()
     try:
+        save_image = nuke.toNode("SaveImage")
+        run = nuke.toNode("Run")
+        output = nuke.toNode("Output1")
+        if not save_image or not run or not output:
+            raise ValueError("ComfyUIGizmo must contain SaveImage, Run and Output1")
+        for child in list(nuke.allNodes("Input")):
+            nuke.delete(child)
         for index, (slot, item) in enumerate(sockets):
             node = nuke.createNode("Input", inpanel=False)
             node.setName(normalize_nodename(item["name"]))
@@ -458,8 +458,10 @@ def create_subgraph(attrs, definition, definitions, not_installed, stack):
             if source:
                 write_metadata(source, "comfyui_output_id", {"id": source.name()})
             if slot == 0:
-                output = nuke.createNode("Output", inpanel=False)
-                output.setInput(0, source)
+                if source:
+                    connect_link(save_image, 0, source, output_slot)
+                run.setInput(0, save_image)
+                output.setInput(0, run)
                 output.setSelected(False)
         widgets = {}
         exposed = set()
