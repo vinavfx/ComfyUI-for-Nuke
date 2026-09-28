@@ -4,6 +4,7 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import os
+import re
 import textwrap
 from copy import deepcopy
 
@@ -181,6 +182,42 @@ def set_widgets(node, attrs):
         set_widget_value(node, node.knob(name), value)
 
 
+def note_width(attrs):
+    size = attrs.get("size", [560, 0])
+    try:
+        width = size.get("0", 560) if isinstance(size, dict) else size[0]
+        return max(24, min(100, int(float(width) / 14)))
+    except (IndexError, TypeError, ValueError):
+        return 40
+
+
+def clean_markdown(text):
+    text = re.sub(r"!\[([^]]*)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"\[([^]]+)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"(?m)^\s{0,3}#{1,6}\s+", "", text)
+    text = re.sub(r"(\*\*|__)(.*?)\1", r"\2", text)
+    text = re.sub(r"(?<!\w)[*_]([^\n*_]+)[*_](?!\w)", r"\1", text)
+    text = re.sub(r"`([^`]+)`", r"\1", text)
+    return text
+
+
+def format_note(text, width):
+    lines = []
+    for line in clean_markdown(text).splitlines():
+        if not line.strip():
+            lines.append("")
+            continue
+        lines.extend(
+            textwrap.wrap(
+                line,
+                width=width,
+                break_on_hyphens=False,
+                replace_whitespace=False,
+            )
+        )
+    return "\n".join(lines).strip()
+
+
 def create_workflow_node(attrs, not_installed):
     node_type = attrs["type"]
     node = create_comfyui_node(node_type, inpanel=False)
@@ -188,7 +225,7 @@ def create_workflow_node(attrs, not_installed):
         node = nuke.createNode("StickyNote", inpanel=False)
         values = attrs.get("widgets_values") or [""]
         text = str(convert_to_utf8(values[0]))
-        node["label"].setValue("\n".join(textwrap.wrap(text, width=40)) + "\n\n")
+        node["label"].setValue(format_note(text, note_width(attrs)))
     elif node_type in ("Reroute", "easy getNode", "easy setNode"):
         node = nuke.createNode("Dot", inpanel=False)
         if node_type != "Reroute":
