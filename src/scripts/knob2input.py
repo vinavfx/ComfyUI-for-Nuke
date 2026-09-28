@@ -6,6 +6,7 @@
 import nuke  # type: ignore
 from ...nuke_util.nuke_util import selected_node
 from ..nodes import get_node_data, save_node_data
+from ..update_menu import normalize_nodename
 
 
 def get_swapped_knobs(node):
@@ -91,7 +92,7 @@ def convert_knobs(node, data, swapped_knobs):
                 node.begin()
                 input_node = nuke.createNode("Input", inpanel=False)
                 input_node.setSelected(False)
-                input_node.setName(knob_name)
+                input_node.setName(normalize_nodename(knob_name))
                 node.end()
 
         elif exists_konb:
