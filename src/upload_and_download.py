@@ -32,7 +32,8 @@ def upload_media():
     filename = os.path.basename(filepath)
     updated_options = list_knob.values()
 
-    if not filename in updated_options:
+    if filename not in updated_options:
         updated_options.append(filename)
 
     list_knob.setValues(updated_options)
+    list_knob.setValue(filename)

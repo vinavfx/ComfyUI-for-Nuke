@@ -16,6 +16,7 @@ from .src import (
     read_media,
     scripts,
     update_menu,
+    upload_and_download as upload_and_download_module,
     workflow_importer,
 )
 from functools import partial
@@ -24,6 +25,7 @@ from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
 cmd = cmd_module
 meta_gizmo = MetaGizmo
+upload_and_download = upload_and_download_module
 
 
 def setup():
