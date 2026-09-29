@@ -380,6 +380,35 @@ def subgraph_boundary(definition, attrs):
     return sockets, promoted
 
 
+def sync_widget_targets(group, widget_targets):
+    for source_name, targets in widget_targets.items():
+        source = group.knob(source_name)
+        if not source:
+            continue
+        for target_path, target_name in targets:
+            target = nuke.toNode(group.fullName() + "." + target_path)
+            target_knob = target.knob(target_name) if target else None
+            if target_knob:
+                target_knob.setValue(source.value())
+
+
+def enable_widget_sync(group):
+    callback = (
+        "import json\n"
+        "node = nuke.thisNode()\n"
+        "knob = nuke.thisKnob()\n"
+        "metadata = json.loads(node['comfyui_subgraph'].value())\n"
+        "targets = metadata.get('widget_targets', {}).get(knob.name(), [])\n"
+        "for target_path, target_name in targets:\n"
+        "    target = nuke.toNode(node.fullName() + '.' + target_path)\n"
+        "    target_knob = target.knob(target_name) if target else None\n"
+        "    if target_knob:\n"
+        "        target_knob.setValue(knob.value())"
+    )
+    existing = group["knobChanged"].value().rstrip()
+    group["knobChanged"].setValue(existing + ("\n" if existing else "") + callback)
+
+
 def expose_knob(group, knob, label, widgets):
     if not knob:
         return
@@ -464,6 +493,7 @@ def create_subgraph(attrs, definition, definitions, not_installed, stack):
                 output.setInput(0, run)
                 output.setSelected(False)
         widgets = {}
+        widget_targets = {}
         exposed = set()
         for item, targets in promoted:
             for link in targets:
@@ -489,16 +519,12 @@ def create_subgraph(attrs, definition, definitions, not_installed, stack):
                     if item["name"] not in widgets:
                         expose_knob(group, knob, item["name"], widgets)
                     else:
-                        owner = knob.node()
-                        depth = owner.fullName().count(".") - group.fullName().count(
-                            "."
+                        prefix_length = len(group.fullName()) + 1
+                        target_path = knob.node().fullName()[prefix_length:]
+                        source_name = widgets[item["name"]]
+                        widget_targets.setdefault(source_name, []).append(
+                            [target_path, knob.name()]
                         )
-                        alias = nuke.Link_Knob(knob.name(), knob.label())
-                        alias.makeLink(
-                            ".".join(["parent"] * depth), widgets[item["name"]]
-                        )
-                        owner.removeKnob(knob)
-                        owner.addKnob(alias)
         proxies = attrs.get("properties", {}).get("proxyWidgets", [])
         proxy_knobs = []
         for node_id, widget_name in proxies:
@@ -514,6 +540,18 @@ def create_subgraph(attrs, definition, definitions, not_installed, stack):
             proxy_knobs.append((target, knob))
             if (str(node_id), widget_name) not in exposed:
                 expose_knob(group, knob, widget_name, widgets)
+        write_metadata(
+            group,
+            "comfyui_subgraph",
+            {
+                "inputs": [item["name"] for _, item in sockets],
+                "outputs": outputs,
+                "widgets": widgets,
+                "widget_targets": widget_targets,
+            },
+        )
+        if widget_targets:
+            enable_widget_sync(group)
         values = attrs.get("widgets_values") or []
         if proxies:
             for target_knob, value in zip(proxy_knobs, values):
@@ -523,15 +561,7 @@ def create_subgraph(attrs, definition, definitions, not_installed, stack):
         else:
             for name, value in zip(widgets.values(), values):
                 set_widget_value(group, group.knob(name), value)
-        write_metadata(
-            group,
-            "comfyui_subgraph",
-            {
-                "inputs": [item["name"] for _, item in sockets],
-                "outputs": outputs,
-                "widgets": widgets,
-            },
-        )
+        sync_widget_targets(group, widget_targets)
     finally:
         group.end()
     return group
