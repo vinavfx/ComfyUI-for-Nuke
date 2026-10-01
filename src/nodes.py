@@ -197,10 +197,7 @@ def create_load_images_and_save(node, settings, rendered_nodes):
         "inputs": {
             "filepath": "",
             "format": "exr",
-            "tonemap": "linear",
-            "image_load_cap": 0,
-            "skip_first_images": 0,
-            "select_every_nth": 1,
+            "tonemap": "sRGB",
         },
         "class_type": "ReadImage",
     }
