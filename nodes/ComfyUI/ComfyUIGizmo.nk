@@ -20,14 +20,22 @@ Group {
   ypos -417
  }
  Group {
-  name SaveImage
+  name WriteImage
   tile_color 0xbcb50001
   xpos -40
   ypos -393
   addUserKnob {20 Controls}
   addUserKnob {1 filename_prefix_ l filename_prefix t "The prefix for the file to save. This may include formatting information such as %date:yyyy-MM-dd% or %Empty Latent Image.width% to include values from nodes."}
+  addUserKnob {4 format_ l format M {png exr}}
+  format_ exr
+  addUserKnob {4 bit_depth_ l bit_depth M {8bit 16bit 32bit}}
+  bit_depth_ 16bit
+  addUserKnob {4 compression_ l compression M {none "Zip (1 scanline)" "Zip (16 scanlines)" "PIZ Wavelet (32 scanlines)" RLE B44 B44A}}
+  compression_ "Zip (16 scanlines)"
+  addUserKnob {4 color_space_ l color_space M {sRGB linear}}
+  color_space_ linear
   filename_prefix_ 20251114184410342/image
-  addUserKnob {22 data -STARTLINE +HIDDEN T "\{\n    'knobs_order': \[\n        'filename_prefix_'\n    ], \n    'inputs': \[\n        \{\n            'opt': false, \n            'outputs': \[\n                'image'\n            ], \n            'name': 'images'\n        \}\n    ], \n    'class_type': 'SaveImage', \n    'outputs': \[], \n    'output_node': true\n\}"}
+  addUserKnob {22 data -STARTLINE +HIDDEN T "LRx4!F+o`-Q(3QCxzhjuW*>kM1ON~KAOMQL@7`)40F;PS\{8aN()bxqzJdoar2AV;r(?Dow0f3rUgyqa&z(|++;7T>DK\$udX1u+1(%P-f;pfPM%f%%|8>yAiD&C^e#%\{PfH6cq1D_\}p5iFA9lFaikbb!2(+5)3`7cxbo&Zc9wUjxfpUCtN?u_d6sasaj9~q#Urccg(E(@r=N?tBAh5lSFK#>fB"}
  }
   Input {
    inputs 0

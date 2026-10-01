@@ -446,11 +446,11 @@ def create_subgraph(attrs, definition, definitions, not_installed, stack):
     boundary = {}
     group.begin()
     try:
-        save_image = nuke.toNode("SaveImage")
+        write_image = nuke.toNode("WriteImage")
         run = nuke.toNode("Run")
         output = nuke.toNode("Output1")
-        if not save_image or not run or not output:
-            raise ValueError("ComfyUIGizmo must contain SaveImage, Run and Output1")
+        if not write_image or not run or not output:
+            raise ValueError("ComfyUIGizmo must contain WriteImage, Run and Output1")
         for child in list(nuke.allNodes("Input")):
             nuke.delete(child)
         for index, (slot, item) in enumerate(sockets):
@@ -488,8 +488,8 @@ def create_subgraph(attrs, definition, definitions, not_installed, stack):
                 write_metadata(source, "comfyui_output_id", {"id": source.name()})
             if slot == 0:
                 if source:
-                    connect_link(save_image, 0, source, output_slot)
-                run.setInput(0, save_image)
+                    connect_link(write_image, 0, source, output_slot)
+                run.setInput(0, write_image)
                 output.setInput(0, run)
                 output.setSelected(False)
         widgets = {}

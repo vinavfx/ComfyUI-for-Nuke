@@ -175,7 +175,7 @@ def create_node(data, inpanel=True):
         set_tile_color(n, [0.33, 0.42, 0.77])
     elif "VAE" in name:
         set_tile_color(n, [0.08, 0.8, 0.97])
-    elif "Save" in name:
+    elif "Save" in name or "Write" in name:
         set_tile_color(n, [0.16, 1, 0.74])
     elif "Merge" in name or "Combine" in name:
         set_tile_color(n, [0.64, 0.62, 0.77])
