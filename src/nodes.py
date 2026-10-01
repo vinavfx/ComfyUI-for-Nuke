@@ -192,33 +192,17 @@ def create_load_images_and_save(node, settings, rendered_nodes):
     prev_state = states.get(node.fullName(), {})
 
     frame_range = [node.firstFrame(), node.lastFrame()]
-    USE_EXR_TO_LOAD_IMAGES = settings["USE_EXR_TO_LOAD_IMAGES"]
-
-    if USE_EXR_TO_LOAD_IMAGES:
-        filepath_key = "filepath"
-        load_image_data = {
-            "frame_range": frame_range,
-            "inputs": {
-                "filepath": "",
-                "tonemap": "linear",
-                "image_load_cap": 0,
-                "skip_first_images": 0,
-                "select_every_nth": 1,
-            },
-            "class_type": "LoadEXR",
-        }
-    else:
-        filepath_key = "directory"
-        load_image_data = {
-            "frame_range": frame_range,
-            "inputs": {
-                "directory": "",
-                "image_load_cap": 0,
-                "skip_first_images": 0,
-                "select_every_nth": 1,
-            },
-            "class_type": "VHS_LoadImagesPath",
-        }
+    load_image_data = {
+        "frame_range": frame_range,
+        "inputs": {
+            "filepath": "",
+            "tonemap": "linear",
+            "image_load_cap": 0,
+            "skip_first_images": 0,
+            "select_every_nth": 1,
+        },
+        "class_type": "LoadEXR",
+    }
 
     if (
         current_state.get("connected_nodes") == prev_state.get("connected_nodes")
@@ -226,16 +210,12 @@ def create_load_images_and_save(node, settings, rendered_nodes):
     ):
         sequence_dir = prev_state.get("sequence_dir", "none")
         filepath = prev_state.get("filepath", "none")
-        same_exr_setting = (
-            prev_state.get("USE_EXR_TO_LOAD_IMAGES") == USE_EXR_TO_LOAD_IMAGES
-        )
-
         if (
             os.path.isdir(sequence_dir)
             and os.listdir(sequence_dir)
-            and same_exr_setting
+            and prev_state.get("format") == "exr"
         ):
-            load_image_data["inputs"][filepath_key] = filepath
+            load_image_data["inputs"]["filepath"] = filepath
             load_image_data["inputs"]["id"] = prev_state.get("state_id", 0)
             return load_image_data, False, False
 
@@ -256,60 +236,33 @@ def create_load_images_and_save(node, settings, rendered_nodes):
         shutil.rmtree(sequence_dir)
 
     os.makedirs(sequence_dir)
-    ext = "exr" if USE_EXR_TO_LOAD_IMAGES else "tiff"
-    filename = "{}/{}_#####.{}".format(sequence_dir, dirname, ext)
+    filename = "{}/{}_#####.exr".format(sequence_dir, dirname)
 
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
-    invert = nuke.createNode("Invert", inpanel=False)
-    invert.knob("channels").setValue("alpha")
-    invert.setInput(0, node)
-    invert.setXYpos(node.xpos(), node.ypos())
-
-    # VHS_LoadImages inverts the alpha
-    if USE_EXR_TO_LOAD_IMAGES:
-        invert["disable"].setValue(True)
-
     crop = nuke.createNode("Crop", inpanel=False)
     crop.knob("box").setValue([0, 0, node.width(), node.height()])
-    crop.setInput(0, invert)
+    crop.setInput(0, node)
     crop.setXYpos(node.xpos(), node.ypos())
 
     clamp = nuke.createNode("Clamp", inpanel=False)
     clamp.setInput(0, crop)
-
-    ocio_display = nuke.createNode("OCIODisplay", inpanel=False)
-    ocio_display["disable"].setValue(True)
-    ocio_display.setInput(0, clamp)
 
     write = nuke.createNode("Write", inpanel=False)
     write.knob("hide_input").setValue(True)
     write.setName(node.name() + "_write")
     write.setXYpos(node.xpos(), node.ypos())
     write.setSelected(False)
-    write.setInput(0, ocio_display)
+    write.setInput(0, clamp)
     write.knob("file").setValue(filename)
-    write.knob("file_type").setValue(ext)
+    write.knob("file_type").setValue("exr")
+    write.knob("raw").setValue(True)
     write.knob("channels").setValue("rgba")
-
-    if USE_EXR_TO_LOAD_IMAGES:
-        if nuke.Root()["colorManagement"].value() == "OCIO":
-            ocio_view = ocio_display["view"].values()
-
-            if "Un-tone-mapped" in ocio_view:
-                ocio_display["disable"].setValue(False)
-                ocio_display["view"].setValue("Un-tone-mapped")
-            else:
-                write["colorspace"].setValue("matte_paint")
-        else:
-            write["colorspace"].setValue("sRGB")
 
     def clean():
         nuke.delete(write)
-        nuke.delete(invert)
         nuke.delete(crop)
         nuke.delete(clamp)
-        nuke.delete(ocio_display)
 
     try:
         nuke.execute(write, node.firstFrame(), node.lastFrame())
@@ -323,13 +276,13 @@ def create_load_images_and_save(node, settings, rendered_nodes):
     state_id = random.randrange(1, 9999)
     current_state["sequence_dir"] = sequence_dir
     current_state["filepath"] = filepath
-    current_state["USE_EXR_TO_LOAD_IMAGES"] = USE_EXR_TO_LOAD_IMAGES
+    current_state["format"] = "exr"
     current_state["state_id"] = state_id
 
     states[node.fullName()] = current_state
     rendered_nodes.add(node)
 
-    load_image_data["inputs"][filepath_key] = filepath
+    load_image_data["inputs"]["filepath"] = filepath
     load_image_data["inputs"]["id"] = state_id
 
     return load_image_data, True, False

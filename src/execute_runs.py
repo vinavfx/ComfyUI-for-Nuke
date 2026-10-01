@@ -92,7 +92,7 @@ def sequential_execution(
                         run_node,
                         iteration=index,
                         node_iteration=node_iteration,
-                        )
+                    )
                 sequential_execution(gizmos, execution_error, callback, index + 1)
 
             submit(
@@ -258,7 +258,6 @@ def execute_runs_plus():
     keys = [
         "URL",
         "Use this URL as primary",
-        "Use EXR to laod images",
         "Display metadata in Read Node",
         "Background Submit",
         "Force scan URLs",
@@ -269,9 +268,8 @@ def execute_runs_plus():
     p.addBooleanCheckBox(keys[1], False)
     p.addNotepad("Queue", queue)
     p.addBooleanCheckBox(keys[2], True)
-    p.addBooleanCheckBox(keys[3], True)
+    p.addBooleanCheckBox(keys[3], False)
     p.addBooleanCheckBox(keys[4], False)
-    p.addBooleanCheckBox(keys[5], False)
     p.addButton("Cancel")
     p.addButton("Run")
 
@@ -293,11 +291,10 @@ def execute_runs_plus():
         if p.value(keys[1]):
             queue_manager.primary_url = url
 
-    settings["USE_EXR_TO_LOAD_IMAGES"] = p.value(keys[2])
-    settings["DISPLAY_META_IN_READ_NODE"] = p.value(keys[3])
-    settings["BACKGROUND_SUBMIT"] = p.value(keys[4])
+    settings["DISPLAY_META_IN_READ_NODE"] = p.value(keys[2])
+    settings["BACKGROUND_SUBMIT"] = p.value(keys[3])
 
-    if p.value(keys[5]):
+    if p.value(keys[4]):
         blocked_urls.clear()
 
     execute_runs(settings, distribute_load)

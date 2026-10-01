@@ -17,7 +17,6 @@ from ..settings import (
     OUTPUT_DIRECTORY,
     UPDATE_MENU_AT_START,
     URL,
-    USE_EXR_TO_LOAD_IMAGES,
 )
 from ..nuke_util.nuke_util import get_connected_nodes
 from ..nuke_util.python_util import jread, jwrite
@@ -291,7 +290,6 @@ def override_settings(run_node, settings):
         override("url")
         override("background_submit")
         override("collect_directory")
-        override("use_exr_to_load_images")
         override("display_meta_in_read_node")
 
     settings["URL"] = normalize_urls(settings["URL"])
@@ -347,7 +345,6 @@ def get_settings(run_node=None):
         "INPUT_DIRECTORY": INPUT_DIRECTORY,
         "COLLECT_DIRECTORY": COLLECT_DIRECTORY,
         "UPDATE_MENU_AT_START": UPDATE_MENU_AT_START,
-        "USE_EXR_TO_LOAD_IMAGES": USE_EXR_TO_LOAD_IMAGES,
         "DISPLAY_META_IN_READ_NODE": DISPLAY_META_IN_READ_NODE,
         "BACKGROUND_SUBMIT": False,
     }
