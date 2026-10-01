@@ -426,7 +426,26 @@ def extract_node_data(node):
 
         inputs[input_name] = [inode.name(), output_index]
 
-    return {"inputs": inputs, "class_type": data["class_type"]}
+    # TODO: Remove this temporary compatibility layer once embedded legacy
+    # SaveImage and SaveEXR nodes are no longer used in existing projects.
+    class_type = data["class_type"]
+    if class_type in ("SaveImage", "SaveEXR", "SaveExr"):
+        inputs = {
+            key: inputs[key] for key in ("images", "filename_prefix") if key in inputs
+        }
+        inputs.update(
+            format="exr",
+            bit_depth="16bit",
+            compression="Zip (16 scanlines)",
+            color_space="linear",
+        )
+        class_type = "WriteImage"
+
+    # Restore after:
+    # return {"inputs": inputs, "class_type": data["class_type"]}
+    # --------------------------------------------------------------------
+
+    return {"inputs": inputs, "class_type": class_type}
 
 
 def connection_types_match(input_class, output_class):
