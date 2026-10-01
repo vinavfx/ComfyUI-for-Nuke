@@ -428,7 +428,7 @@ def build_menu(info, progress, callback=None):
             continue
         item.clearMenu()
 
-    load_exr_exist = False
+    read_image_exists = False
     nodes = {}
 
     def normalize_string(string):
@@ -441,8 +441,8 @@ def build_menu(info, progress, callback=None):
     for _, value in info.items():
         name = value["name"].replace("+", "")
 
-        if name == "LoadEXR":
-            load_exr_exist = True
+        if name == "ReadImage":
+            read_image_exists = True
 
         value["display_name"] = value.get("display_name") or value.get("name")
         display_name = normalize_string(value["display_name"])
@@ -456,8 +456,8 @@ def build_menu(info, progress, callback=None):
         item_name = "{}/{}".format(category, display_name)
         nodes[item_name] = value
 
-    if not load_exr_exist:
-        show_message("ComfyUI-HQ-Image-Save module is required !")
+    if not read_image_exists:
+        show_message("ReadImage node is required in ComfyUI!")
 
     icon_gray = "{}/icons/comfyui_icon_gray.png".format(COMFYUI2NUKE)
 

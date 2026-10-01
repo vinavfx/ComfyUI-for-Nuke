@@ -196,12 +196,13 @@ def create_load_images_and_save(node, settings, rendered_nodes):
         "frame_range": frame_range,
         "inputs": {
             "filepath": "",
+            "format": "exr",
             "tonemap": "linear",
             "image_load_cap": 0,
             "skip_first_images": 0,
             "select_every_nth": 1,
         },
-        "class_type": "LoadEXR",
+        "class_type": "ReadImage",
     }
 
     if (
