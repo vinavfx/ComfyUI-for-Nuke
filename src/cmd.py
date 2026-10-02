@@ -3,8 +3,6 @@
 # OFFICE --------> Senior VFX Compositor, Software Developer
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
-import json
-
 import nuke  # type: ignore
 import __main__
 
@@ -12,29 +10,7 @@ from .common import wait_for_comfyui
 from .run import submit
 
 
-def get_meta_gizmo_last(meta_gizmo):
-    order_knob = meta_gizmo.knob("gizmo_order")
-    try:
-        names = json.loads(order_knob.value() or "[]")
-    except (AttributeError, TypeError, ValueError):
-        return
-
-    if not names or not isinstance(names[-1], str):
-        return
-
-    children = {
-        child.name(): child
-        for child in meta_gizmo.nodes()
-        if child.knob("comfyui_gizmo")
-    }
-    return children.get(names[-1])
-
-
 def get_run(run):
-    if run.knob("meta_gizmo"):
-        last_gizmo = get_meta_gizmo_last(run)
-        return get_run(last_gizmo) if last_gizmo else run
-
     if run.knob("comfyui_gizmo"):
         return nuke.toNode(run.fullName() + ".Run")
 

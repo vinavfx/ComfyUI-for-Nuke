@@ -20,11 +20,9 @@ from .src import (
     workflow_importer,
 )
 from functools import partial
-from .nodes.ComfyUI import MetaGizmo
 from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
 cmd = cmd_module
-meta_gizmo = MetaGizmo
 upload_and_download = upload_and_download_module
 
 
