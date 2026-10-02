@@ -40,7 +40,6 @@ def ordered_gizmos(node):
     gizmos = get_gizmos(node)
     gizmos_by_name = {gizmo.name(): gizmo for gizmo in gizmos}
     names = [name for name in read_order(node) if name in gizmos_by_name]
-    names.extend(gizmo.name() for gizmo in gizmos if gizmo.name() not in names)
     return [gizmos_by_name[name] for name in names]
 
 
@@ -72,16 +71,23 @@ def refresh_widgets(node):
 
 
 def update_content(node):
-    gizmos = ordered_gizmos(node)
-    save_order(node, [gizmo.name() for gizmo in gizmos])
+    gizmos = get_gizmos(node)
+    names = [gizmo.name() for gizmo in ordered_gizmos(node)]
+    names.extend(gizmo.name() for gizmo in gizmos if gizmo.name() not in names)
+    save_order(node, names)
     refresh_widgets(node)
 
 
 def move_selected(node, offset):
     selection_knob = node.knob(SELECTION_KNOB)
     selected_name = selection_knob.value() if selection_knob else ""
-    names = [gizmo.name() for gizmo in ordered_gizmos(node)]
-    if selected_name not in names:
+    names = read_order(node)
+    current_names = [gizmo.name() for gizmo in get_gizmos(node)]
+    if (
+        len(names) != len(current_names)
+        or set(names) != set(current_names)
+        or selected_name not in names
+    ):
         return
 
     index = names.index(selected_name)
@@ -153,10 +159,10 @@ class MetaGizmoWidget(QWidget):
 
         self.tree.blockSignals(True)
         self.tree.clear()
-        for gizmo in ordered_gizmos(node):
-            item = QTreeWidgetItem([gizmo.name()])
+        for name in read_order(node):
+            item = QTreeWidgetItem([name])
             self.tree.addTopLevelItem(item)
-            if gizmo.name() == selected_name:
+            if name == selected_name:
                 self.tree.setCurrentItem(item)
         self.tree.blockSignals(False)
 
