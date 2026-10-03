@@ -408,6 +408,8 @@ def create_node(data, inpanel=True):
 
 def update_menu(callback=None):
     if menu_updated:
+        if callback:
+            callback()
         return
 
     return update(callback)

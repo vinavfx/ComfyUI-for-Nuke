@@ -5,7 +5,7 @@ from ...nuke_util.nuke_util import (
     get_input_nodes,
     transfer_knobs,
 )
-from ..update_menu import create_comfyui_node, update
+from ..update_menu import create_comfyui_node, update_menu
 from ..nodes import get_node_data, save_node_data
 from .knob2input import convert_knobs, get_swapped_knobs
 
@@ -37,7 +37,7 @@ def reload_node():
     nodes[0].parent().begin()
     [n.setSelected(False) for n in nuke.selectedNodes()]
 
-    update(lambda: reload_node_action(nodes))
+    update_menu(lambda: reload_node_action(nodes))
 
 
 def reload_node_action(nodes):
