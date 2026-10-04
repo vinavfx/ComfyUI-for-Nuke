@@ -5,11 +5,12 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 from functools import partial
+import colorsys
 import re
 import json
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import set_tile_color, get_output_nodes
+from ..nuke_util.nuke_util import get_output_nodes
 from .connection import convert_to_utf8
 from ..settings import COMFYUI2NUKE
 from .common import (
@@ -124,12 +125,12 @@ def get_nodes():
     return comfyui_nodes
 
 
-def create_comfyui_node(node_type, inpanel=True):
+def create_comfyui_node(node_type, inpanel=True, connect_selected=True):
     node_data = comfyui_nodes.get(node_type)
     if not node_data:
         return
 
-    return create_node(node_data, inpanel)
+    return create_node(node_data, inpanel, connect_selected)
 
 
 def refresh_models(node, knob_name, class_type):
@@ -152,24 +153,24 @@ def refresh_models(node, knob_name, class_type):
     knob.setValue(value)
 
 
-def set_comfyui_node_color(node, name, category):
+def get_comfyui_node_color(name, category):
     leaf_category = category.split("/")[-1]
     node_description = "{}/{}".format(category, name).lower()
 
     if "loop" in node_description:
-        set_tile_color(node, [0.98, 0.4, 0.72])
+        hsl = [0.98, 0.4, 0.72]
     elif "lora" in node_description:
-        set_tile_color(node, [0.49, 0.45, 0.65])
+        hsl = [0.49, 0.45, 0.65]
     elif leaf_category == "loaders":
-        set_tile_color(node, [0.57, 0.58, 0.48])
+        hsl = [0.57, 0.58, 0.48]
     elif leaf_category == "mask":
-        set_tile_color(node, [0.33, 0.42, 0.77])
+        hsl = [0.33, 0.42, 0.77]
     elif "VAE" in name:
-        set_tile_color(node, [0.08, 0.8, 0.97])
+        hsl = [0.08, 0.8, 0.97]
     elif "Save" in name or "Write" in name:
-        set_tile_color(node, [0.16, 1, 0.74])
+        hsl = [0.16, 1, 0.74]
     elif "Merge" in name or "Combine" in name:
-        set_tile_color(node, [0.64, 0.62, 0.77])
+        hsl = [0.64, 0.62, 0.77]
     else:
         color_rules = (
             ("Transform", ("transform", "resize", "scale", "crop", "rotate", "flip")),
@@ -184,17 +185,60 @@ def set_comfyui_node_color(node, name, category):
         )
         for node_class, keywords in color_rules:
             if any(keyword in node_description for keyword in keywords):
-                node["tile_color"].setValue(nuke.defaultNodeColor(node_class))
-                return
+                return nuke.defaultNodeColor(node_class)
+        return 0
+
+    red, green, blue = (int(value * 255) for value in colorsys.hsv_to_rgb(*hsl))
+    return (red << 24) | (green << 16) | (blue << 8) | 1
 
 
-def create_node(data, inpanel=True):
-    try:
-        selected_node = nuke.selectedNode()
-    except Exception:
-        selected_node = None
+def set_comfyui_node_color(node, name, category):
+    node["tile_color"].setValue(get_comfyui_node_color(name, category))
 
-    n = nuke.createNode("Group", inpanel=inpanel)
+
+def get_ordered_inputs(data):
+    input_data = data["input"]
+    required = input_data.get("required", {})
+    optional = input_data.get("optional", {})
+    input_order = data.get("input_order", {})
+    required_order = input_order.get("required", list(required))
+    optional_order = input_order.get("optional", list(optional))
+    ordered_inputs = []
+    dynamic_combos = {}
+
+    for key in required_order + optional_order:
+        input_value = required.get(key, [])
+        is_optional = not input_value
+        if is_optional:
+            input_value = optional.get(key)
+
+        input_class = input_value[0]
+        info = input_value[1] if len(input_value) == 2 else {}
+        if input_class == "COMFY_DYNAMICCOMBO_V3":
+            ordered_inputs.extend(
+                get_dynamic_combo_inputs(
+                    key,
+                    info,
+                    is_optional,
+                    dynamic_combos=dynamic_combos,
+                )
+            )
+        else:
+            ordered_inputs.append([key, input_value, is_optional, key])
+
+    return ordered_inputs, dynamic_combos
+
+
+def create_node(data, inpanel=True, connect_selected=True):
+    selected_node = None
+    if connect_selected:
+        try:
+            selected_node = nuke.selectedNode()
+        except Exception:
+            pass
+        n = nuke.createNode("Group", inpanel=inpanel)
+    else:
+        n = nuke.nodes.Group()
 
     name = normalize_nodename(data["name"])
     display_name = normalize_nodename(data["display_name"])
@@ -209,43 +253,11 @@ def create_node(data, inpanel=True):
 
     inputs = []
 
-    input_data = data["input"]
-    required = input_data.get("required", {})
-    optional = input_data.get("optional", {})
-
-    input_order = data.get("input_order", {})
-    required_order = input_order.get("required", [])
-    optional_order = input_order.get("optional", [])
-
     knobs_order = []
     knobs_class = {}
     knobs_input_names = {}
-    dynamic_combos = {}
-    has_dynamic_combo = False
-    ordered_inputs = []
-
-    for key in required_order + optional_order:
-        input_value = required.get(key, [])
-        is_optional = not input_value
-
-        if is_optional:
-            input_value = optional.get(key)
-
-        input_class = input_value[0]
-        info = input_value[1] if len(input_value) == 2 else {}
-
-        if input_class == "COMFY_DYNAMICCOMBO_V3":
-            has_dynamic_combo = True
-            ordered_inputs.extend(
-                get_dynamic_combo_inputs(
-                    key,
-                    info,
-                    is_optional,
-                    dynamic_combos=dynamic_combos,
-                )
-            )
-        else:
-            ordered_inputs.append([key, input_value, is_optional, key])
+    ordered_inputs, dynamic_combos = get_ordered_inputs(data)
+    has_dynamic_combo = bool(dynamic_combos)
 
     for key, input_value, is_optional, display_name in ordered_inputs:
         input_class = input_value[0]
@@ -490,6 +502,7 @@ def build_menu(info, progress, callback=None):
 
     icon_gray = "{}/icons/comfyui_icon_gray.png".format(COMFYUI2NUKE)
 
+    comfyui_nodes.clear()
     for i, (fullname, value) in enumerate(sorted(nodes.items())):
         progress.setProgress(int(i * 100 / len(nodes)))
 
