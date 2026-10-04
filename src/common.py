@@ -192,6 +192,15 @@ def wait_for_comfyui(callback):
     return True
 
 
+def get_autogrow_names(template):
+    names = template.get("names")
+    if names is not None:
+        return names[:AUTOGROW_INPUT_COUNT]
+
+    prefix = template.get("prefix", "")
+    return ["{}{}".format(prefix, index) for index in range(AUTOGROW_INPUT_COUNT)]
+
+
 def update_images_and_mask_inputs():
     global updated_inputs
 
@@ -223,12 +232,11 @@ def update_images_and_mask_inputs():
 
             template = value[1].get("template", {})
             template_input = template.get("input", {})
-            prefix = template.get("prefix", "")
             for group in ("required", "optional"):
                 for template_value in template_input.get(group, {}).values():
                     template_class = template_value[0]
-                    for index in range(AUTOGROW_INPUT_COUNT):
-                        input_name = "{}.{}{}".format(name, prefix, index)
+                    for input_suffix in get_autogrow_names(template):
+                        input_name = "{}.{}".format(name, input_suffix)
                         if template_class in ["*", "IMAGE"]:
                             if input_name not in image_inputs:
                                 image_inputs.append(input_name)

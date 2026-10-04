@@ -14,7 +14,7 @@ from ..nuke_util.nuke_util import get_output_nodes
 from .connection import convert_to_utf8
 from ..settings import COMFYUI2NUKE
 from .common import (
-    AUTOGROW_INPUT_COUNT,
+    get_autogrow_names,
     show_message,
     jsondumps,
     get_object_info,
@@ -42,14 +42,12 @@ def get_autogrow_inputs(key, input_class, info, is_optional):
 
     template = info.get("template", {})
     template_input = template.get("input", {})
-    prefix = template.get("prefix", "")
     inputs = []
 
     for group in ("required", "optional"):
         for template_value in template_input.get(group, {}).values():
             template_class = template_value[0]
-            for index in range(AUTOGROW_INPUT_COUNT):
-                display_name = "{}{}".format(prefix, index)
+            for display_name in get_autogrow_names(template):
                 input_name = "{}.{}".format(key, display_name)
                 inputs.append([input_name, template_class, is_optional, display_name])
 
