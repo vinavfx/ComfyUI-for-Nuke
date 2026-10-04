@@ -60,9 +60,17 @@ def has_node_updates(node, data, definition):
         if node.knob(name) is not None or node.knob(name[:-1] + "_hide") is not None
     ]
     actual_inputs = [value["name"] for value in data["inputs"]]
-    return sorted(expected_knobs) != sorted(actual_knobs) or sorted(
-        expected_inputs
-    ) != sorted(actual_inputs)
+    expected_outputs = [
+        name if isinstance(output, list) else output.lower()
+        for output, name in zip(definition["output"], definition["output_name"])
+    ]
+    return (
+        sorted(expected_knobs) != sorted(actual_knobs)
+        or sorted(expected_inputs) != sorted(actual_inputs)
+        or expected_outputs != data.get("outputs", [])
+        or definition.get("output_name", False) != data.get("output_name", False)
+        or definition.get("output_node", False) != data.get("output_node", False)
+    )
 
 
 def transfer_reload_knobs(source_node, new_node):
