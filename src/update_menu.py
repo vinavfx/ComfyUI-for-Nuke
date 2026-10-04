@@ -157,7 +157,7 @@ def get_comfyui_node_color(name, category):
     leaf_category = category.split("/")[-1]
     node_description = "{}/{}".format(category, name).lower()
 
-    if "loop" in node_description:
+    if "loop" in node_description or "iteration" in name.lower():
         hsl = [0.98, 0.4, 0.72]
     elif "lora" in node_description:
         hsl = [0.49, 0.45, 0.65]
