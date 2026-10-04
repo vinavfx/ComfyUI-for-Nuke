@@ -42,14 +42,18 @@ def get_autogrow_inputs(key, input_class, info, is_optional):
 
     template = info.get("template", {})
     template_input = template.get("input", {})
+    minimum = template.get("min", 1)
     inputs = []
 
     for group in ("required", "optional"):
         for template_value in template_input.get(group, {}).values():
             template_class = template_value[0]
-            for display_name in get_autogrow_names(template):
+            for index, display_name in enumerate(get_autogrow_names(template)):
                 input_name = "{}.{}".format(key, display_name)
-                inputs.append([input_name, template_class, is_optional, display_name])
+                optional_input = is_optional or group == "optional" or index >= minimum
+                inputs.append(
+                    [input_name, template_class, optional_input, display_name]
+                )
 
     return inputs
 
