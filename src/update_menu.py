@@ -152,6 +152,42 @@ def refresh_models(node, knob_name, class_type):
     knob.setValue(value)
 
 
+def set_comfyui_node_color(node, name, category):
+    leaf_category = category.split("/")[-1]
+    node_description = "{}/{}".format(category, name).lower()
+
+    if "loop" in node_description:
+        set_tile_color(node, [0.98, 0.4, 0.72])
+    elif "lora" in node_description:
+        set_tile_color(node, [0.49, 0.45, 0.65])
+    elif leaf_category == "loaders":
+        set_tile_color(node, [0.57, 0.58, 0.48])
+    elif leaf_category == "mask":
+        set_tile_color(node, [0.33, 0.42, 0.77])
+    elif "VAE" in name:
+        set_tile_color(node, [0.08, 0.8, 0.97])
+    elif "Save" in name or "Write" in name:
+        set_tile_color(node, [0.16, 1, 0.74])
+    elif "Merge" in name or "Combine" in name:
+        set_tile_color(node, [0.64, 0.62, 0.77])
+    else:
+        color_rules = (
+            ("Transform", ("transform", "resize", "scale", "crop", "rotate", "flip")),
+            ("Grade", ("color", "colour", "exposure", "contrast", "gamma")),
+            ("Blur", ("filter", "blur", "sharpen", "denoise")),
+            ("Keyer", ("controlnet", "control_net", "segmentation")),
+            ("Text2", ("conditioning", "text", "prompt", "clip")),
+            ("Noise", ("sampling", "sampler", "scheduler", "noise")),
+            ("Shuffle", ("latent", "channel")),
+            ("TimeWarp", ("video", "animation", "frame", "temporal")),
+            ("Read", ("image", "load", "input")),
+        )
+        for node_class, keywords in color_rules:
+            if any(keyword in node_description for keyword in keywords):
+                node["tile_color"].setValue(nuke.defaultNodeColor(node_class))
+                return
+
+
 def create_node(data, inpanel=True):
     try:
         selected_node = nuke.selectedNode()
@@ -169,16 +205,7 @@ def create_node(data, inpanel=True):
 
     category = data["category"].split("/")[-1]
 
-    if category == "loaders":
-        set_tile_color(n, [0.57, 0.58, 0.48])
-    elif category == "mask":
-        set_tile_color(n, [0.33, 0.42, 0.77])
-    elif "VAE" in name:
-        set_tile_color(n, [0.08, 0.8, 0.97])
-    elif "Save" in name or "Write" in name:
-        set_tile_color(n, [0.16, 1, 0.74])
-    elif "Merge" in name or "Combine" in name:
-        set_tile_color(n, [0.64, 0.62, 0.77])
+    set_comfyui_node_color(n, name, data["category"])
 
     inputs = []
 

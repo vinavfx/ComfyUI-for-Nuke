@@ -17,7 +17,9 @@ def transfer_reload_knobs(source_node, new_node):
         if isinstance(knob, nuke.Enumeration_Knob)
     }
 
+    tile_color = new_node["tile_color"].value()
     transfer_knobs(source_node, new_node, transfer_all=True)
+    new_node["tile_color"].setValue(tile_color)
 
     for knob_name, values in choices.items():
         knob = new_node.knob(knob_name)
