@@ -12,6 +12,7 @@ from ..nuke_util.nuke_util import get_project_name
 
 blocked_urls = []
 primary_url = None
+prevalidated_url = None
 default_timeout = 15
 
 
@@ -125,6 +126,10 @@ def resolve_queue_position(settings, new_user):
 
 
 def resolve_submission_target(settings, timeout=None):
+    if prevalidated_url is not None:
+        settings["URL"] = [prevalidated_url]
+        return settings
+
     timeout = default_timeout if timeout is None else timeout
     urls, available_url, lowest_load_url, _, _ = scan_urls(settings, timeout)
     if not urls:
