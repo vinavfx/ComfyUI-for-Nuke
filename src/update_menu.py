@@ -482,6 +482,9 @@ def build_menu(info, progress, callback=None):
         return string.replace(" /", "/").replace("/ ", "/").strip()
 
     for _, value in info.items():
+        if value.get("category") == "__hide__":
+            continue
+
         name = value["name"].replace("+", "")
 
         if name == "ReadImage":
