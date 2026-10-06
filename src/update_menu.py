@@ -159,6 +159,9 @@ def get_comfyui_node_color(name, category):
     leaf_category = category.split("/")[-1]
     node_description = "{}/{}".format(category, name).lower()
 
+    if "batch" in node_description or "time" in node_description:
+        return nuke.defaultNodeColor("TimeWarp")
+
     if "loop" in node_description or "iteration" in name.lower():
         hsl = [0.98, 0.4, 0.72]
     elif "lora" in node_description:
