@@ -133,12 +133,6 @@ class ComfyJob:
         if not message:
             return
 
-        if "Loop" in message:
-            message = "{} - {}".format(
-                message.count("Loop") + 1,
-                message.split(".")[-1],
-            )
-
         ip = ""
         url = self.settings["URL"][0]
         if include_ip and "127" not in url:
@@ -354,7 +348,7 @@ class ComfyJob:
                     )
                     if not read:
                         error = (
-                            "The ComfyUI job finished, but no Read node was " "created."
+                            "The ComfyUI job finished, but no Read node was created."
                         )
             except Exception:
                 error = traceback.format_exc()
