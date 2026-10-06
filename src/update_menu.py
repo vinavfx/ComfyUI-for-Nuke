@@ -461,7 +461,8 @@ def build_menu(info, progress, callback=None):
     menu_updated = True
 
     progress.setMessage("Refreshing menu items...")
-    comfyui_menu = nuke.menu("Nodes").addMenu("ComfyUI")
+    nodes_menu = nuke.menu("Nodes")
+    comfyui_menu = nodes_menu.addMenu("ComfyUI")
 
     for item in comfyui_menu.items():
         if item.name() in ["Update all ComfyUI", "Basic Nodes", "Gizmos", "Scripts"]:
@@ -472,7 +473,8 @@ def build_menu(info, progress, callback=None):
         item.clearMenu()
 
     read_image_exists = False
-    nodes = {}
+    nodes = []
+    label_counts = {}
 
     def normalize_string(string):
         if not string:
@@ -480,6 +482,19 @@ def build_menu(info, progress, callback=None):
 
         string = "".join(char if ord(char) < 128 else "" for char in string)
         return string.replace(" /", "/").replace("/ ", "/").strip()
+
+    nuke_labels = set()
+
+    def collect_menu_labels(menu):
+        for item in menu.items():
+            if item.name() == "ComfyUI":
+                continue
+            if hasattr(item, "items"):
+                collect_menu_labels(item)
+            else:
+                nuke_labels.add(normalize_string(item.name()))
+
+    collect_menu_labels(nodes_menu)
 
     for _, value in info.items():
         if value.get("category") == "__hide__":
@@ -499,8 +514,17 @@ def build_menu(info, progress, callback=None):
 
         value["category"] = category
 
-        item_name = "{}/{}".format(category, display_name)
-        nodes[item_name] = value
+        label_counts[display_name] = label_counts.get(display_name, 0) + 1
+        nodes.append((category, display_name, value))
+
+    menu_items = []
+    for category, display_name, value in nodes:
+        repeated_label = label_counts[display_name] > 1
+        if display_name in nuke_labels:
+            display_name = "{} [ComfyUI]".format(display_name)
+        if repeated_label:
+            display_name = "{} [{}]".format(display_name, value["name"])
+        menu_items.append(("{}/{}".format(category, display_name), value))
 
     if not read_image_exists:
         show_message("ReadImage node is required in ComfyUI!")
@@ -508,8 +532,8 @@ def build_menu(info, progress, callback=None):
     icon_gray = "{}/icons/comfyui_icon_gray.png".format(COMFYUI2NUKE)
 
     comfyui_nodes.clear()
-    for i, (fullname, value) in enumerate(sorted(nodes.items())):
-        progress.setProgress(int(i * 100 / len(nodes)))
+    for i, (fullname, value) in enumerate(sorted(menu_items, key=lambda item: item[0])):
+        progress.setProgress(int(i * 100 / len(menu_items)))
 
         input_data = value.get("input", {})
         input_order = value.get("input_order", {})
