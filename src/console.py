@@ -288,7 +288,7 @@ class QueuePoller(Poller):
 
 class console_panel(panel_widget):
     def __init__(self, parent=None):
-        super(console_panel, self).__init__(parent)
+        super().__init__(parent)
         self.margin = 2
 
         layout = QVBoxLayout(self)
@@ -651,11 +651,11 @@ class output_widget(QTextEdit):
         scrollbar.setValue(scrollbar.maximum())
 
     def hideEvent(self, event):
-        super(output_widget, self).hideEvent(event)
+        super().hideEvent(event)
         self.stop_all()
 
     def showEvent(self, event):
-        super(output_widget, self).showEvent(event)
+        super().showEvent(event)
         parent = self.parent
         if not hasattr(parent, "toolbar"):
             return
