@@ -73,12 +73,10 @@ def wait_for_startup_scan():
 
 
 def scan_comfyui(force_scan):
-    from .connection import GET
+    from .connection import GET, get_ip_from_url
     from .queue_manager import resolve_submission_target
 
     global object_info
-    cache_path = "/tmp/comfyui2nuke_object_info.json"
-
     settings = get_settings()
     settings = resolve_submission_target(settings, 10)
     if not settings:
@@ -86,10 +84,16 @@ def scan_comfyui(force_scan):
         print("Could not load ComfyUI object_info.")
         return False
 
+    server_url = settings["URL"][0]
+    server_key = hashlib.sha256(server_url.encode("utf-8")).hexdigest()
+    cache_path = f"/tmp/comfyui2nuke_object_info_{server_key}.json"
+    server_ip = get_ip_from_url(server_url)
+    loaded_message = f"ComfyUI loaded successfully from {server_ip}."
+
     if not force_scan and os.path.exists(cache_path):
         try:
             object_info = jread(cache_path)
-            print("ComfyUI loaded successfully.")
+            print(loaded_message)
             return True
         except (OSError, TypeError, json.JSONDecodeError):
             pass
@@ -101,7 +105,7 @@ def scan_comfyui(force_scan):
             jwrite(cache_path, object_info)
         except OSError:
             pass
-        print("ComfyUI loaded successfully.")
+        print(loaded_message)
     else:
         print("Could not load ComfyUI object_info.")
 
