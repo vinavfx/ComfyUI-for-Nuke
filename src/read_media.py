@@ -435,6 +435,15 @@ def create_read(run_node, data, settings, filename, already_exists=False):
         run_node.parent() if run_node.parent().knob("comfyui_gizmo") else run_node
     )
 
+    if comfyui_gizmo.knob("comfyui_gizmo") is not None:
+        source = read.knobs().get("comfyui_source")
+        if source is not None or settings.get("LINK_DEPENDENCY_SOURCE", False):
+            if source is None:
+                source = nuke.Link_Knob("comfyui_source")
+                source.setFlag(nuke.INVISIBLE)
+                read.addKnob(source)
+            source.makeLink(comfyui_gizmo.fullName(), "comfyui_gizmo")
+
     for i, onode in get_output_nodes(comfyui_gizmo):
         onode.setInput(i, read)
 

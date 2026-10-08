@@ -8,7 +8,15 @@ import copy
 import nuke  # type: ignore
 from ..nuke_util.nuke_util import selected_node
 from .run import submit
-from .cmd import get_run, inference_end, inference_start
+from .cmd import (
+    confirm_dependencies,
+    confirm_dependency_order,
+    dependency_gizmos,
+    get_run,
+    inference_end,
+    inference_start,
+    run_dependencies,
+)
 from .common import get_settings, override_settings, wait_for_comfyui, init_scan_thread
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
@@ -20,10 +28,18 @@ def cli_submit(gizmos, callback=None, validate_prompt=False):
 
 
 def sequential_execution(
-    gizmos=None, error=None, callback=None, index=0, validate_prompt=False
+    gizmos=None,
+    error=None,
+    callback=None,
+    index=0,
+    validate_prompt=False,
+    settings=None,
+    dependency_nodes=None,
 ):
     if gizmos is None:
         gizmos = []
+    if dependency_nodes is None:
+        dependency_nodes = []
 
     while not error and index < len(gizmos):
         gizmo = gizmos[index]
@@ -50,13 +66,25 @@ def sequential_execution(
                         iteration=index,
                         node_iteration=node_iteration,
                     )
-                sequential_execution(gizmos, execution_error, callback, index + 1)
+                sequential_execution(
+                    gizmos,
+                    execution_error,
+                    callback,
+                    index + 1,
+                    settings=settings,
+                    dependency_nodes=dependency_nodes,
+                )
 
-            submit(
-                run,
-                success_callback=execution_finished,
-                custom_metadata=metadata,
-            )
+            run_settings = copy.deepcopy(settings) if settings else get_settings(run)
+            run_settings["BACKGROUND_SUBMIT"] = False
+            run_settings["LINK_DEPENDENCY_SOURCE"] = gizmo in dependency_nodes
+            with run:
+                submit(
+                    run,
+                    success_callback=execution_finished,
+                    settings=run_settings,
+                    custom_metadata=metadata,
+                )
             return
 
         validation_errors = []
@@ -149,6 +177,15 @@ def multi_versions(run=None, success_callback=None):
     if not run:
         run = nuke.thisNode()
 
+    if run.knob("comfyui_gizmo") is not None:
+        gizmos = confirm_dependencies(run)
+        if gizmos is None:
+            return
+        if gizmos:
+            runs = gizmos[:-1] + prepare_multiversions(run)
+            run_dependencies(runs, success_callback)
+            return
+
     multi_runs(prepare_multiversions(run), success_callback)
 
 
@@ -178,6 +215,30 @@ def execute_runs(settings=None, distribute_load=False):
 
     if not runs:
         nuke.message("Select at least 1 Run node!")
+        return
+
+    ordered = []
+    has_dependencies = False
+    try:
+        for run in runs:
+            dependencies = [run]
+            if run.knob("comfyui_gizmo") is not None:
+                dependencies = dependency_gizmos(run)
+                has_dependencies = has_dependencies or len(dependencies) > 1
+            for dependency in dependencies:
+                if dependency not in ordered:
+                    ordered.append(dependency)
+    except ValueError as error:
+        nuke.message(str(error))
+        return
+
+    if has_dependencies:
+        if confirm_dependency_order(ordered) is None:
+            return
+        ordered_runs = []
+        for node in ordered:
+            ordered_runs.extend([node] * max(runs.count(node), 1))
+        run_dependencies(ordered_runs, settings=settings)
         return
 
     multi_runs(runs, settings=settings, distribute_load=distribute_load)

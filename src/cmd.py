@@ -78,8 +78,101 @@ def submit_run(run_node, metadata):
         submit(run_node, inference_end, custom_metadata=metadata)
 
 
+def dependency_gizmos(gizmo):
+    ordered = []
+    visited = set()
+    visiting = set()
+
+    def visit(node):
+        name = node.fullName()
+        if name in visiting:
+            raise ValueError("Circular gizmo dependency: {}".format(name))
+        if name in visited:
+            return
+
+        visiting.add(name)
+        source = node.knobs().get("comfyui_source")
+        linked = source.getLinkedKnob() if source else None
+        if linked is not None and linked.name() == "comfyui_gizmo":
+            visit(linked.node())
+        else:
+            for index in range(node.inputs()):
+                upstream = node.input(index)
+                if upstream is not None:
+                    visit(upstream)
+
+        visiting.remove(name)
+        visited.add(name)
+        if node.knob("comfyui_gizmo") is not None:
+            ordered.append(node)
+
+    visit(gizmo)
+    return ordered
+
+
+def confirm_dependencies(gizmo):
+    try:
+        gizmos = dependency_gizmos(gizmo)
+    except ValueError as error:
+        nuke.message(str(error))
+        return None
+    if len(gizmos) <= 1:
+        return []
+    return confirm_dependency_order(gizmos)
+
+
+def confirm_dependency_order(gizmos):
+    names = "\n".join(
+        "{}. {}".format(index + 1, node.fullName()) for index, node in enumerate(gizmos)
+    )
+    message = ("Run all {} connected ComfyUI gizmos in dependency order?\n\n{}").format(
+        len(gizmos), names
+    )
+    if nuke.ask(message):
+        return gizmos
+    return None
+
+
+def run_dependencies(gizmos, success_callback=None, settings=None):
+    from .execute_runs import sequential_execution
+
+    dependency_nodes = []
+    for gizmo in gizmos:
+        if gizmo.knob("comfyui_gizmo") is not None:
+            for dependency in dependency_gizmos(gizmo)[:-1]:
+                if dependency not in dependency_nodes:
+                    dependency_nodes.append(dependency)
+
+    def execution_finished(error):
+        if error:
+            nuke.message(error)
+        elif success_callback:
+            success_callback()
+
+    def execute():
+        sequential_execution(
+            gizmos,
+            callback=execution_finished,
+            settings=settings,
+            dependency_nodes=dependency_nodes,
+        )
+
+    if wait_for_comfyui(execute):
+        return
+    execute()
+
+
 def run():
     run_node = get_run(nuke.thisNode())
+    gizmo = run_node.parent()
+    if gizmo.knob("comfyui_gizmo") is not None:
+        gizmos = confirm_dependencies(gizmo)
+        if gizmos is None:
+            return
+        if gizmos:
+            run_dependencies(gizmos)
+            return
+
     ret, _, _, metadata = inference_start(run_node)
     if not ret:
         return
