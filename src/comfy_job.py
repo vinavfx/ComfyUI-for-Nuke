@@ -75,8 +75,6 @@ class ComfyJob:
                 ComfyJob.show_text_update(node_name, data)
             elif "PreviewImage" in node_name:
                 ComfyJob.preview_image_update(node_name, data, settings)
-            elif "PyScript" in node_name:
-                print(data["output"]["stdout"][0])
 
     @staticmethod
     def show_text_update(node_name, data):
