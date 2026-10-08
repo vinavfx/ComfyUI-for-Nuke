@@ -45,15 +45,16 @@ def extract_data(run_node, settings):
     nodes = get_connected_comfyui_nodes(run_node)
     nuke.root().knob("proxy").setValue(False)
 
+    for node, _ in nodes:
+        if not check_node(node):
+            return {}, None, "Invalid node connection!"
+
     comfyui_nodes = [n.name() for n, _ in nodes]
     data = {}
     input_node_changed = False
     rendered_nodes = set()
 
     for n, node_data in nodes:
-        if not check_node(n):
-            return {}, None, "Invalid node connection!"
-
         if n.knob("randomize"):
             if n.knob("randomize").value():
                 random_value = random.randrange(1, 9999)
@@ -497,6 +498,17 @@ def check_node(node):
 
         if not inode_data:
             if input_name in image_inputs + mask_inputs:
+                pixel_aspect = inode.pixelAspect()
+                if pixel_aspect != 1:
+                    message = (
+                        '{}: input "{}" from "{}" has pixel aspect ratio {}:1.\n\n'
+                        "Only a 1:1 pixel aspect ratio is allowed for image and "
+                        "mask inputs. Any other pixel aspect ratio, including "
+                        "2:1, is rejected. Inference stopped; nothing was sent."
+                    ).format(node.name(), input_name, inode.name(), pixel_aspect)
+                    show_message(message)
+                    return
+
                 if inode.bbox().w() < 10 or inode.bbox().h() < 10:
                     message = (
                         '{}: input "{}" not connected or bbox without '
