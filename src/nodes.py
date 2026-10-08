@@ -501,9 +501,9 @@ def check_node(node):
                 pixel_aspect = inode.pixelAspect()
                 if pixel_aspect != 1:
                     message = (
-                        "{}: pixel aspect ratio {}:1 is not supported.\n"
+                        "Pixel aspect ratio {:g}:1 is not supported.\n"
                         "Only 1:1 is allowed. Inference stopped."
-                    ).format(inode.name(), pixel_aspect)
+                    ).format(pixel_aspect)
                     show_message(message)
                     return
 
