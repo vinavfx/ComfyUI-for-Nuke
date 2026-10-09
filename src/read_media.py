@@ -72,7 +72,7 @@ def update_filename_prefix(run_node, update=True, data={}):
 
 def set_correct_colorspace(read):
     filename = read.knob("file").value()
-    ext = filename.split(".")[-1]
+    ext = filename.split(".")[-1].lower()
 
     if ext == "exr":
         read.knob("raw").setValue(True)

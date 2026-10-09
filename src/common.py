@@ -22,6 +22,7 @@ from ..nuke_util.nuke_util import get_connected_nodes
 from ..nuke_util.python_util import jread, jwrite
 import threading
 from time import monotonic, sleep
+from tempfile import gettempdir
 
 image_inputs = []
 mask_inputs = []
@@ -86,7 +87,9 @@ def scan_comfyui(force_scan):
 
     server_url = settings["URL"][0]
     server_key = hashlib.sha256(server_url.encode("utf-8")).hexdigest()
-    cache_path = f"/tmp/comfyui2nuke_object_info_{server_key}.json"
+    cache_path = os.path.join(
+        gettempdir(), f"comfyui2nuke_object_info_{server_key}.json"
+    )
     server_ip = get_ip_from_url(server_url)
     loaded_message = f"ComfyUI loaded successfully from {server_ip}."
 
