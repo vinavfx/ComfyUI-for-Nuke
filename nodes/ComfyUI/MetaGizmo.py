@@ -59,6 +59,10 @@ def run(meta=None, settings=None):
         if node.Class() == "NoOp"
         and node.knob("comfyui_meta_output") is not None
         and node.input(0) is not None
+        and (
+            node.knob("comfyui_meta_enabled") is None
+            or node["comfyui_meta_enabled"].value()
+        )
     ]
     outputs.sort(key=lambda node: (node.ypos(), node.xpos(), node.name()))
     group_output = next(

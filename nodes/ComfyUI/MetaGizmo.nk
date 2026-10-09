@@ -22,6 +22,8 @@ Group {
   xpos 0
   ypos 100
   addUserKnob {26 comfyui_meta_output +INVISIBLE T MetaOutput}
+  addUserKnob {6 comfyui_meta_enabled l Enabled +STARTLINE}
+  comfyui_meta_enabled true
  }
  Output {
   name Output1

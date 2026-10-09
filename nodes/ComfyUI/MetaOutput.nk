@@ -7,4 +7,6 @@ NoOp {
  label "Connect a ComfyUI gizmo here"
  selected true
  addUserKnob {26 comfyui_meta_output +INVISIBLE T MetaOutput}
+ addUserKnob {6 comfyui_meta_enabled l Enabled +STARTLINE}
+ comfyui_meta_enabled true
 }
