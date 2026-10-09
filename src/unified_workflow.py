@@ -1,6 +1,6 @@
 import nuke  # type: ignore
 
-from .nodes import extract_data, get_input
+from .nodes import extract_data, get_external_input, get_input, get_node_data
 
 
 def unified_gizmos(gizmo):
@@ -9,15 +9,38 @@ def unified_gizmos(gizmo):
     gizmos = dependency_gizmos(gizmo)
     for target in gizmos:
         for index in range(target.inputs()):
-            source = target.input(index)
+            source = get_external_input(target, index, resolve_source=True)
             if source is None or source.knob("comfyui_gizmo") is not None:
                 continue
             if dependency_gizmos(source):
                 raise ValueError(
-                    "Unified submissions do not allow intermediate Nuke nodes "
-                    "between ComfyUI gizmos: {}".format(source.fullName())
+                    "Unified submissions only allow standard Switch nodes "
+                    "between ComfyUI gizmos; disable other Nuke nodes: {}".format(
+                        source.fullName()
+                    )
                 )
     return gizmos
+
+
+def link_internal_inputs(gizmo, input_links):
+    for child in gizmo.nodes():
+        if not get_node_data(child):
+            continue
+        for index in range(child.maxInputs()):
+            source = get_input(child, index)
+            if source is None:
+                continue
+            current = source
+            visited = set()
+            while current is not None and current not in visited:
+                name = current.fullName()
+                if name in input_links:
+                    input_links[source.fullName()] = input_links[name]
+                    break
+                if current.parent() != gizmo or get_node_data(current):
+                    break
+                visited.add(current)
+                current = get_input(current, 0)
 
 
 def extract_unified_data(run_node, settings):
@@ -31,9 +54,12 @@ def extract_unified_data(run_node, settings):
             for child in gizmo.nodes():
                 if child.Class() != "Input":
                     continue
-                source = gizmo.input(int(child["number"].value()))
+                source = get_external_input(
+                    gizmo, int(child["number"].value()), resolve_source=True
+                )
                 if source is not None and source.fullName() in outputs:
                     input_links[child.fullName()] = outputs[source.fullName()]
+            link_internal_inputs(gizmo, input_links)
             current_run = gizmo.node("Run")
             with current_run:
                 current_data, input_changed, error = extract_data(

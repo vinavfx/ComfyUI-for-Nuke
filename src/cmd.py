@@ -7,6 +7,7 @@ import nuke  # type: ignore
 import __main__
 
 from .common import get_settings, wait_for_comfyui
+from .nodes import get_external_input
 from .run import submit
 
 
@@ -92,12 +93,14 @@ def dependency_gizmos(gizmo):
 
         visiting.add(name)
         source = node.knobs().get("comfyui_source")
-        linked = source.getLinkedKnob() if source else None
+        linked = (
+            source.getLinkedKnob() if hasattr(source, "getLinkedKnob") else None
+        )
         if linked is not None and linked.name() == "comfyui_gizmo":
             visit(linked.node())
         else:
             for index in range(node.inputs()):
-                upstream = node.input(index)
+                upstream = get_external_input(node, index)
                 if upstream is not None:
                     visit(upstream)
 
@@ -135,11 +138,11 @@ def missing_dependency_outputs(gizmos):
             missing.append(node.fullName())
             return
         for index in range(node.inputs()):
-            visit(node.input(index))
+            visit(get_external_input(node, index))
 
     for gizmo in gizmos:
         for index in range(gizmo.inputs()):
-            visit(gizmo.input(index))
+            visit(get_external_input(gizmo, index))
     return list(dict.fromkeys(missing))
 
 
@@ -148,14 +151,20 @@ def confirm_dependency_order(gizmos, selected_gizmos, settings=None):
         "{}. {}".format(index + 1, node.fullName()) for index, node in enumerate(gizmos)
     )
     panel = nuke.Panel("Run connected ComfyUI gizmos")
-    panel.addEnumerationPulldown("Submission", "Sequential Unified Selected")
+    submission_modes = [
+        "Unified workflow",
+        "Separate workflows (Read per gizmo)",
+        "Selected gizmos only",
+    ]
+    choices = " ".join(mode.replace(" ", "\\ ") for mode in submission_modes)
+    panel.addEnumerationPulldown("Submission", choices)
     panel.addNotepad("Dependency order", names)
     if not panel.show():
         return None
     mode = panel.value("Submission")
-    if mode == "Sequential":
+    if mode == "Separate workflows (Read per gizmo)":
         return gizmos
-    if mode == "Unified":
+    if mode == "Unified workflow":
         from .execute_runs import multi_runs
         from .unified_workflow import unified_gizmos
 

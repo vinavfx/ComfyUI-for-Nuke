@@ -511,15 +511,6 @@ def check_node(node, input_links=None):
 
         if not inode_data:
             if input_name in image_inputs + mask_inputs:
-                if input_links and any(
-                    source.fullName() in input_links
-                    for source in get_connected_nodes(inode)
-                ):
-                    show_message(
-                        "Unified submissions do not allow intermediate Nuke nodes "
-                        "between ComfyUI gizmos: {}".format(inode.fullName())
-                    )
-                    return
                 pixel_aspect = inode.pixelAspect()
                 if pixel_aspect != 1:
                     message = (
@@ -626,6 +617,35 @@ def is_null_input(node):
         return
 
     return True
+
+
+def get_external_input(node, index, resolve_source=False):
+    source = node.input(index)
+    visited = set()
+    while source is not None:
+        name = source.fullName()
+        if name in visited:
+            raise ValueError("Circular gizmo dependency: {}".format(name))
+        visited.add(name)
+        disable = source.knob("disable")
+        if disable is not None and disable.value():
+            source = source.input(0)
+        elif source.Class() == "Switch" and source.knob("switch_any") is None:
+            source = source.input(int(source["which"].value()))
+        else:
+            source_knob = (
+                source.knobs().get("comfyui_source") if resolve_source else None
+            )
+            linked = (
+                source_knob.getLinkedKnob()
+                if source_knob is not None and hasattr(source_knob, "getLinkedKnob")
+                else None
+            )
+            if linked is not None and linked.name() == "comfyui_gizmo":
+                source = linked.node()
+                continue
+            return source
+    return None
 
 
 def get_input(node, i, ignore_disabled=True):
