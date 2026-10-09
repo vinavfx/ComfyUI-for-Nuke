@@ -1,0 +1,10 @@
+set cut_paste_input [stack 0]
+version 12.0 v8
+push $cut_paste_input
+NoOp {
+ name Output
+ tile_color 0x55aa55ff
+ label "Connect a ComfyUI gizmo here"
+ selected true
+ addUserKnob {26 comfyui_meta_output +INVISIBLE T MetaOutput}
+}

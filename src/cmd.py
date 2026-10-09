@@ -133,15 +133,18 @@ def confirm_dependency_order(gizmos):
     return None
 
 
-def run_dependencies(gizmos, success_callback=None, settings=None):
+def run_dependencies(
+    gizmos, success_callback=None, settings=None, dependency_nodes=None
+):
     from .execute_runs import sequential_execution
 
-    dependency_nodes = []
-    for gizmo in gizmos:
-        if gizmo.knob("comfyui_gizmo") is not None:
-            for dependency in dependency_gizmos(gizmo)[:-1]:
-                if dependency not in dependency_nodes:
-                    dependency_nodes.append(dependency)
+    if dependency_nodes is None:
+        dependency_nodes = []
+        for gizmo in gizmos:
+            if gizmo.knob("comfyui_gizmo") is not None:
+                for dependency in dependency_gizmos(gizmo)[:-1]:
+                    if dependency not in dependency_nodes:
+                        dependency_nodes.append(dependency)
 
     def execution_finished(error):
         if error:
