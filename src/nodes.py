@@ -28,7 +28,7 @@ from .common import (
 states = {}
 
 
-def extract_data(run_node, settings):
+def extract_data(run_node, settings, input_links=None):
     output_node = get_input(run_node, 0)
 
     if not output_node:
@@ -46,7 +46,7 @@ def extract_data(run_node, settings):
     nuke.root().knob("proxy").setValue(False)
 
     for node, _ in nodes:
-        if not check_node(node):
+        if not check_node(node, input_links):
             return {}, None, "Invalid node connection!"
 
     comfyui_nodes = [n.name() for n, _ in nodes]
@@ -88,6 +88,11 @@ def extract_data(run_node, settings):
             run_node.begin()
 
             if not input_node:
+                continue
+
+            linked_input = (input_links or {}).get(input_node.fullName())
+            if linked_input is not None:
+                node_data["inputs"][key] = list(linked_input)
                 continue
 
             if is_switch_any(input_node):
@@ -475,7 +480,7 @@ def get_output_index(node, node_data, input_index):
     return -1
 
 
-def check_node(node):
+def check_node(node, input_links=None):
     node_data = get_node_data(node)
 
     for i in range(node.maxInputs()):
@@ -494,10 +499,27 @@ def check_node(node):
             )
             return
 
+        if input_links and inode.fullName() in input_links:
+            if input_name not in image_inputs:
+                show_message(
+                    "Unified workflows only support image connections between gizmos."
+                )
+                return
+            continue
+
         inode_data = get_node_data(inode)
 
         if not inode_data:
             if input_name in image_inputs + mask_inputs:
+                if input_links and any(
+                    source.fullName() in input_links
+                    for source in get_connected_nodes(inode)
+                ):
+                    show_message(
+                        "Unified submissions do not allow intermediate Nuke nodes "
+                        "between ComfyUI gizmos: {}".format(inode.fullName())
+                    )
+                    return
                 pixel_aspect = inode.pixelAspect()
                 if pixel_aspect != 1:
                     message = (

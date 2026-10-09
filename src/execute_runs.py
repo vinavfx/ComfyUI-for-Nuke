@@ -242,7 +242,7 @@ def execute_runs(settings=None, distribute_load=False):
         return
 
     if has_dependencies:
-        confirmed = confirm_dependency_order(ordered, runs)
+        confirmed = confirm_dependency_order(ordered, runs, settings=settings)
         if confirmed is None:
             return
         if confirmed:

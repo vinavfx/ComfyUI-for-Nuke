@@ -18,6 +18,7 @@ from .queue_manager import (
     show_queue,
 )
 from .nodes import extract_data
+from .unified_workflow import extract_unified_data
 from .read_media import (
     create_read,
     update_filename_prefix,
@@ -147,7 +148,10 @@ class SubmissionJob(ComfyJob):
         settings["project_name"] = nuke.root().name()
         self.set_progress(0, "Rendering Nuke images...")
 
-        data, input_node_changed, error_message = extract_data(
+        extract = (
+            extract_unified_data if settings.get("UNIFIED_WORKFLOW") else extract_data
+        )
+        data, input_node_changed, error_message = extract(
             self.run_node,
             settings,
         )

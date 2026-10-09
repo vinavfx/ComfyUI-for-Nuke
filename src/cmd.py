@@ -6,7 +6,7 @@
 import nuke  # type: ignore
 import __main__
 
-from .common import wait_for_comfyui
+from .common import get_settings, wait_for_comfyui
 from .run import submit
 
 
@@ -143,23 +143,32 @@ def missing_dependency_outputs(gizmos):
     return list(dict.fromkeys(missing))
 
 
-def confirm_dependency_order(gizmos, selected_gizmos):
+def confirm_dependency_order(gizmos, selected_gizmos, settings=None):
     names = "\n".join(
         "{}. {}".format(index + 1, node.fullName()) for index, node in enumerate(gizmos)
     )
-    message = (
-        "Run all connected ComfyUI gizmos in dependency order?\n\n"
-        "Yes: run all dependencies and selected nodes.\n"
-        "No: run selected nodes only.\n"
-        "Cancel: do not run anything.\n\n"
-        + names
-    )
-    try:
-        run_all = nuke.askWithCancel(message)
-    except nuke.CancelledError:
+    panel = nuke.Panel("Run connected ComfyUI gizmos")
+    panel.addEnumerationPulldown("Submission", "Sequential Unified Selected")
+    panel.addNotepad("Dependency order", names)
+    if not panel.show():
         return None
-    if run_all:
+    mode = panel.value("Submission")
+    if mode == "Sequential":
         return gizmos
+    if mode == "Unified":
+        from .execute_runs import multi_runs
+        from .unified_workflow import unified_gizmos
+
+        try:
+            for gizmo in selected_gizmos:
+                unified_gizmos(gizmo)
+        except ValueError as error:
+            nuke.message(str(error))
+            return None
+        unified_settings = dict(settings or get_settings(get_run(selected_gizmos[0])))
+        unified_settings["UNIFIED_WORKFLOW"] = True
+        multi_runs(selected_gizmos, settings=unified_settings)
+        return None
     missing = missing_dependency_outputs(selected_gizmos)
     if missing:
         nuke.message(
