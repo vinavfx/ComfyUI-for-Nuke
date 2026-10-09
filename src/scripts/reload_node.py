@@ -17,6 +17,7 @@ from ..update_menu import (
     update_menu,
 )
 from ..nodes import get_node_data, save_node_data
+from ..nuke_metadata import apply_nuke_metadata, get_nuke_metadata
 from .knob2input import convert_knobs, get_swapped_knobs
 
 
@@ -70,18 +71,27 @@ def has_node_updates(node, data, definition):
         or expected_outputs != data.get("outputs", [])
         or definition.get("output_name", False) != data.get("output_name", False)
         or definition.get("output_node", False) != data.get("output_node", False)
+        or get_nuke_metadata(ordered_inputs) != data.get("nuke_metadata", {})
     )
 
 
 def transfer_reload_knobs(source_node, new_node):
+    node_data = get_node_data(new_node)
+    names = node_data.get("knobs_input_names", {})
+    options = node_data.get("nuke_options", {})
     choices = {
-        knob.name(): knob.values()
+        knob.name(): options.get(
+            names.get(knob.name(), knob.name()[:-1]), knob.values()
+        )
         for knob in new_node.allKnobs()
         if isinstance(knob, nuke.Enumeration_Knob)
     }
 
     tile_color = new_node["tile_color"].value()
-    transfer_knobs(source_node, new_node, transfer_all=True)
+    callback = new_node["knobChanged"].value()
+    transfer_knobs(source_node, new_node, transfer_all=True, ignore_hidden=False)
+    new_node["knobChanged"].setValue("")
+    save_node_data(new_node, node_data)
     new_node["tile_color"].setValue(tile_color)
 
     for knob_name, values in choices.items():
@@ -90,6 +100,8 @@ def transfer_reload_knobs(source_node, new_node):
         knob.setValues(values)
         if value in values:
             knob.setValue(value)
+    apply_nuke_metadata(new_node)
+    new_node["knobChanged"].setValue(callback)
 
 
 def reload_node():

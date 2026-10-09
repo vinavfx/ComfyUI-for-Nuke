@@ -12,6 +12,7 @@ import nuke  # type: ignore
 
 from ..nuke_util.nuke_util import get_output_nodes
 from .connection import convert_to_utf8
+from .nuke_metadata import apply_nuke_metadata, get_nuke_metadata
 from ..settings import COMFYUI2NUKE
 from .common import (
     get_autogrow_names,
@@ -263,6 +264,8 @@ def create_node(data, inpanel=True, connect_selected=True):
     knobs_input_names = {}
     ordered_inputs, dynamic_combos = get_ordered_inputs(data)
     has_dynamic_combo = bool(dynamic_combos)
+    nuke_metadata = get_nuke_metadata(ordered_inputs)
+    nuke_options = {}
 
     for key, input_value, is_optional, display_name in ordered_inputs:
         input_class = input_value[0]
@@ -339,6 +342,9 @@ def create_node(data, inpanel=True, connect_selected=True):
 
         n.addKnob(knob)
         knobs_order.append(knob.name())
+        if key in nuke_metadata and "options_when" in nuke_metadata[key]:
+            if isinstance(knob, nuke.Enumeration_Knob):
+                nuke_options[key] = knob.values()
 
         if knob.name() != key + "_":
             knobs_input_names[knob.name()] = key
@@ -411,6 +417,10 @@ def create_node(data, inpanel=True, connect_selected=True):
         node_data["knobs_input_names"] = knobs_input_names
     if dynamic_combos:
         node_data["dynamic_combos"] = dynamic_combos
+    if nuke_metadata:
+        node_data["nuke_metadata"] = nuke_metadata
+    if nuke_options:
+        node_data["nuke_options"] = nuke_options
 
     data_knob.setValue(jsondumps(node_data))
 
@@ -429,6 +439,12 @@ def create_node(data, inpanel=True, connect_selected=True):
             "        child_knob.setEnabled(knob.value() != 'off')"
         )
         n.knob("knobChanged").setValue(knob_changed)
+
+    if nuke_metadata:
+        callback = n.knob("knobChanged").value().rstrip()
+        callback += "\ncomfyui.update_menu.apply_nuke_metadata(nuke.thisNode())"
+        n.knob("knobChanged").setValue(callback.lstrip())
+        apply_nuke_metadata(n)
 
     if n.knob("User"):
         n.knob("User").setName("Controls")
