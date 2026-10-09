@@ -242,13 +242,15 @@ def execute_runs(settings=None, distribute_load=False):
         return
 
     if has_dependencies:
-        if confirm_dependency_order(ordered) is None:
+        confirmed = confirm_dependency_order(ordered, runs)
+        if confirmed is None:
             return
-        ordered_runs = []
-        for node in ordered:
-            ordered_runs.extend([node] * max(runs.count(node), 1))
-        run_dependencies(ordered_runs, settings=settings)
-        return
+        if confirmed:
+            ordered_runs = []
+            for node in confirmed:
+                ordered_runs.extend([node] * max(runs.count(node), 1))
+            run_dependencies(ordered_runs, settings=settings)
+            return
 
     multi_runs(runs, settings=settings, distribute_load=distribute_load)
 

@@ -118,19 +118,57 @@ def confirm_dependencies(gizmo):
         return None
     if len(gizmos) <= 1:
         return []
-    return confirm_dependency_order(gizmos)
+    return confirm_dependency_order(gizmos, [gizmo])
 
 
-def confirm_dependency_order(gizmos):
+def missing_dependency_outputs(gizmos):
+    missing = []
+    visited = set()
+
+    def visit(node):
+        if node is None or node.fullName() in visited:
+            return
+        visited.add(node.fullName())
+        if node.Class() in ("Read", "ReadGeo", "ReadGeo2"):
+            return
+        if node.knob("comfyui_gizmo") is not None:
+            missing.append(node.fullName())
+            return
+        for index in range(node.inputs()):
+            visit(node.input(index))
+
+    for gizmo in gizmos:
+        for index in range(gizmo.inputs()):
+            visit(gizmo.input(index))
+    return list(dict.fromkeys(missing))
+
+
+def confirm_dependency_order(gizmos, selected_gizmos):
     names = "\n".join(
         "{}. {}".format(index + 1, node.fullName()) for index, node in enumerate(gizmos)
     )
-    message = ("Run all {} connected ComfyUI gizmos in dependency order?\n\n{}").format(
-        len(gizmos), names
+    message = (
+        "Run all connected ComfyUI gizmos in dependency order?\n\n"
+        "Yes: run all dependencies and selected nodes.\n"
+        "No: run selected nodes only.\n"
+        "Cancel: do not run anything.\n\n"
+        + names
     )
-    if nuke.ask(message):
+    try:
+        run_all = nuke.askWithCancel(message)
+    except nuke.CancelledError:
+        return None
+    if run_all:
         return gizmos
-    return None
+    missing = missing_dependency_outputs(selected_gizmos)
+    if missing:
+        nuke.message(
+            "These dependencies must run first because they are connected "
+            "as gizmos rather than rendered Read nodes:\n\n"
+            + "\n".join(missing)
+        )
+        return None
+    return []
 
 
 def run_dependencies(

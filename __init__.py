@@ -85,6 +85,12 @@ def setup():
     )
 
     comfyui_menu.addCommand(
+        "Scripts/Unlink Dependencies",
+        scripts.unlink_dependencies.unlink_dependencies,
+        icon=icon_gray,
+    )
+
+    comfyui_menu.addCommand(
         "Scripts/Force ComfyUI Scan",
         common.force_comfyui_scan,
         icon=icon_gray,
