@@ -21,8 +21,6 @@ def unified_gizmos(gizmo):
 
 
 def extract_unified_data(run_node, settings):
-    from .cmd import get_run
-
     try:
         gizmos = unified_gizmos(run_node.parent())
         data = {}
@@ -36,7 +34,7 @@ def extract_unified_data(run_node, settings):
                 source = gizmo.input(int(child["number"].value()))
                 if source is not None and source.fullName() in outputs:
                     input_links[child.fullName()] = outputs[source.fullName()]
-            current_run = get_run(gizmo)
+            current_run = gizmo.node("Run")
             with current_run:
                 current_data, input_changed, error = extract_data(
                     current_run, settings, input_links
@@ -45,6 +43,10 @@ def extract_unified_data(run_node, settings):
                 return {}, None, error
             changed = changed or input_changed
             output_node = get_input(current_run, 0)
+            if output_node is None:
+                raise ValueError(
+                    "Run is not connected: {}".format(current_run.fullName())
+                )
             output_name = output_node.name()
             prefix = "" if gizmo == run_node.parent() else gizmo.fullName() + "."
             names = {name: prefix + name for name in current_data}
