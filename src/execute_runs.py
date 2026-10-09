@@ -203,9 +203,17 @@ def prepare_multiversions(node):
 
 def execute_runs(settings=None, distribute_load=False):
     runs = []
+    has_meta = False
 
     for n in nuke.selectedNodes():
         if not n.knob("run"):
+            continue
+
+        if n.knob("comfyui_meta_gizmo") is not None:
+            from ..nodes.ComfyUI import MetaGizmo
+
+            MetaGizmo.run(n, settings=settings)
+            has_meta = True
             continue
 
         if n in runs:
@@ -214,7 +222,8 @@ def execute_runs(settings=None, distribute_load=False):
         runs.extend(prepare_multiversions(n))
 
     if not runs:
-        nuke.message("Select at least 1 Run node!")
+        if not has_meta:
+            nuke.message("Select at least 1 Run node!")
         return
 
     ordered = []

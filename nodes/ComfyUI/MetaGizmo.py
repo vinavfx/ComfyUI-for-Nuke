@@ -1,11 +1,7 @@
 import nuke
 
 from ...nuke_util.nuke_util import get_output_nodes
-from ...src.cmd import (
-    confirm_dependency_order,
-    dependency_gizmos,
-    run_dependencies,
-)
+from ...src.cmd import dependency_gizmos, run_dependencies
 from ...src.execute_runs import prepare_multiversions
 
 
@@ -54,7 +50,7 @@ def publish_read(meta, source, output, index):
     return read
 
 
-def run(meta=None):
+def run(meta=None, settings=None):
     if meta is None:
         meta = nuke.thisNode()
     outputs = [
@@ -93,9 +89,6 @@ def run(meta=None):
     except ValueError as error:
         nuke.message(str(error))
         return
-    if len(gizmos) > 1 and confirm_dependency_order(gizmos) is None:
-        return
-
     def execution_finished():
         for index, (output, target) in enumerate(zip(outputs, targets)):
             source = next(
@@ -119,4 +112,6 @@ def run(meta=None):
             runs.extend(prepare_multiversions(gizmo))
         else:
             runs.append(gizmo)
-    run_dependencies(runs, execution_finished, dependency_nodes=gizmos)
+    run_dependencies(
+        runs, execution_finished, settings=settings, dependency_nodes=gizmos
+    )
