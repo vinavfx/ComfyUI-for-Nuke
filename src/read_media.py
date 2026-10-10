@@ -10,32 +10,16 @@ import shutil
 import nuke  # type: ignore
 from time import time
 
-from ..nuke_util.media_util import get_padding, get_name_no_padding
+from ..nuke_util.media_util import get_name_no_padding
 from ..nuke_util.nuke_util import (
     get_output_nodes,
     selected_node,
     set_tile_color,
     get_tile_color,
 )
-from .nodes import get_connected_comfyui_nodes, get_input
+from .nodes import get_input
 from .common import get_date_code, jsonloads, jsondumps, show_message
 from .update_menu import normalize_nodename
-
-
-def exr_filepath_fixed(run_node):
-    nodes = get_connected_comfyui_nodes(run_node)
-    for n, _ in nodes:
-        filepath_knob = n.knob("filepath_")
-        if not filepath_knob:
-            continue
-
-        filepath = filepath_knob.value()
-        padding = get_padding(filepath)
-        if not padding:
-            continue
-
-        filepath = filepath.replace(padding, "%04d")
-        filepath_knob.setText(filepath)
 
 
 def update_filename_prefix(run_node, update=True, data={}):

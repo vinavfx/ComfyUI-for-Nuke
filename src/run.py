@@ -22,7 +22,6 @@ from .unified_workflow import extract_unified_data
 from .read_media import (
     create_read,
     update_filename_prefix,
-    exr_filepath_fixed,
     resolve_filename,
     create_empty_read,
     register_temporary_inference,
@@ -122,8 +121,7 @@ class SubmissionJob(ComfyJob):
 
         if not settings["INPUT_DIRECTORY"] or not settings["OUTPUT_DIRECTORY"]:
             message = (
-                "INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables "
-                "are not set!"
+                "INPUT_DIRECTORY or OUTPUT_DIRECTORY environment variables are not set!"
             )
             self.close_progress()
             self.show_error(message)
@@ -144,7 +142,6 @@ class SubmissionJob(ComfyJob):
             self.run_success_callback(run_node=self.run_node, error=message)
             return
 
-        exr_filepath_fixed(self.run_node)
         settings["project_name"] = nuke.root().name()
         self.set_progress(0, "Rendering Nuke images...")
 

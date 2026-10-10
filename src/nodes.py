@@ -5,6 +5,7 @@
 # -----------------------------------------------------------
 import json
 import os
+import re
 import shutil
 import random
 import traceback
@@ -380,7 +381,15 @@ def extract_node_data(node):
         if not knob.name()[-1:] == "_":
             continue
 
-        if hasattr(knob, "valueAt"):
+        if isinstance(knob, nuke.File_Knob):
+            frame = int(nuke.frame())
+            value = knob.evaluate(frame)
+            padding = re.search(r"%0?(\d*)d", knob.value())
+            if padding:
+                width = int(padding[1] or 1)
+                prefix, suffix = value.rsplit(padding[0] % frame, 1)
+                value = prefix + "#" * width + suffix
+        elif hasattr(knob, "valueAt"):
             value = (
                 knob.valueAt(1)
                 if knob.isAnimated() and not knob.hasExpression()
