@@ -20,12 +20,12 @@ Group {
   ypos -417
  }
  Group {
-  name WriteImage
+  name Write
   tile_color 0xbcb50001
   xpos -40
   ypos -393
   addUserKnob {20 Controls}
-  addUserKnob {1 filename_prefix_ l filename_prefix t "The prefix for the file to save. This may include formatting information such as %date:yyyy-MM-dd% or %Empty Latent Image.width% to include values from nodes."}
+  addUserKnob {2 filepath_ l filepath}
   addUserKnob {4 format_ l format M {png exr}}
   format_ exr
   addUserKnob {4 bit_depth_ l bit_depth M {8bit 16bit 32bit}}
@@ -34,8 +34,8 @@ Group {
   compression_ "Zip (16 scanlines)"
   addUserKnob {4 color_space_ l color_space M {sRGB linear}}
   color_space_ linear
-  filename_prefix_ 20251114184410342/image
-  addUserKnob {22 data -STARTLINE +HIDDEN T "LRx4!F+o`-Q(3QCxzhjuW*>kM1ON~KAOMQL@7`)40F;PS\{8aN()bxqzJdoar2AV;r(?Dow0f3rUgyqa&z(|++;7T>DK\$udX1u+1(%P-f;pfPM%f%%|8>yAiD&C^e#%\{PfH6cq1D_\}p5iFA9lFaikbb!2(+5)3`7cxbo&Zc9wUjxfpUCtN?u_d6sasaj9~q#Urccg(E(@r=N?tBAh5lSFK#>fB"}
+  filepath_ image_####.exr
+  addUserKnob {22 data -STARTLINE +HIDDEN T "LRx4!F+o`-Q&|Ch@jCzjf*XJk1ON~KiofsPDlh=Jf>dQRXn8<r2893vKmY<\$L\{Cr?Mw&B3Tp4hO;s\{*3&0-XW9lMt&AWTQBe<qy=Ng!&lnu\{)XY0iwiF03DKEJX\}@K5q>Vj#o*\}\$9Bx2Lj8T\{+UgoNl7T915N333gN0mzyI0\{6p)n<-nL(&ljJg9NoLN;%BMGL\$JYP~zg6GK<Q9|k@Crd\{N!R_v>\{\{AlHig2MI0\{h~2"}
  }
   Input {
    inputs 0
