@@ -21,8 +21,8 @@ from .nodes import extract_data
 from .unified_workflow import extract_unified_data
 from .read_media import (
     create_read,
-    update_filename_prefix,
-    resolve_filename,
+    prepare_output_path,
+    find_inference_file,
     create_empty_read,
     register_temporary_inference,
 )
@@ -142,7 +142,6 @@ class SubmissionJob(ComfyJob):
             self.run_success_callback(run_node=self.run_node, error=message)
             return
 
-        settings["project_name"] = nuke.root().name()
         self.set_progress(0, "Rendering Nuke images...")
 
         extract = (
@@ -166,13 +165,15 @@ class SubmissionJob(ComfyJob):
             and data == states.get(node_name, {})
             and not input_node_changed
         ):
-            settings["filename_prefix"] = update_filename_prefix(
+            output_path = prepare_output_path(
                 self.run_node,
-                False,
+                settings,
+                update=False,
+                data=data,
             )
             read = None
-            if settings["filename_prefix"]:
-                filename = resolve_filename(settings, True)
+            if output_path:
+                filename = find_inference_file(settings)
                 read = create_read(
                     self.run_node,
                     data,
@@ -184,12 +185,13 @@ class SubmissionJob(ComfyJob):
             self.run_success_callback(read, self.run_node)
             return
 
-        settings["filename_prefix"] = update_filename_prefix(
+        output_path = prepare_output_path(
             self.run_node,
+            settings,
             data=data,
         )
         self.data = data
-        if not self.validate_prompt and settings["filename_prefix"]:
+        if not self.validate_prompt and output_path:
             register_temporary_inference(self.run_node, data, settings)
 
         settings["pre_inference_time"] = time() - settings["pre_inference_time"]
@@ -217,7 +219,7 @@ class SubmissionJob(ComfyJob):
         if settings["BACKGROUND_SUBMIT"] and not error:
             self.close_progress()
             read = None
-            if settings["filename_prefix"]:
+            if output_path:
                 read = create_empty_read(self.run_node, data, settings)
             self.run_success_callback(
                 read,

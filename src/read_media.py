@@ -5,7 +5,7 @@
 # -----------------------------------------------------------
 import os
 import math
-import shutil
+import re
 
 import nuke  # type: ignore
 from time import time
@@ -22,10 +22,26 @@ from .common import get_date_code, jsonloads, jsondumps, show_message
 from .update_menu import normalize_nodename
 
 
-def update_filename_prefix(run_node, update=True, data={}):
+def prepare_output_path(run_node, settings, update=True, data=None):
     output_node = get_input(run_node, 0)
     if not output_node:
         return
+
+    settings.pop("output_filepath", None)
+    settings.pop("filename_prefix", None)
+    settings.pop("output_format", None)
+    output_data = (data or {}).get(output_node.name(), {})
+    inputs = output_data.get("inputs", {})
+    format_knob = output_node.knob("format_")
+    settings["output_format"] = inputs.get(
+        "format", format_knob.value() if format_knob else "png"
+    )
+
+    filepath_knob = output_node.knob("filepath_")
+    if filepath_knob:
+        filepath = inputs.get("filepath", filepath_knob.value())
+        settings["output_filepath"] = filepath
+        return filepath
 
     filename_prefix_knob = None
     filename_knob_name = ""
@@ -40,7 +56,8 @@ def update_filename_prefix(run_node, update=True, data={}):
         return
 
     if not update:
-        return filename_prefix_knob.value()
+        settings["filename_prefix"] = filename_prefix_knob.value()
+        return settings["filename_prefix"]
 
     prefix = filename_prefix_knob.value()
     old_rand = prefix.split("/")[0]
@@ -50,7 +67,9 @@ def update_filename_prefix(run_node, update=True, data={}):
 
     new_prefix = "{}/{}".format(get_date_code(), prefix)
     filename_prefix_knob.setValue(new_prefix)
-    data[output_node.name()]["inputs"][filename_knob_name] = new_prefix
+    if data is not None:
+        data[output_node.name()]["inputs"][filename_knob_name] = new_prefix
+    settings["filename_prefix"] = new_prefix
     return new_prefix
 
 
@@ -137,108 +156,61 @@ def get_frame_range(data):
     return max(ranges, key=lambda r: r[1] - r[0])
 
 
-def get_output_path(settings, default_output=False):
-    default_output_dir = settings["OUTPUT_DIRECTORY"]
+def get_inference_pattern(settings):
+    extension = settings.get("output_format", "png")
+    filepath = settings.get("output_filepath")
+    if filepath:
+        filepath = os.path.abspath(os.path.expanduser(filepath.strip().strip('"')))
+        stem, suffix = os.path.splitext(filepath)
+        if suffix.lower() not in (".png", ".exr"):
+            stem = filepath
+        if "#" not in os.path.basename(stem):
+            stem += "_####"
+        return f"{stem}.{extension}"
 
-    if default_output:
-        return default_output_dir
-
-    collect_dir = settings["COLLECT_DIRECTORY"].strip()
-    untitled = settings["project_name"] == "Root"
-
-    if os.path.isabs(collect_dir) and os.path.isdir(collect_dir):
-        return collect_dir
-
-    elif collect_dir and not untitled:
-        return os.path.join(os.path.dirname(settings["project_name"]), collect_dir)
-
-    return default_output_dir
+    prefix = settings.get("filename_prefix")
+    if prefix:
+        filename = os.path.join(settings["OUTPUT_DIRECTORY"], prefix)
+        return f"{filename}_#####_.{extension}"
 
 
-def relocate_filename(filename, settings):
-    if not settings["COLLECT_DIRECTORY"].strip():
-        return filename
-
-    if not filename:
+def find_inference_file(settings):
+    pattern = get_inference_pattern(settings)
+    if not pattern:
         return
 
-    output_dir = get_output_path(settings)
-    if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
-
-    src_dir = os.path.dirname(filename)
-    dst_dir = os.path.join(output_dir, os.path.basename(src_dir))
-
-    if src_dir == dst_dir:
-        return filename
-
-    task = nuke.ProgressTask("Relocate from ComfyUI")
-    task.setMessage("Relocating: ...")
-    task.setProgress(0)
-
-    if os.path.exists(dst_dir):
-        shutil.rmtree(dst_dir)
-
-    os.mkdir(dst_dir)
-    files = os.listdir(src_dir)
-
-    for i, f in enumerate(files):
-        src_file = os.path.join(src_dir, f)
-        if os.path.isfile(src_file):
-            shutil.move(src_file, dst_dir)
-
-        task.setMessage("Relocating: " + f)
-        task.setProgress(int((i / float(len(files))) * 100))
-
-    task.setProgress(100)
-
-    if os.path.exists(src_dir) and not os.listdir(src_dir):
-        os.rmdir(src_dir)
-
-    return os.path.join(dst_dir, os.path.basename(filename))
-
-
-def get_local_filename(settings, default_output=False):
-    filename_prefix = settings.get("filename_prefix")
-
-    if not filename_prefix:
+    sequence_output = os.path.dirname(pattern)
+    if not os.path.isdir(sequence_output):
         return
 
-    basename = os.path.basename(filename_prefix)
-    dirname = os.path.dirname(filename_prefix)
-
-    sequence_output = os.path.join(get_output_path(settings, default_output), dirname)
-
-    if not sequence_output:
-        return
-
-    filenames = nuke.getFileNameList(sequence_output)
-    if not filenames:
-        return
-
-    filename = next((fn for fn in filenames if basename in fn), None)
-
-    if not filename:
-        return
-
-    return os.path.join(sequence_output, filename)
-
-
-def resolve_filename(settings, already_generated=False):
-    if already_generated:
-        filename = get_local_filename(settings)
+    filenames = nuke.getFileNameList(sequence_output) or []
+    if settings.get("output_filepath"):
+        expression = re.escape(os.path.basename(pattern))
+        expression = re.sub(r"(?:\\#)+", lambda match: r"[0-9#]+", expression)
+        expression += r"(?: -?\d+--?\d+)?"
+        filename = next(
+            (
+                name
+                for name in filenames
+                if re.fullmatch(
+                    expression,
+                    re.sub(r"%0?\d*d", "####", name),
+                )
+            ),
+            None,
+        )
     else:
-        filename = get_local_filename(settings, default_output=True)
-        filename = relocate_filename(filename, settings)
+        basename = os.path.basename(settings["filename_prefix"])
+        filename = next((name for name in filenames if basename in name), None)
 
-    return filename
+    if filename:
+        return os.path.join(sequence_output, filename)
 
 
 def register_temporary_inference(run_node, data, settings):
     first_frame, last_frame = get_frame_range(data)
     frame_count = last_frame - first_frame + 1
-    filename = os.path.join(settings["OUTPUT_DIRECTORY"], settings["filename_prefix"])
-    filename += "_#####_.png 1-{}".format(frame_count)
+    filename = "{} 1-{}".format(get_inference_pattern(settings), frame_count)
     settings["temporary_inference_filename"] = filename
     inference_register(
         run_node,
@@ -250,8 +222,7 @@ def register_temporary_inference(run_node, data, settings):
 
 
 def create_empty_read(run_node, data, settings):
-    filename = os.path.join(settings["OUTPUT_DIRECTORY"], settings["filename_prefix"])
-    filename += "_#####_.png"
+    filename = get_inference_pattern(settings)
     read = create_read(run_node, data, settings, filename)
 
     if not read:

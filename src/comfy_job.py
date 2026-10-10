@@ -12,7 +12,7 @@ from ..nuke_util.nuke_util import get_connected_nodes, set_tile_color
 from .common import execute_in_main_thread, show_message
 from .connection import GET, get_ip_from_url
 from .queue_manager import find_prompt_id, interrupt
-from .read_media import create_read, inference_unregister, resolve_filename
+from .read_media import create_read, inference_unregister, find_inference_file
 
 
 class ComfyJob:
@@ -332,9 +332,12 @@ class ComfyJob:
         error = self.execution_error
         read = None
 
-        if not error and self.settings.get("filename_prefix"):
+        output_path = self.settings.get("output_filepath") or self.settings.get(
+            "filename_prefix"
+        )
+        if not error and output_path:
             try:
-                filename = resolve_filename(self.settings)
+                filename = find_inference_file(self.settings)
                 if not filename:
                     error = "The ComfyUI job finished, but its output was not found."
                 else:

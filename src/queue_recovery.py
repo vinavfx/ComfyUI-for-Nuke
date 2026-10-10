@@ -41,18 +41,22 @@ def get_recovery_settings(job, run_node):
     settings = get_settings(run_node)
     settings.update(recovery_data.get("settings", {}))
     settings["URL"] = [job["url"]]
-    settings["project_name"] = nuke.root().name()
     settings["pre_inference_time"] = settings.get("pre_inference_time", 0)
     settings["inference_time"] = time()
 
-    if settings.get("filename_prefix"):
-        return settings
-
-    for node_data in job["prompt"].values():
+    output_node = get_input(run_node, 0)
+    if output_node:
+        node_data = job["prompt"].get(output_node.name(), {})
         inputs = node_data.get("inputs", {})
-        for key in ("filename_prefix", "file_path"):
+        settings.pop("output_filepath", None)
+        settings.pop("filename_prefix", None)
+        settings["output_format"] = inputs.get("format", "png")
+        for key in ("filepath", "filename_prefix", "file_path"):
             if inputs.get(key):
-                settings["filename_prefix"] = inputs[key]
+                setting_key = (
+                    "output_filepath" if key == "filepath" else "filename_prefix"
+                )
+                settings[setting_key] = inputs[key]
                 return settings
 
     return settings
