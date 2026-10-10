@@ -51,10 +51,10 @@ def get_recovery_settings(job, run_node):
         settings.pop("output_filepath", None)
         settings.pop("filename_prefix", None)
         settings["output_format"] = inputs.get("format", "png")
-        for key in ("filepath", "filename_prefix", "file_path"):
+        for key in ("filepath", "file_path", "filename_prefix"):
             if inputs.get(key):
                 setting_key = (
-                    "output_filepath" if key == "filepath" else "filename_prefix"
+                    "filename_prefix" if key == "filename_prefix" else "output_filepath"
                 )
                 settings[setting_key] = inputs[key]
                 return settings

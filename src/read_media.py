@@ -37,20 +37,14 @@ def prepare_output_path(run_node, settings, update=True, data=None):
         "format", format_knob.value() if format_knob else "png"
     )
 
-    filepath_knob = output_node.knob("filepath_")
-    if filepath_knob:
-        filepath = inputs.get("filepath", filepath_knob.value())
-        settings["output_filepath"] = filepath
-        return filepath
+    for knob_name in ("filepath", "file_path"):
+        filepath_knob = output_node.knob(knob_name + "_")
+        if filepath_knob:
+            filepath = inputs.get(knob_name, filepath_knob.value())
+            settings["output_filepath"] = filepath
+            return filepath
 
-    filename_prefix_knob = None
-    filename_knob_name = ""
-
-    for knob_name in ["filename_prefix", "file_path"]:
-        filename_prefix_knob = output_node.knob(knob_name + "_")
-        if filename_prefix_knob:
-            filename_knob_name = knob_name
-            break
+    filename_prefix_knob = output_node.knob("filename_prefix_")
 
     if not filename_prefix_knob:
         return
@@ -68,7 +62,7 @@ def prepare_output_path(run_node, settings, update=True, data=None):
     new_prefix = "{}/{}".format(get_date_code(), prefix)
     filename_prefix_knob.setValue(new_prefix)
     if data is not None:
-        data[output_node.name()]["inputs"][filename_knob_name] = new_prefix
+        data[output_node.name()]["inputs"]["filename_prefix"] = new_prefix
     settings["filename_prefix"] = new_prefix
     return new_prefix
 
