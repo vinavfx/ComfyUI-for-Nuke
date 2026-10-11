@@ -176,10 +176,10 @@ def find_inference_file(settings):
         return
 
     filenames = nuke.getFileNameList(sequence_output) or []
+    expression = re.escape(os.path.basename(pattern))
+    expression = re.sub(r"(?:\\#)+", lambda match: r"(-?\d+|#+)", expression)
+    expression += r"(?: -?\d+--?\d+)?"
     if settings.get("output_filepath"):
-        expression = re.escape(os.path.basename(pattern))
-        expression = re.sub(r"(?:\\#)+", lambda match: r"[0-9#]+", expression)
-        expression += r"(?: -?\d+--?\d+)?"
         filename = next(
             (
                 name
@@ -198,7 +198,13 @@ def find_inference_file(settings):
     if filename:
         if settings.get("output_filepath"):
             frame_range = re.search(r" -?\d+--?\d+$", filename)
-            return pattern + (frame_range[0] if frame_range else "")
+            if frame_range:
+                return pattern + frame_range[0]
+            frame_match = re.fullmatch(expression, filename)
+            if frame_match and "#" not in frame_match[1]:
+                frame = frame_match[1]
+                return f"{pattern} {frame}-{frame}"
+            return pattern
         return os.path.join(sequence_output, filename)
 
 
