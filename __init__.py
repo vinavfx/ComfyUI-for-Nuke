@@ -20,6 +20,7 @@ from .src import (
     workflow_importer,
 )
 from functools import partial
+from .src.run import add_inference_start, remove_inference_start
 from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
 cmd = cmd_module

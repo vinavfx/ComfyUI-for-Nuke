@@ -158,7 +158,13 @@ def get_inference_pattern(settings):
         stem, suffix = os.path.splitext(filepath)
         if suffix.lower() not in (".png", ".exr"):
             stem = filepath
-        if "#" not in os.path.basename(stem):
+        basename = re.sub(
+            r"%0?(\d*)d",
+            lambda match: "#" * max(1, int(match[1] or 1)),
+            os.path.basename(stem),
+        )
+        stem = os.path.join(os.path.dirname(stem), basename)
+        if "#" not in basename:
             stem += "_####"
         return f"{stem}.{extension}"
 

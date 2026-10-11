@@ -34,6 +34,17 @@ show_text_uptate = ComfyJob.show_text_update
 preview_image_update = ComfyJob.preview_image_update
 states = ComfyJob.states
 prompt_counter = 0
+inference_start_callbacks = []
+
+
+def add_inference_start(callback):
+    if callback not in inference_start_callbacks:
+        inference_start_callbacks.append(callback)
+
+
+def remove_inference_start(callback):
+    if callback in inference_start_callbacks:
+        inference_start_callbacks.remove(callback)
 
 
 class SubmissionJob(ComfyJob):
@@ -143,6 +154,16 @@ class SubmissionJob(ComfyJob):
             return
 
         self.set_progress(0, "Rendering Nuke images...")
+
+        gizmo = self.run_node.parent()
+        if gizmo.knob("comfyui_gizmo") is not None:
+            current_group = nuke.thisGroup()
+            try:
+                with gizmo:
+                    for callback in tuple(inference_start_callbacks):
+                        callback(self.run_node)
+            finally:
+                current_group.begin()
 
         extract = (
             extract_unified_data if settings.get("UNIFIED_WORKFLOW") else extract_data
