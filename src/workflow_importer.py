@@ -10,8 +10,8 @@ from copy import deepcopy
 
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import set_hex_color
-from ..nuke_util.python_util import jread
+from ..nuke_util.colors import set_tile_color_hex
+from ..nuke_util.python_util import read_json_file
 from ..settings import COMFYUI2NUKE
 from .common import show_message, wait_for_comfyui
 from .connection import convert_to_utf8
@@ -57,7 +57,7 @@ def import_workflow():
             show_message("Please select a JSON file, not a folder.")
             return
         try:
-            data = jread(workflow_path)
+            data = read_json_file(workflow_path)
         except (OSError, ValueError) as error:
             show_message("Could not read the workflow: {}".format(error))
             return
@@ -293,7 +293,7 @@ def build_graph(data, definitions, not_installed, boundary=None, stack=()):
         nodes.append(node)
         node.setSelected(False)
         if not node["tile_color"].value():
-            set_hex_color(node, attrs.get("bgcolor"))
+            set_tile_color_hex(node, attrs.get("bgcolor"))
         pos = attrs.get("pos", [0, 0])
         x, y = (pos["0"], pos["1"]) if isinstance(pos, dict) else pos
         node.setXYpos(int(x / 2), int(y / 2))
@@ -347,7 +347,7 @@ def build_graph(data, definitions, not_installed, boundary=None, stack=()):
         backdrop.setXYpos(int(x / 2), int(y / 2))
         backdrop["z_order"].setValue(0)
         backdrop["note_font_size"].setValue(30)
-        set_hex_color(backdrop, attrs.get("color"))
+        set_tile_color_hex(backdrop, attrs.get("color"))
         backdrop.setSelected(False)
         nodes.append(backdrop)
     move_nodes_to_origin(nodes)

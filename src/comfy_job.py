@@ -8,7 +8,8 @@ from time import time
 import nuke  # type: ignore
 import websocket
 
-from ..nuke_util.nuke_util import get_connected_nodes, set_tile_color
+from ..nuke_util.colors import set_tile_color_hsv
+from ..nuke_util.graph import get_upstream_nodes
 from .common import execute_in_main_thread, show_message
 from .connection import GET, get_hostname_from_url
 from .queue_manager import find_prompt_id, interrupt
@@ -57,7 +58,7 @@ class ComfyJob:
             return
 
         if enable:
-            set_tile_color(node, [0, 1, 1])
+            set_tile_color_hsv(node, [0, 1, 1])
             message = " ".join(message.split()[:30])
             formatted_message = "\n".join(textwrap.wrap(message, width=30))
             node.knob("label").setValue("ERROR:\n" + formatted_message)
@@ -67,7 +68,7 @@ class ComfyJob:
 
     @staticmethod
     def remove_all_error_style(root_node):
-        for node in get_connected_nodes(root_node):
+        for node in get_upstream_nodes(root_node):
             label_knob = node.knob("label")
             if "ERROR" in label_knob.value():
                 ComfyJob.error_node_style(node.fullName(), False)

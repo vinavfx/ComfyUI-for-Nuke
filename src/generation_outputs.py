@@ -10,13 +10,10 @@ import re
 import nuke  # type: ignore
 from time import time
 
-from ..nuke_util.media_util import get_name_no_padding
-from ..nuke_util.nuke_util import (
-    get_output_nodes,
-    selected_node,
-    set_tile_color,
-    get_tile_color,
-)
+from ..nuke_util.colors import get_tile_color_hsv, set_tile_color_hsv
+from ..nuke_util.graph import get_output_connections
+from ..nuke_util.media_names import get_sequence_stem
+from ..nuke_util.selection import get_selected_node
 from .nodes import get_frame_range, get_input
 from .common import (
     get_date_code,
@@ -441,7 +438,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
                 read.addKnob(source)
             source.makeLink(comfyui_gizmo.fullName(), "comfyui_gizmo")
 
-    for i, onode in get_output_nodes(comfyui_gizmo):
+    for i, onode in get_output_connections(comfyui_gizmo):
         onode.setInput(i, read)
 
     inference_register(
@@ -503,8 +500,8 @@ def backup_previous_generation(run_node=None):
 
 
 def filename_matching(filename, filenames=[]):
-    filename_no_padding = get_name_no_padding(filename, True)
-    if any(get_name_no_padding(f, True) == filename_no_padding for f in filenames):
+    filename_no_padding = get_sequence_stem(filename, True)
+    if any(get_sequence_stem(f, True) == filename_no_padding for f in filenames):
         return True
 
 
@@ -557,7 +554,7 @@ def arrange_related_reads(main_node):
 def restore_run_generations():
     from .batch_execution import get_run
 
-    node = selected_node()
+    node = get_selected_node()
     if not node:
         return
 
@@ -616,9 +613,9 @@ def restore_run_generations():
 
         set_raw_mode_for_format(read)
 
-        hue, saturation, lightness = get_tile_color(main_node)
-        if lightness > 0:
-            set_tile_color(read, [hue, saturation / 2, lightness])
+        hue, saturation, value = get_tile_color_hsv(main_node)
+        if value > 0:
+            set_tile_color_hsv(read, [hue, saturation / 2, value])
 
         message += f"{read['file'].value()}\n"
 

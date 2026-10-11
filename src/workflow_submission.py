@@ -8,7 +8,7 @@ from time import time
 
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import get_project_name, get_user_path
+from ..nuke_util.paths import get_project_name, get_user_home_path
 from .common import get_settings, show_message, update_images_and_mask_inputs
 from .comfy_job import ComfyJob
 from .connection import POST
@@ -91,7 +91,7 @@ class SubmissionJob(ComfyJob):
         global prompt_counter
         prompt_counter += 1
 
-        user = os.path.basename(get_user_path())
+        user = os.path.basename(get_user_home_path())
         project_name = get_project_name()
         client_id = "{}:{}:{}".format(user, project_name, prompt_counter)
         self.client_id = client_id.replace(" ", "-")

@@ -4,7 +4,7 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import nuke  # type: ignore
-from ...nuke_util.nuke_util import selected_node
+from ...nuke_util.selection import get_selected_node
 from ..nodes import get_node_data, save_node_data
 from ..update_menu import normalize_nodename
 
@@ -41,7 +41,7 @@ def get_swapped_knobs(node):
 
 
 def knob_to_input():
-    node = selected_node()
+    node = get_selected_node()
     if not node:
         return
 

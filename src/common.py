@@ -17,8 +17,8 @@ from ..settings import (
     UPDATE_MENU_AT_START,
     URL,
 )
-from ..nuke_util.nuke_util import get_connected_nodes
-from ..nuke_util.python_util import jread, jwrite
+from ..nuke_util.graph import get_upstream_nodes
+from ..nuke_util.python_util import read_json_file, write_json_file
 import threading
 from time import monotonic, sleep
 from tempfile import gettempdir
@@ -94,7 +94,7 @@ def scan_comfyui(force_scan):
 
     if not force_scan and os.path.exists(cache_path):
         try:
-            object_info = jread(cache_path)
+            object_info = read_json_file(cache_path)
             print(loaded_message)
             return True
         except (OSError, TypeError, json.JSONDecodeError):
@@ -104,7 +104,7 @@ def scan_comfyui(force_scan):
 
     if object_info:
         try:
-            jwrite(cache_path, object_info)
+            write_json_file(cache_path, object_info)
         except OSError:
             pass
         print(loaded_message)
@@ -284,7 +284,7 @@ def get_name_code(name, length=15):
 
 def override_settings(run_node, settings):
     override_node = None
-    for n in get_connected_nodes(
+    for n in get_upstream_nodes(
         run_node, ignore_disabled=True, continue_at_up_level=True, active_switch=True
     ):
         if n.knob("override_settings"):

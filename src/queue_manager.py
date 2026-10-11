@@ -8,7 +8,7 @@ import nuke  # type: ignore
 
 from .connection import GET, POST, get_hostname_from_url
 from .common import show_message, get_settings
-from ..nuke_util.nuke_util import get_project_name
+from ..nuke_util.paths import get_project_name
 
 blocked_urls = []
 primary_url = None

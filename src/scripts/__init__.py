@@ -6,7 +6,7 @@ from . import force_output_connection as force_output_connection
 from . import knob2input as knob2input
 from . import reload_node as reload_node
 from . import unlink_dependencies as unlink_dependencies
-from ...nuke_util.nuke_util import selected_node
+from ...nuke_util.selection import get_selected_node
 from ...nuke_util.pyside import (
     QApplication,  # type: ignore
     QDialog,  # type: ignore
@@ -29,7 +29,7 @@ __all__ = [
 
 
 def show_data():
-    node = selected_node()
+    node = get_selected_node()
     if not node:
         return
 

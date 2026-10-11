@@ -7,7 +7,7 @@ import __main__
 import copy
 
 import nuke  # type: ignore
-from ..nuke_util.nuke_util import selected_node
+from ..nuke_util.selection import get_selected_nodes
 from .workflow_submission import submit
 from .nodes import get_external_input
 from .common import (
@@ -483,7 +483,7 @@ def execute_runs(settings=None, distribute_load=False):
 
 
 def execute_runs_plus():
-    nodes = selected_node(False)
+    nodes = get_selected_nodes()
     if not nodes:
         return
 

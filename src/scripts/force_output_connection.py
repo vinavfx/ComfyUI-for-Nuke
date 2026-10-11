@@ -4,13 +4,14 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import nuke  # type: ignore
-from ...nuke_util.nuke_util import get_input, selected_node
+from ...nuke_util.graph import resolve_input_node
+from ...nuke_util.selection import get_selected_node
 from ..nodes import get_node_data, requires_force_output, save_node_data
 
 
 def force_output(node=None):
     if not node:
-        node = selected_node()
+        node = get_selected_node()
 
     if not node:
         return
@@ -23,7 +24,7 @@ def force_output(node=None):
     items = []
 
     for i in range(node.inputs()):
-        inode = get_input(node, i, active_switch=True)
+        inode = resolve_input_node(node, i, active_switch=True)
         if not inode:
             continue
 
@@ -44,7 +45,7 @@ def force_output(node=None):
             data["inputs"][i].pop("force_output", None)
             continue
 
-        if not "output_name" in dst_node_data:
+        if "output_name" not in dst_node_data:
             nuke.message(
                 "{} obsolete node, generate node again".format(
                     dst_node_data["class_type"]
@@ -57,7 +58,7 @@ def force_output(node=None):
         outputs_items = " ".join([n.replace(" ", "\\ ") for n in output_name])
         outputs_items = "- " + outputs_items
 
-        if not force_output == None:
+        if force_output is not None:
             outputs_items = output_name[force_output] + " " + outputs_items
 
         p.addEnumerationPulldown(label, outputs_items)

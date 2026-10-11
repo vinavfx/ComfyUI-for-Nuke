@@ -1,12 +1,9 @@
 from html import escape
 
 import nuke  # type: ignore
-from ...nuke_util.nuke_util import (
-    selected_node,
-    get_output_nodes,
-    get_input_nodes,
-    transfer_knobs,
-)
+from ...nuke_util.graph import get_input_connections, get_output_connections
+from ...nuke_util.node_operations import transfer_knobs
+from ...nuke_util.selection import get_selected_nodes
 from ..update_menu import (
     comfyui_nodes,
     create_comfyui_node,
@@ -105,7 +102,7 @@ def transfer_reload_knobs(source_node, new_node):
 
 
 def reload_node():
-    nodes = selected_node(False)
+    nodes = get_selected_nodes()
 
     if not nodes:
         nuke.message("Select at least 1 ComfyUI node!")
@@ -168,10 +165,10 @@ def reload_node_action(nodes):
             new_node.setName(name)
             new_node.setSelected(False)
 
-            for i, onode in get_output_nodes(node):
+            for i, onode in get_output_connections(node):
                 onode.setInput(i, new_node)
 
-            for i, inode in get_input_nodes(node):
+            for i, inode in get_input_connections(node):
                 new_node.setInput(i, inode)
 
             new_node.setXYpos(node.xpos(), node.ypos())

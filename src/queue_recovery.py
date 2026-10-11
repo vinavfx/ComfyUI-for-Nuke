@@ -14,7 +14,7 @@ from .comfy_job import ComfyJob
 from .connection import get_hostname_from_url
 from .nodes import get_input
 from .queue_manager import get_project_jobs
-from ..nuke_util.nuke_util import get_project_name
+from ..nuke_util.paths import get_project_name
 
 active_recoveries = set()
 

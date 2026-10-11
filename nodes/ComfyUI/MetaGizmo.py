@@ -1,6 +1,6 @@
 import nuke  # type: ignore
 
-from ...nuke_util.nuke_util import get_output_nodes
+from ...nuke_util.graph import get_output_connections
 from ...src.batch_execution import (
     dependency_gizmos,
     prepare_multiversions,
@@ -48,7 +48,7 @@ def publish_read(meta, source, output, index):
         read.setXYpos(xpos, ypos)
         read["tile_color"].setValue(meta["tile_color"].value())
         if index == 0:
-            for input_index, node in get_output_nodes(meta):
+            for input_index, node in get_output_connections(meta):
                 node.setInput(input_index, read)
     return read
 

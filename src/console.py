@@ -32,7 +32,9 @@ from .. import settings
 from .common import get_settings
 from .queue_manager import scan_urls, job_running_message
 
-console_panel_instance = panels.init("comfyui.console.console_panel", "ComfyUI Console")
+console_panel_instance = panels.register_docked_panel(
+    "comfyui.console.console_panel", "ComfyUI Console"
+)
 
 LOGS_ENDPOINT = "Logs"
 SYSTEM_STATS_ENDPOINT = "System Stats"

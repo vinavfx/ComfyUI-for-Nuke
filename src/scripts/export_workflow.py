@@ -7,8 +7,8 @@ import nuke  # type: ignore
 import os
 import json
 from ..nodes import prepare_workflow_data
-from ...nuke_util.nuke_util import selected_node
-from ...nuke_util.python_util import jwrite
+from ...nuke_util.selection import get_selected_node
+from ...nuke_util.python_util import write_json_file
 from ..common import update_images_and_mask_inputs, get_settings
 
 
@@ -100,7 +100,7 @@ def copy_workflow():
 
 
 def get_workflow():
-    node = selected_node()
+    node = get_selected_node()
     if not node:
         return
 
@@ -136,6 +136,6 @@ def export_workflow():
         return
 
     workflow = workflow if "json" in workflow else workflow + ".json"
-    jwrite(workflow, data)
+    write_json_file(workflow, data)
 
     nuke.message("Workflow Saved: " + workflow)

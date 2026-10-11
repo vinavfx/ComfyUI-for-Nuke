@@ -11,11 +11,8 @@ import traceback
 from collections import Counter
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import (
-    get_connected_nodes,
-    get_project_name,
-    get_user_path,
-)
+from ..nuke_util.graph import get_upstream_nodes
+from ..nuke_util.paths import get_project_name, get_user_home_path
 from .common import (
     image_inputs,
     mask_inputs,
@@ -149,7 +146,7 @@ def get_frame_range(data):
 
 
 def compute_input_fingerprint(node):
-    connected_nodes = get_connected_nodes(node, continue_at_up_level=True)
+    connected_nodes = get_upstream_nodes(node, continue_at_up_level=True)
     connected_nodes = [n for n in connected_nodes if not n.Class() == "Dot"]
     connected_nodes.append(node)
     state = ""
@@ -241,7 +238,7 @@ def prepare_rendered_image_input(node, settings, rendered_nodes):
 
     dirname = get_name_code(
         "{}{}{}{}{}".format(
-            os.path.basename(get_user_path()),
+            os.path.basename(get_user_home_path()),
             get_project_name(),
             node.fullName(),
             frame_range[0],

@@ -10,7 +10,7 @@ import re
 import json
 import nuke  # type: ignore
 
-from ..nuke_util.nuke_util import get_output_nodes
+from ..nuke_util.graph import get_output_connections
 from .connection import convert_to_utf8
 from .nuke_metadata import apply_nuke_metadata, get_nuke_metadata
 from ..settings import COMFYUI2NUKE
@@ -452,7 +452,7 @@ def create_node(data, inpanel=True, connect_selected=True):
     if selected_node:
         n.setXYpos(selected_node.xpos(), selected_node.ypos() + 24)
         n.setInput(0, selected_node)
-        for i, onode in get_output_nodes(selected_node):
+        for i, onode in get_output_connections(selected_node):
             onode.setInput(i, n)
 
     if "ShowText" in name:
