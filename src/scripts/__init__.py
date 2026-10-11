@@ -14,6 +14,8 @@ from ...nuke_util.pyside import (
     QTextEdit,  # type: ignore
     QVBoxLayout,  # type: ignore
 )
+from ..cmd import get_run
+from ..common import jsonloads
 from ..nodes import get_node_data
 
 __all__ = [
@@ -31,7 +33,16 @@ def show_data():
     if not node:
         return
 
-    raw_json = json.dumps(get_node_data(node), indent=4)
+    run_node = get_run(node)
+    register_knob = run_node.knob("register") if run_node else None
+    if node.knob("comfyui_gizmo") or register_knob:
+        data = jsonloads(register_knob.toScript()) if register_knob else {}
+        title = "ComfyUI Gizmo Register"
+    else:
+        data = get_node_data(node)
+        title = "ComfyUI Node Data"
+
+    raw_json = json.dumps(data, indent=4)
 
     lines = []
     for line in raw_json.split("\n"):
@@ -61,7 +72,7 @@ def show_data():
     ).format("\n".join(lines))
 
     dialog = QDialog(QApplication.activeWindow())
-    dialog.setWindowTitle("ComfyUI Node Data")
+    dialog.setWindowTitle(title)
 
     layout = QVBoxLayout(dialog)
     data_view = QTextEdit(dialog)
