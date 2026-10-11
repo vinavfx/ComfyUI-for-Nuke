@@ -17,7 +17,7 @@ from ..settings import COMFYUI2NUKE
 from .common import (
     get_autogrow_names,
     show_message,
-    jsondumps,
+    encode_compressed_json,
     get_object_info,
     wait_for_comfyui,
 )
@@ -354,7 +354,7 @@ def create_node(data, inpanel=True, connect_selected=True):
 
         if name in ["LoadAudio", "LoadImage"]:
             upload_knob = nuke.PyScript_Knob("upload", "+")
-            upload_knob.setValue("comfyui.upload_and_download.upload_media()")
+            upload_knob.setValue("comfyui.media_import.import_media()")
             n.addKnob(upload_knob)
 
         if category == "loaders" and "name" in knob_name:
@@ -422,7 +422,7 @@ def create_node(data, inpanel=True, connect_selected=True):
     if nuke_options:
         node_data["nuke_options"] = nuke_options
 
-    data_knob.setValue(jsondumps(node_data))
+    data_knob.setValue(encode_compressed_json(node_data))
 
     n.addKnob(data_knob)
 

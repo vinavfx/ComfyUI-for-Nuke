@@ -15,7 +15,7 @@ from ...nuke_util.pyside import (
     QVBoxLayout,  # type: ignore
 )
 from ..cmd import get_run
-from ..common import jsonloads
+from ..common import decode_compressed_json
 from ..nodes import get_node_data
 
 __all__ = [
@@ -36,7 +36,7 @@ def show_data():
     run_node = get_run(node)
     register_knob = run_node.knob("register") if run_node else None
     if node.knob("comfyui_gizmo") or register_knob:
-        data = jsonloads(register_knob.toScript()) if register_knob else {}
+        data = decode_compressed_json(register_knob.toScript()) if register_knob else {}
         title = "ComfyUI Gizmo Register"
     else:
         data = get_node_data(node)

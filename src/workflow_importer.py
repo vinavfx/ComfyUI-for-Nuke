@@ -16,14 +16,14 @@ from ..settings import COMFYUI2NUKE
 from .common import show_message, wait_for_comfyui
 from .connection import convert_to_utf8
 from .nodes import get_node_data, save_node_data
-from .run import error_node_style
+from .workflow_submission import error_node_style
 from .scripts.knob2input import convert_knobs
 from .update_menu import create_comfyui_node, normalize_nodename, update_menu
 from .workflow_connections import read_metadata, write_metadata
 from .workflow_templates import select_template
 
 
-def center_nodes(nodes):
+def move_nodes_to_origin(nodes):
     if not nodes:
         return
     min_x = min(node.xpos() for node in nodes)
@@ -350,7 +350,7 @@ def build_graph(data, definitions, not_installed, boundary=None, stack=()):
         set_hex_color(backdrop, attrs.get("color"))
         backdrop.setSelected(False)
         nodes.append(backdrop)
-    center_nodes(nodes)
+    move_nodes_to_origin(nodes)
     return created, nodes
 
 

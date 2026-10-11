@@ -257,13 +257,13 @@ def update_images_and_mask_inputs():
     return False
 
 
-def jsondumps(data):
+def encode_compressed_json(data):
     json_bytes = json.dumps(data, separators=(",", ":")).encode("utf-8")
     compressed_bytes = bz2.compress(json_bytes, compresslevel=9)
     return base64.b85encode(compressed_bytes).decode("utf-8")
 
 
-def jsonloads(data):
+def decode_compressed_json(data):
     try:
         compressed_bytes = base64.b85decode(data.encode("utf-8"))
         json_bytes = bz2.decompress(compressed_bytes)

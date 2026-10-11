@@ -18,7 +18,12 @@ from ..nuke_util.nuke_util import (
     get_tile_color,
 )
 from .nodes import get_frame_range, get_input
-from .common import get_date_code, jsonloads, jsondumps, show_message
+from .common import (
+    get_date_code,
+    show_message,
+    decode_compressed_json,
+    encode_compressed_json,
+)
 from .update_menu import normalize_nodename
 
 
@@ -67,7 +72,7 @@ def prepare_output_path(run_node, settings, update=True, data=None):
     return new_prefix
 
 
-def set_correct_colorspace(read):
+def set_raw_mode_for_format(read):
     filename = read.knob("file").value()
     ext = filename.split(".")[-1].lower()
 
@@ -269,7 +274,7 @@ def inference_register(
         register_knob.setFlag(nuke.INVISIBLE)
         run_node.addKnob(register_knob)
 
-    register = jsonloads(register_knob.toScript())
+    register = decode_compressed_json(register_knob.toScript())
     inferences = register.get("inferences", [])
 
     filenames = [i["filename"] for i in inferences]
@@ -302,7 +307,7 @@ def inference_register(
         return
 
     register["inferences"] = inferences
-    register_knob.setValue(jsondumps(register))
+    register_knob.setValue(encode_compressed_json(register))
 
 
 def inference_unregister(run_node, settings):
@@ -311,13 +316,13 @@ def inference_unregister(run_node, settings):
     if not register_knob or not filename:
         return
 
-    register = jsonloads(register_knob.toScript())
+    register = decode_compressed_json(register_knob.toScript())
     register["inferences"] = [
         inference
         for inference in register.get("inferences", [])
         if inference["filename"] != filename
     ]
-    register_knob.setValue(jsondumps(register))
+    register_knob.setValue(encode_compressed_json(register))
 
 
 def metadata_format(meta):
@@ -337,7 +342,7 @@ def metadata_format(meta):
 def get_register(run_node):
     register_knob = run_node.knob("register")
     if register_knob:
-        register = jsonloads(register_knob.toScript())
+        register = decode_compressed_json(register_knob.toScript())
         return register.get("inferences", [])
 
     return []
@@ -389,7 +394,7 @@ def create_read(run_node, data, settings, filename, already_exists=False):
             read.knob("frame").setValue(str(get_frame_range(data)[0]))
         read.knob("auto_alpha").setValue(True)
 
-        set_correct_colorspace(read)
+        set_raw_mode_for_format(read)
 
     elif ext in ["obj"]:
         if not read:
@@ -476,14 +481,14 @@ def backup_previous_generation(run_node=None):
         new_read.knob("frame").setValue(read.knob("frame").value())
         new_read.knob("auto_alpha").setValue(True)
         new_read.knob("premultiplied").setValue(read.knob("premultiplied").value())
-        set_correct_colorspace(new_read)
+        set_raw_mode_for_format(new_read)
 
     name = f"{main_node.name()}Backup"
     name = normalize_nodename(name)
     new_read.setName(name)
     new_read.knob("label").setValue(read.knob("label").value())
 
-    sort_reads(main_node)
+    arrange_related_reads(main_node)
 
 
 def filename_matching(filename, filenames=[]):
@@ -493,7 +498,7 @@ def filename_matching(filename, filenames=[]):
 
 
 def get_related_reads(main_node):
-    from .execute_runs import get_run
+    from .batch_execution import get_run
 
     run_node = get_run(main_node)
     filenames = [f["filename"] for f in get_register(run_node)]
@@ -520,7 +525,7 @@ def get_related_reads(main_node):
     return backup_reads + restore_reads
 
 
-def sort_reads(main_node):
+def arrange_related_reads(main_node):
     reads = get_related_reads(main_node)
     if not reads:
         return
@@ -539,7 +544,7 @@ def sort_reads(main_node):
 
 
 def restore_run_generations():
-    from .execute_runs import get_run
+    from .batch_execution import get_run
 
     node = selected_node()
     if not node:
@@ -598,7 +603,7 @@ def restore_run_generations():
         label = metadata_format(r["metadata"])
         read.knob("label").setValue(label)
 
-        set_correct_colorspace(read)
+        set_raw_mode_for_format(read)
 
         hue, saturation, lightness = get_tile_color(main_node)
         if lightness > 0:
@@ -610,7 +615,7 @@ def restore_run_generations():
         show_message("Nothing to restore!")
         return
 
-    sort_reads(main_node)
+    arrange_related_reads(main_node)
 
     if message:
         message = f"<font color=#6cb56b>Restored:</font>\n{message}"

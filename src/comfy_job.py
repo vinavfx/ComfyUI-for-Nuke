@@ -12,7 +12,11 @@ from ..nuke_util.nuke_util import get_connected_nodes, set_tile_color
 from .common import execute_in_main_thread, show_message
 from .connection import GET, get_ip_from_url
 from .queue_manager import find_prompt_id, interrupt
-from .read_media import create_read, inference_unregister, find_inference_file
+from .generation_outputs import (
+    create_read,
+    inference_unregister,
+    find_inference_file,
+)
 
 
 class ComfyJob:

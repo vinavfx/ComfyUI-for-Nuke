@@ -88,7 +88,7 @@ def scan_urls(settings, timeout=None):
     return urls, available_url, lowest_load_url, running_client, pending_client
 
 
-def resolve_queue_position(settings, new_user):
+def calculate_queue_priority(settings, new_user):
     queue = GET("queue", settings)
     if not queue:
         return 1

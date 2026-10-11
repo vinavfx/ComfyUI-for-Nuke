@@ -13,13 +13,13 @@ from .common import get_settings, show_message, update_images_and_mask_inputs
 from .comfy_job import ComfyJob
 from .connection import POST
 from .queue_manager import (
-    resolve_queue_position,
+    calculate_queue_priority,
     resolve_submission_target,
     show_queue,
 )
-from .nodes import extract_data
+from .nodes import prepare_workflow_data
 from .unified_workflow import extract_unified_data
-from .read_media import (
+from .generation_outputs import (
     create_read,
     prepare_output_path,
     find_inference_file,
@@ -64,7 +64,7 @@ class SubmissionJob(ComfyJob):
         self.last_error = last_error
         self.validate_prompt = validate_prompt
 
-    def run_success_callback(self, read=None, run_node=None, error=None):
+    def notify_submission_result(self, read=None, run_node=None, error=None):
         if not self.success_callback:
             return
 
@@ -102,7 +102,7 @@ class SubmissionJob(ComfyJob):
         }
         return {
             "client_id": self.client_id,
-            "number": resolve_queue_position(self.settings, user),
+            "number": calculate_queue_priority(self.settings, user),
             "prompt": self.data,
             "extra_data": {"comfyui2nuke": recovery_data},
         }
@@ -119,11 +119,11 @@ class SubmissionJob(ComfyJob):
         return error
 
     def finish_succeeded(self, read):
-        self.run_success_callback(read, self.run_node)
+        self.notify_submission_result(read, self.run_node)
 
     def finish_failed(self, error):
         self.show_error(error)
-        self.run_success_callback(run_node=self.run_node, error=error)
+        self.notify_submission_result(run_node=self.run_node, error=error)
 
     def start(self):
         settings = self.settings
@@ -136,21 +136,21 @@ class SubmissionJob(ComfyJob):
             )
             self.close_progress()
             self.show_error(message)
-            self.run_success_callback(run_node=self.run_node, error=message)
+            self.notify_submission_result(run_node=self.run_node, error=message)
             return
 
         self.set_progress(0, "Scanning ComfyUI servers...", False)
         if not resolve_submission_target(settings):
             message = "No ComfyUI server available!"
             self.close_progress()
-            self.run_success_callback(run_node=self.run_node, error=message)
+            self.notify_submission_result(run_node=self.run_node, error=message)
             return
 
         if not update_images_and_mask_inputs():
             message = "Error connecting: the image and mask inputs were not refreshed!"
             self.close_progress()
             self.show_error(message)
-            self.run_success_callback(run_node=self.run_node, error=message)
+            self.notify_submission_result(run_node=self.run_node, error=message)
             return
 
         self.set_progress(0, "Rendering Nuke images...")
@@ -166,7 +166,9 @@ class SubmissionJob(ComfyJob):
                 current_group.begin()
 
         extract = (
-            extract_unified_data if settings.get("UNIFIED_WORKFLOW") else extract_data
+            extract_unified_data
+            if settings.get("UNIFIED_WORKFLOW")
+            else prepare_workflow_data
         )
         data, input_node_changed, error_message = extract(
             self.run_node,
@@ -174,7 +176,7 @@ class SubmissionJob(ComfyJob):
         )
         if not data:
             self.close_progress()
-            self.run_success_callback(
+            self.notify_submission_result(
                 run_node=self.run_node,
                 error=error_message,
             )
@@ -203,7 +205,7 @@ class SubmissionJob(ComfyJob):
                     already_exists=True,
                 )
             self.close_progress()
-            self.run_success_callback(read, self.run_node)
+            self.notify_submission_result(read, self.run_node)
             return
 
         output_path = prepare_output_path(
@@ -229,7 +231,7 @@ class SubmissionJob(ComfyJob):
             if error:
                 self.finish_with_error(error)
             else:
-                self.run_success_callback(run_node=self.run_node)
+                self.notify_submission_result(run_node=self.run_node)
             return settings
 
         self.set_progress(0, "Waiting in Queue ...")
@@ -242,7 +244,7 @@ class SubmissionJob(ComfyJob):
             read = None
             if output_path:
                 read = create_empty_read(self.run_node, data, settings)
-            self.run_success_callback(
+            self.notify_submission_result(
                 read,
                 self.run_node,
                 self.execution_error,

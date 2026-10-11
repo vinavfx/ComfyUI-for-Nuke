@@ -10,7 +10,7 @@ import shutil
 from .common import get_settings
 
 
-def upload_media():
+def import_media():
     settings = get_settings()
     input_dir = settings["INPUT_DIRECTORY"]
     filepath = nuke.getFilename("Upload Media", "*.jpg *.exr *.png *.mp3 *.wav")

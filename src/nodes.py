@@ -21,14 +21,14 @@ from .common import (
     mask_inputs,
     get_name_code,
     show_message,
-    jsondumps,
-    jsonloads,
+    decode_compressed_json,
+    encode_compressed_json,
 )
 
 states = {}
 
 
-def extract_data(run_node, settings, input_links=None):
+def prepare_workflow_data(run_node, settings, input_links=None):
     output_node = get_input(run_node, 0)
 
     if not output_node:
@@ -106,7 +106,7 @@ def extract_data(run_node, settings, input_links=None):
                     load_image_data,
                     changed_node,
                     execution_canceled,
-                ) = create_load_images_and_save(input_node, settings, rendered_nodes)
+                ) = prepare_rendered_image_input(input_node, settings, rendered_nodes)
 
                 if execution_canceled:
                     return {}, None, "Image rendering was canceled!"
@@ -148,7 +148,7 @@ def get_frame_range(data):
     return max(ranges, key=lambda r: r[1] - r[0])
 
 
-def state_node(node):
+def compute_input_fingerprint(node):
     connected_nodes = get_connected_nodes(node, continue_at_up_level=True)
     connected_nodes = [n for n in connected_nodes if not n.Class() == "Dot"]
     connected_nodes.append(node)
@@ -207,8 +207,8 @@ def state_node(node):
     return state
 
 
-def create_load_images_and_save(node, settings, rendered_nodes):
-    state = state_node(node)
+def prepare_rendered_image_input(node, settings, rendered_nodes):
+    state = compute_input_fingerprint(node)
 
     current_state = {"connected_nodes": state.strip(), "state_id": 0}
     prev_state = states.get(node.fullName(), {})
@@ -362,7 +362,7 @@ def get_node_data(node):
     if not data_knob:
         return {}
 
-    data = jsonloads(data_knob.value())
+    data = decode_compressed_json(data_knob.value())
     if data:
         return data
 
@@ -381,7 +381,7 @@ def get_node_data(node):
 
 
 def save_node_data(node, data):
-    node.knob("data").setValue(jsondumps(data))
+    node.knob("data").setValue(encode_compressed_json(data))
 
 
 def extract_node_data(node):

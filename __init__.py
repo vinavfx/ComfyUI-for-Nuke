@@ -10,21 +10,23 @@ from .src import (
     cmd as cmd_module,
     common,
     console,
-    execute_runs,
+    batch_execution,
     queue_manager,
     queue_recovery,
-    read_media,
-    scripts,
+    generation_outputs,
+    media_import as media_import_module,
     update_menu,
-    upload_and_download as upload_and_download_module,
+    scripts,
     workflow_importer,
+    workflow_submission,
 )
 from functools import partial
-from .src.run import add_inference_start, remove_inference_start
 from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
 cmd = cmd_module
-upload_and_download = upload_and_download_module
+media_import = media_import_module
+add_inference_start = workflow_submission.add_inference_start
+remove_inference_start = workflow_submission.remove_inference_start
 
 
 def setup():
@@ -108,12 +110,12 @@ def setup():
     )
 
     comfyui_menu.addCommand(
-        "Scripts/Execute Runs", execute_runs.execute_runs, "Ctrl+R", icon=icon_gray
+        "Scripts/Execute Runs", batch_execution.execute_runs, "Ctrl+R", icon=icon_gray
     )
 
     comfyui_menu.addCommand(
         "Scripts/Execute Runs +",
-        execute_runs.execute_runs_plus,
+        batch_execution.execute_runs_plus,
         "Ctrl+Shift+R",
         icon=icon_gray,
     )
@@ -136,7 +138,7 @@ def setup():
 
     comfyui_menu.addCommand(
         "Scripts/Restore RunNode Generations",
-        read_media.restore_run_generations,
+        generation_outputs.restore_run_generations,
         icon=icon_gray,
     )
 

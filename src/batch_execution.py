@@ -7,7 +7,7 @@ import copy
 
 import nuke  # type: ignore
 from ..nuke_util.nuke_util import selected_node
-from .run import submit
+from .workflow_submission import submit
 from .cmd import (
     confirm_dependencies,
     confirm_dependency_order,

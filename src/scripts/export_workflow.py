@@ -6,7 +6,7 @@
 import nuke  # type: ignore
 import os
 import json
-from ..nodes import extract_data
+from ..nodes import prepare_workflow_data
 from ...nuke_util.nuke_util import selected_node
 from ...nuke_util.python_util import jwrite
 from ..common import update_images_and_mask_inputs, get_settings
@@ -114,7 +114,7 @@ def get_workflow():
 
     settings = get_settings(node)
     update_images_and_mask_inputs()
-    data, _, _ = extract_data(node, settings)
+    data, _, _ = prepare_workflow_data(node, settings)
 
     return data, settings
 

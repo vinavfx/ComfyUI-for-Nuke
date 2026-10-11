@@ -1,6 +1,11 @@
 import nuke  # type: ignore
 
-from .nodes import extract_data, get_external_input, get_input, get_node_data
+from .nodes import (
+    prepare_workflow_data,
+    get_external_input,
+    get_input,
+    get_node_data,
+)
 
 
 def unified_gizmos(gizmo):
@@ -62,7 +67,7 @@ def extract_unified_data(run_node, settings):
             link_internal_inputs(gizmo, input_links)
             current_run = gizmo.node("Run")
             with current_run:
-                current_data, input_changed, error = extract_data(
+                current_data, input_changed, error = prepare_workflow_data(
                     current_run, settings, input_links
                 )
             if not current_data:

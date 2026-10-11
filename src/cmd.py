@@ -8,7 +8,7 @@ import __main__
 
 from .common import get_settings, wait_for_comfyui
 from .nodes import get_external_input
-from .run import submit
+from .workflow_submission import submit
 
 
 def get_run(run):
@@ -93,9 +93,7 @@ def dependency_gizmos(gizmo):
 
         visiting.add(name)
         source = node.knobs().get("comfyui_source")
-        linked = (
-            source.getLinkedKnob() if hasattr(source, "getLinkedKnob") else None
-        )
+        linked = source.getLinkedKnob() if hasattr(source, "getLinkedKnob") else None
         if linked is not None and linked.name() == "comfyui_gizmo":
             visit(linked.node())
         else:
@@ -165,7 +163,7 @@ def confirm_dependency_order(gizmos, selected_gizmos, settings=None):
     if mode == "Separate workflows (Read per gizmo)":
         return gizmos
     if mode == "Unified workflow":
-        from .execute_runs import multi_runs
+        from .batch_execution import multi_runs
         from .unified_workflow import unified_gizmos
 
         try:
@@ -192,7 +190,7 @@ def confirm_dependency_order(gizmos, selected_gizmos, settings=None):
 def run_dependencies(
     gizmos, success_callback=None, settings=None, dependency_nodes=None
 ):
-    from .execute_runs import sequential_execution
+    from .batch_execution import sequential_execution
 
     if dependency_nodes is None:
         dependency_nodes = []
