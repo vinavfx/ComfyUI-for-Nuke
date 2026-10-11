@@ -21,11 +21,14 @@ Group {
  }
  Group {
   name Write
+  knobChanged comfyui.update_menu.apply_nuke_metadata(nuke.thisNode())
   tile_color 0xbcb50001
   xpos -40
   ypos -393
   addUserKnob {20 Controls}
   addUserKnob {2 filepath_ l filepath}
+  addUserKnob {3 start_frame_ l start_frame}
+  start_frame_ 1001
   addUserKnob {4 format_ l format M {png exr}}
   format_ exr
   addUserKnob {4 bit_depth_ l bit_depth M {8bit 16bit 32bit}}
@@ -35,7 +38,7 @@ Group {
   addUserKnob {4 color_space_ l color_space M {sRGB linear}}
   color_space_ linear
   filepath_ image_####.exr
-  addUserKnob {22 data -STARTLINE +HIDDEN T "LRx4!F+o`-Q&|Ch@jCzjf*XJk1ON~KiofsPDlh=Jf>dQRXn8<r2893vKmY<\$L\{Cr?Mw&B3Tp4hO;s\{*3&0-XW9lMt&AWTQBe<qy=Ng!&lnu\{)XY0iwiF03DKEJX\}@K5q>Vj#o*\}\$9Bx2Lj8T\{+UgoNl7T915N333gN0mzyI0\{6p)n<-nL(&ljJg9NoLN;%BMGL\$JYP~zg6GK<Q9|k@Crd\{N!R_v>\{\{AlHig2MI0\{h~2"}
+  addUserKnob {22 data -STARTLINE +HIDDEN T "LRx4!F+o`-Q(0|INfZD8_?v(b1UXOuiofsQ>M#K@ZLmry<r+rPW~PDZ8eu&_DUz8rBh%F%sWVBYo~DeLNkV#_rbzV\$nrJi+P\}npKZ1~pd5kn(wYiY4nE%04T=<xSuR!ev^BSFJulWIi?0z-7)2l`8r^kk_*BY=!TAd5gKD5E?3Zb>WU144IAPi6QWY(R7AT6\}>rX)~f\}sh(~XGbQ))i63UnYq2i^jt)?Ine>V(W^fJYu=)-Zfgy`nLu6ij8ER\{z4B>_HK7?9p&zUnpP\{ew~gwbm85)!zhcP?~OAdMYgkhm66l0!jK*tSJYhAd-f=H\$UGkcz@FSsaNx#&vN4g6\$%ygv-i=7A#^`X!H6i`3(hS\{9VZu;X*;RH6%~"}
  }
   Input {
    inputs 0
