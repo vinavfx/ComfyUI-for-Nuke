@@ -35,6 +35,7 @@ def prepare_output_path(run_node, settings, update=True, data=None):
     settings.pop("output_filepath", None)
     settings.pop("filename_prefix", None)
     settings.pop("output_format", None)
+    settings.pop("output_start_frame", None)
     output_data = (data or {}).get(output_node.name(), {})
     inputs = output_data.get("inputs", {})
     format_knob = output_node.knob("format_")
@@ -47,6 +48,12 @@ def prepare_output_path(run_node, settings, update=True, data=None):
         if filepath_knob:
             filepath = inputs.get(knob_name, filepath_knob.value())
             settings["output_filepath"] = filepath
+            start_frame_knob = output_node.knob("start_frame_")
+            start_frame = inputs.get(
+                "start_frame", start_frame_knob.value() if start_frame_knob else None
+            )
+            if isinstance(start_frame, (int, float)):
+                settings["output_start_frame"] = int(start_frame)
             return filepath
 
     filename_prefix_knob = output_node.knob("filename_prefix_")
@@ -216,11 +223,18 @@ def find_inference_file(settings):
         return os.path.join(sequence_output, filename)
 
 
-def register_temporary_inference(run_node, data, settings):
+def get_output_frame_range(data, settings):
     first_frame, last_frame = get_frame_range(data)
-    if not settings.get("output_filepath"):
-        last_frame = last_frame - first_frame + 1
+    frame_count = last_frame - first_frame + 1
+    if settings.get("output_filepath"):
+        first_frame = settings.get("output_start_frame", first_frame)
+    else:
         first_frame = 1
+    return first_frame, first_frame + frame_count - 1
+
+
+def register_temporary_inference(run_node, data, settings):
+    first_frame, last_frame = get_output_frame_range(data, settings)
     filename = "{} {}-{}".format(
         get_inference_pattern(settings), first_frame, last_frame
     )
@@ -246,11 +260,8 @@ def create_empty_read(run_node, data, settings):
     if not read:
         return
 
-    first_frame, last_frame = get_frame_range(data)
+    first_frame, last_frame = get_output_frame_range(data, settings)
     read["on_error"].setValue("black")
-    if not settings.get("output_filepath"):
-        last_frame = last_frame - first_frame + 1
-        first_frame = 1
     read["first"].setValue(first_frame)
     read["origfirst"].setValue(first_frame)
     read["last"].setValue(last_frame)
