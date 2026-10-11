@@ -129,7 +129,21 @@ def extract_data(run_node, settings, input_links=None):
         }
         data[n.name()] = node_data
 
+    if any(node.get("frame_range") for node in data.values()):
+        start_frame = int(get_frame_range(data)[0])
+        for node_data in data.values():
+            if node_data["class_type"] == "Write":
+                node_data["inputs"]["start_frame"] = start_frame
+
     return data, input_node_changed, ""
+
+
+def get_frame_range(data):
+    #  Of all the read nodes, it gets the longest range.
+    ranges = [n.get("frame_range") for n in data.values() if n.get("frame_range")]
+    if not ranges:
+        return [1, 1]
+    return max(ranges, key=lambda r: r[1] - r[0])
 
 
 def state_node(node):

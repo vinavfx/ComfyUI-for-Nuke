@@ -17,7 +17,7 @@ from ..nuke_util.nuke_util import (
     set_tile_color,
     get_tile_color,
 )
-from .nodes import get_input
+from .nodes import get_frame_range, get_input
 from .common import get_date_code, jsonloads, jsondumps, show_message
 from .update_menu import normalize_nodename
 
@@ -142,14 +142,6 @@ def extract_meta(data, settings):
     return meta
 
 
-def get_frame_range(data):
-    #  Of all the read nodes, it gets the longest range.
-    ranges = [n.get("frame_range") for n in data.values() if n.get("frame_range")]
-    if not ranges:
-        return [1, 1]
-    return max(ranges, key=lambda r: r[1] - r[0])
-
-
 def get_inference_pattern(settings):
     extension = settings.get("output_format", "png")
     filepath = settings.get("output_filepath")
@@ -204,20 +196,28 @@ def find_inference_file(settings):
         filename = next((name for name in filenames if basename in name), None)
 
     if filename:
+        if settings.get("output_filepath"):
+            frame_range = re.search(r" -?\d+--?\d+$", filename)
+            return pattern + (frame_range[0] if frame_range else "")
         return os.path.join(sequence_output, filename)
 
 
 def register_temporary_inference(run_node, data, settings):
     first_frame, last_frame = get_frame_range(data)
-    frame_count = last_frame - first_frame + 1
-    filename = "{} 1-{}".format(get_inference_pattern(settings), frame_count)
+    if not settings.get("output_filepath"):
+        last_frame = last_frame - first_frame + 1
+        first_frame = 1
+    filename = "{} {}-{}".format(
+        get_inference_pattern(settings), first_frame, last_frame
+    )
     settings["temporary_inference_filename"] = filename
     inference_register(
         run_node,
         None,
         filename,
         [],
-        start_frame=first_frame,
+        start_frame="" if settings.get("output_filepath") else get_frame_range(data)[0],
+        frame_mode="expression" if settings.get("output_filepath") else "start at",
     )
 
 
@@ -230,9 +230,13 @@ def create_empty_read(run_node, data, settings):
 
     first_frame, last_frame = get_frame_range(data)
     read["on_error"].setValue("black")
-    read["first"].setValue(1)
-    read["last"].setValue(last_frame - first_frame + 1)
-    read["origlast"].setValue(last_frame - first_frame + 1)
+    if not settings.get("output_filepath"):
+        last_frame = last_frame - first_frame + 1
+        first_frame = 1
+    read["first"].setValue(first_frame)
+    read["origfirst"].setValue(first_frame)
+    read["last"].setValue(last_frame)
+    read["origlast"].setValue(last_frame)
 
     return read
 
@@ -243,7 +247,8 @@ def inference_register(
     filename,
     metadata,
     temporary_filename=None,
-    start_frame=1,
+    start_frame=None,
+    frame_mode="start at",
 ):
     register_knob = run_node.knob("register")
     if not register_knob:
@@ -259,10 +264,14 @@ def inference_register(
     if read:
         frame_knob = read.knob("frame")
         start_frame = frame_knob.value() if frame_knob else 1
+        frame_mode_knob = read.knob("frame_mode")
+        if frame_mode_knob:
+            frame_mode = frame_mode_knob.value()
 
     inference = {
         "filename": filename,
-        "start_frame": start_frame,
+        "start_frame": 1 if start_frame is None else start_frame,
+        "frame_mode": frame_mode,
         "metadata": metadata,
     }
     if temporary_filename in filenames:
@@ -359,8 +368,12 @@ def create_read(run_node, data, settings, filename, already_exists=False):
             read = nuke.createNode("Read", inpanel=False)
 
         read.knob("file").fromUserText(filename)
-        read.knob("frame_mode").setValue("start at")
-        read.knob("frame").setValue(str(get_frame_range(data)[0]))
+        if settings.get("output_filepath"):
+            read.knob("frame_mode").setValue("expression")
+            read.knob("frame").setValue("")
+        else:
+            read.knob("frame_mode").setValue("start at")
+            read.knob("frame").setValue(str(get_frame_range(data)[0]))
         read.knob("auto_alpha").setValue(True)
 
         set_correct_colorspace(read)
@@ -555,7 +568,7 @@ def restore_run_generations():
         read.setName(name)
 
         read.knob("file").fromUserText(filename)
-        read.knob("frame_mode").setValue("start at")
+        read.knob("frame_mode").setValue(r.get("frame_mode", "start at"))
         read.knob("frame").setValue(str(r["start_frame"]))
         read.knob("auto_alpha").setValue(True)
 
