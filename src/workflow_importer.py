@@ -403,7 +403,7 @@ def enable_widget_sync(group):
         "    target = nuke.toNode(node.fullName() + '.' + target_path)\n"
         "    target_knob = target.knob(target_name) if target else None\n"
         "    if target_knob:\n"
-        "        target_knob.setValue(knob.value())"
+        "        target_knob.setValue(node[knob.name()].value())"
     )
     existing = group["knobChanged"].value().rstrip()
     group["knobChanged"].setValue(existing + ("\n" if existing else "") + callback)
@@ -446,11 +446,13 @@ def create_subgraph(attrs, definition, definitions, not_installed, stack):
     boundary = {}
     group.begin()
     try:
-        write_image = nuke.toNode("WriteImage")
+        write_image = nuke.toNode("Write") or nuke.toNode("WriteImage")
         run = nuke.toNode("Run")
         output = nuke.toNode("Output1")
         if not write_image or not run or not output:
-            raise ValueError("ComfyUIGizmo must contain WriteImage, Run and Output1")
+            raise ValueError(
+                "ComfyUIGizmo must contain Write (or WriteImage), Run and Output1"
+            )
         for child in list(nuke.allNodes("Input")):
             nuke.delete(child)
         for index, (slot, item) in enumerate(sockets):
