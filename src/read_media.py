@@ -89,7 +89,7 @@ def get_gizmo_group(run_node):
             return gizmo
 
 
-def extract_meta(data, settings):
+def extract_meta(data, settings, include_time=True):
     seed = denoise = -1
     lora = lora2 = ""
 
@@ -135,9 +135,12 @@ def extract_meta(data, settings):
     if lora2:
         meta.append(("lora2", lora2))
 
-    total_time = settings["pre_inference_time"] + (time() - settings["inference_time"])
-    itime = "%02d:%02d" % divmod(int(total_time), 60)
-    meta.append(("time", itime))
+    if include_time:
+        total_time = settings["pre_inference_time"] + (
+            time() - settings["inference_time"]
+        )
+        itime = "%02d:%02d" % divmod(int(total_time), 60)
+        meta.append(("time", itime))
 
     return meta
 
@@ -217,11 +220,15 @@ def register_temporary_inference(run_node, data, settings):
         get_inference_pattern(settings), first_frame, last_frame
     )
     settings["temporary_inference_filename"] = filename
+    meta = list(settings.get("custom_metadata", {}).items())
+    meta.extend(extract_meta(data, settings, include_time=False))
+    if not settings["DISPLAY_META_IN_READ_NODE"]:
+        meta = []
     inference_register(
         run_node,
         None,
         filename,
-        [],
+        meta,
         start_frame="" if settings.get("output_filepath") else get_frame_range(data)[0],
         frame_mode="expression" if settings.get("output_filepath") else "start at",
     )
@@ -561,9 +568,19 @@ def restore_run_generations():
     for r in register:
         filename = r["filename"]
 
-        dirname = os.path.dirname(filename)
-        if not os.path.isdir(dirname) or not os.listdir(dirname):
-            missing.append(filename)
+        filepath = re.sub(r" -?\d+--?\d+$", "", filename)
+        if re.search(r"#+|%0?\d*d", os.path.basename(filepath)):
+            filename = find_inference_file(
+                {
+                    "output_filepath": filepath,
+                    "output_format": os.path.splitext(filepath)[1][1:],
+                }
+            )
+        elif not os.path.isfile(filepath):
+            filename = None
+
+        if not filename:
+            missing.append(r["filename"])
             continue
 
         if filename_matching(filename, [main_filename] + related_filenames):
