@@ -10,7 +10,7 @@ import websocket
 
 from ..nuke_util.nuke_util import get_connected_nodes, set_tile_color
 from .common import execute_in_main_thread, show_message
-from .connection import GET, get_ip_from_url
+from .connection import GET, get_hostname_from_url
 from .queue_manager import find_prompt_id, interrupt
 from .generation_outputs import (
     create_read,
@@ -135,12 +135,12 @@ class ComfyJob:
         if not message:
             return
 
-        ip = ""
+        hostname = ""
         url = self.settings["URL"][0]
         if include_ip and "127" not in url:
-            ip = get_ip_from_url(url)
+            hostname = get_hostname_from_url(url)
 
-        message = "{} ({}) ".format(message, ip) if ip else message
+        message = "{} ({}) ".format(message, hostname) if hostname else message
         progress.setMessage(message)
         self.progress_message = message
 

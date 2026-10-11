@@ -11,7 +11,7 @@ from .common import (
     wait_for_startup_scan,
 )
 from .comfy_job import ComfyJob
-from .connection import get_ip_from_url
+from .connection import get_hostname_from_url
 from .nodes import get_input
 from .queue_manager import get_project_jobs
 from ..nuke_util.nuke_util import get_project_name
@@ -91,7 +91,7 @@ class RecoveryJob(ComfyJob):
         active_recoveries.add(self.recovery_key)
         message = "Restored {} job ({})".format(
             self.job["status"],
-            get_ip_from_url(self.job["url"]),
+            get_hostname_from_url(self.job["url"]),
         )
         self.set_progress(0, message, include_ip=False)
         self.start_monitor()

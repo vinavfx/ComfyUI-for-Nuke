@@ -7,6 +7,7 @@ import sys
 import json
 import traceback
 from collections import OrderedDict
+from urllib.parse import urlsplit
 
 if sys.version_info.major == 2:
     import urllib2 as urllib2  # type: ignore
@@ -17,13 +18,8 @@ import nuke  # type: ignore
 from .common import show_message, get_settings
 
 
-def get_ip_from_url(url):
-    if "://" in url:
-        _, rest = url.split("://", 1)
-    else:
-        rest = url
-
-    return rest.split(":")[0].split("/")[0]
+def get_hostname_from_url(url):
+    return urlsplit(url if "://" in url else "//" + url).hostname or ""
 
 
 def GET(endpoint, settings, warning=True, timeout=30):
@@ -89,7 +85,11 @@ def POST(endpoint, data, settings):
 
             return errors
         except Exception:
-            show_message(traceback.format_exc())
+            message = "ERROR: HTTP {} FROM {}\n\n{}".format(
+                e.code, url, traceback.format_exc()
+            )
+            show_message(message)
+            return message
 
     except Exception as e:
         return "Error: {}".format(e)

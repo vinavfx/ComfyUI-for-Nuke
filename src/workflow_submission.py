@@ -30,7 +30,7 @@ from .generation_outputs import (
 error_node_style = ComfyJob.error_node_style
 remove_all_error_style = ComfyJob.remove_all_error_style
 update_node = ComfyJob.update_node
-show_text_uptate = ComfyJob.show_text_update
+show_text_update = ComfyJob.show_text_update
 preview_image_update = ComfyJob.preview_image_update
 states = ComfyJob.states
 prompt_counter = 0
@@ -51,7 +51,7 @@ class SubmissionJob(ComfyJob):
     def __init__(
         self,
         run_node,
-        success_callback=None,
+        result_callback=None,
         settings=None,
         last_error=None,
         validate_prompt=False,
@@ -60,21 +60,21 @@ class SubmissionJob(ComfyJob):
         settings = settings or get_settings(run_node)
         settings["custom_metadata"] = custom_metadata or {}
         super().__init__(run_node, settings)
-        self.success_callback = success_callback
+        self.result_callback = result_callback
         self.last_error = last_error
         self.validate_prompt = validate_prompt
 
     def notify_submission_result(self, read=None, run_node=None, error=None):
-        if not self.success_callback:
+        if not self.result_callback:
             return
 
-        argument_count = self.success_callback.__code__.co_argcount
+        argument_count = self.result_callback.__code__.co_argcount
         if argument_count == 2:
-            self.success_callback(read, run_node)
+            self.result_callback(read, run_node)
         elif argument_count == 3:
-            self.success_callback(read, run_node, error)
+            self.result_callback(read, run_node, error)
         else:
-            self.success_callback(read)
+            self.result_callback(read)
 
     def show_error(self, message):
         if self.last_error is None:
@@ -147,7 +147,10 @@ class SubmissionJob(ComfyJob):
             return
 
         if not update_images_and_mask_inputs():
-            message = "Error connecting: the image and mask inputs were not refreshed!"
+            message = (
+                "Could not discover image and mask inputs: "
+                "ComfyUI node information is unavailable."
+            )
             self.close_progress()
             self.show_error(message)
             self.notify_submission_result(run_node=self.run_node, error=message)
@@ -262,18 +265,22 @@ class SubmissionJob(ComfyJob):
 
         if not nuke.GUI:
             self.wait()
-            print(
-                "\nPrompt executed in {} seconds".format(
-                    round(time() - settings["inference_time"], 1)
-                )
-            )
+            elapsed = round(time() - settings["inference_time"], 1)
+            if self.cancelled:
+                print("\nPrompt cancelled after {} seconds".format(elapsed))
+            elif error or self.execution_error:
+                print("\nPrompt failed after {} seconds".format(elapsed))
+            elif settings["BACKGROUND_SUBMIT"]:
+                print("\nPrompt submitted to the ComfyUI queue")
+            else:
+                print("\nPrompt completed successfully in {} seconds".format(elapsed))
 
         return settings
 
 
 def submit(
     run_node,
-    success_callback=None,
+    result_callback=None,
     settings=None,
     last_error=None,
     validate_prompt=False,
@@ -281,7 +288,7 @@ def submit(
 ):
     job = SubmissionJob(
         run_node,
-        success_callback,
+        result_callback,
         settings,
         last_error,
         validate_prompt,

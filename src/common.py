@@ -73,7 +73,7 @@ def wait_for_startup_scan():
 
 
 def scan_comfyui(force_scan):
-    from .connection import GET, get_ip_from_url
+    from .connection import GET, get_hostname_from_url
     from .queue_manager import resolve_submission_target
 
     global object_info
@@ -89,8 +89,8 @@ def scan_comfyui(force_scan):
     cache_path = os.path.join(
         gettempdir(), f"comfyui2nuke_object_info_{server_key}.json"
     )
-    server_ip = get_ip_from_url(server_url)
-    loaded_message = f"ComfyUI loaded successfully from {server_ip}."
+    server_hostname = get_hostname_from_url(server_url)
+    loaded_message = f"ComfyUI loaded successfully from {server_hostname}."
 
     if not force_scan and os.path.exists(cache_path):
         try:
@@ -250,11 +250,8 @@ def update_images_and_mask_inputs():
                             if input_name not in mask_inputs:
                                 mask_inputs.append(input_name)
 
-    if len(image_inputs) > 50:
-        updated_inputs = True
-        return True
-
-    return False
+    updated_inputs = True
+    return True
 
 
 def encode_compressed_json(data):

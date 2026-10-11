@@ -306,7 +306,7 @@ def sequential_execution(
             with run:
                 submit(
                     run,
-                    success_callback=execution_finished,
+                    result_callback=execution_finished,
                     settings=run_settings,
                     custom_metadata=metadata,
                 )
@@ -321,7 +321,7 @@ def sequential_execution(
         with run:
             submit(
                 run,
-                success_callback=validation_finished,
+                result_callback=validation_finished,
                 validate_prompt=True,
                 custom_metadata=metadata,
             )
@@ -388,7 +388,7 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
         with run:
             settings = submit(
                 run,
-                success_callback=on_success,
+                result_callback=on_success,
                 settings=copy.deepcopy(settings) if settings else None,
                 last_error=last_error,
                 custom_metadata=metadata,
