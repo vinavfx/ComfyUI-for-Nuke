@@ -131,8 +131,10 @@ def extract_data(run_node, settings, input_links=None):
 
     if any(node.get("frame_range") for node in data.values()):
         start_frame = int(get_frame_range(data)[0])
-        for node_data in data.values():
+        for node, node_data in nodes:
             if node_data["class_type"] == "Write":
+                start_frame_knob = node.knob("start_frame_")
+                start_frame_knob.setValue(start_frame)
                 node_data["inputs"]["start_frame"] = start_frame
 
     return data, input_node_changed, ""
