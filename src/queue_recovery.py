@@ -3,7 +3,7 @@ from time import time
 
 import nuke  # type: ignore
 
-from .cmd import get_run, inference_end
+from .batch_execution import get_run, inference_end
 from .common import (
     execute_in_main_thread,
     get_settings,

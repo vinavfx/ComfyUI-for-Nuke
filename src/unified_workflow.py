@@ -9,7 +9,7 @@ from .nodes import (
 
 
 def unified_gizmos(gizmo):
-    from .cmd import dependency_gizmos
+    from .batch_execution import dependency_gizmos
 
     gizmos = dependency_gizmos(gizmo)
     for target in gizmos:

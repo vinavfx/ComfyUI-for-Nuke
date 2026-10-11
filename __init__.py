@@ -7,7 +7,6 @@ import os
 import threading
 import nuke  # type: ignore
 from .src import (
-    cmd as cmd_module,
     common,
     console,
     batch_execution,
@@ -23,7 +22,6 @@ from .src import (
 from functools import partial
 from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 
-cmd = cmd_module
 media_import = media_import_module
 add_inference_start = workflow_submission.add_inference_start
 remove_inference_start = workflow_submission.remove_inference_start

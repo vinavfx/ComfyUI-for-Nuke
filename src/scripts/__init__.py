@@ -14,7 +14,7 @@ from ...nuke_util.pyside import (
     QTextEdit,  # type: ignore
     QVBoxLayout,  # type: ignore
 )
-from ..cmd import get_run
+from ..batch_execution import get_run
 from ..common import decode_compressed_json
 from ..nodes import get_node_data
 

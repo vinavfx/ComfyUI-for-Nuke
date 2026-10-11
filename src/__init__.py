@@ -10,7 +10,6 @@ from . import (
     batch_execution,
     scripts,
     queue_manager,
-    cmd,
     console,
 )
 
@@ -26,6 +25,5 @@ __all__ = [
     "batch_execution",
     "scripts",
     "queue_manager",
-    "cmd",
     "console",
 ]
