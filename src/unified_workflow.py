@@ -83,16 +83,17 @@ def extract_unified_data(run_node, settings):
                             value[0] = names[value[0]]
             if gizmo != run_node.parent():
                 output_data = current_data.pop(output_name)
-                if output_data["class_type"] != "WriteImage":
+                if output_data["class_type"] not in ("Write", "WriteImage"):
                     raise ValueError(
-                        "Unified dependencies must end with WriteImage: {}".format(
-                            gizmo.fullName()
-                        )
+                        "Unified dependencies must end with Write or WriteImage: "
+                        "{}".format(gizmo.fullName())
                     )
                 image = output_data["inputs"].get("images")
                 if not isinstance(image, list) or len(image) != 2:
                     raise ValueError(
-                        "WriteImage has no connected image: {}".format(gizmo.fullName())
+                        "{} has no connected image: {}".format(
+                            output_data["class_type"], gizmo.fullName()
+                        )
                     )
                 outputs[gizmo.fullName()] = image
             data.update({names[name]: value for name, value in current_data.items()})
