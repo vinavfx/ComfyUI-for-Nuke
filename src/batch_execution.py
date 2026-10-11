@@ -17,7 +17,13 @@ from .cmd import (
     inference_start,
     run_dependencies,
 )
-from .common import get_settings, override_settings, wait_for_comfyui, init_scan_thread
+from .common import (
+    get_settings,
+    override_settings,
+    wait_for_comfyui,
+    init_scan_thread,
+    show_message,
+)
 from . import queue_manager
 from .queue_manager import scan_urls, job_running_message, blocked_urls
 
@@ -151,7 +157,9 @@ def multi_runs(runs, success_callback=None, settings=None, distribute_load=False
         iterations[node_name] = iteration + 1
         run = get_run(run)
 
-        ret, halt, _, metadata = inference_start(run, i, iteration)
+        ret, halt, start_error, metadata = inference_start(run, i, iteration)
+        if start_error:
+            show_message(start_error)
         if halt:
             break
         if not ret:
