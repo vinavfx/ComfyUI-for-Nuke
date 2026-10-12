@@ -6,6 +6,7 @@
 import nuke  # type: ignore
 from datetime import datetime
 import json
+import sys
 import os
 import hashlib
 import bz2
@@ -81,7 +82,7 @@ def scan_comfyui(force_scan):
     settings = resolve_submission_target(settings, 10)
     if not settings:
         object_info = None
-        print("Could not load ComfyUI object_info.")
+        show_message("Could not load ComfyUI object_info.")
         return False
 
     server_url = settings["URL"][0]
@@ -95,7 +96,7 @@ def scan_comfyui(force_scan):
     if not force_scan and os.path.exists(cache_path):
         try:
             object_info = read_json_file(cache_path)
-            print(loaded_message)
+            show_message(loaded_message)
             return True
         except (OSError, TypeError, json.JSONDecodeError):
             pass
@@ -107,9 +108,9 @@ def scan_comfyui(force_scan):
             write_json_file(cache_path, object_info)
         except OSError:
             pass
-        print(loaded_message)
+        show_message(loaded_message)
     else:
-        print("Could not load ComfyUI object_info.")
+        show_message("Could not load ComfyUI object_info.")
 
     return bool(object_info)
 
@@ -128,7 +129,7 @@ def get_object_info():
             if scan:
                 force_comfyui_scan()
         else:
-            print(message)
+            show_message(message)
     return object_info
 
 
@@ -136,7 +137,7 @@ def show_message(msg):
     if gui_available() and getattr(scan_thread_state, "gui", True):
         execute_in_main_thread(nuke.message, (msg,))
     else:
-        print(msg)
+        print(msg, file=sys.__stdout__)
 
 
 def execute_in_main_thread(func, args=(), kwargs=None):
