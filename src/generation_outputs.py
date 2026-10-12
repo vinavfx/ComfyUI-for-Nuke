@@ -576,6 +576,9 @@ def get_related_reads(main_node):
     run_node = get_run(main_node)
     filenames = [f["filename"] for f in get_register(run_node)]
 
+    generation_order = {
+        get_inference_stem(filename): index for index, filename in enumerate(filenames)
+    }
     backup_reads = []
     restore_reads = []
 
@@ -592,8 +595,11 @@ def get_related_reads(main_node):
         if n.name().startswith(main_node.name() + "Restored"):
             restore_reads.append(n)
 
-    backup_reads.sort(key=lambda n: n["file"].value(), reverse=True)
-    restore_reads.sort(key=lambda n: n["file"].value(), reverse=True)
+    for reads in (backup_reads, restore_reads):
+        reads.sort(
+            key=lambda n: generation_order[get_inference_stem(n["file"].value())],
+            reverse=True,
+        )
 
     return backup_reads + restore_reads
 
