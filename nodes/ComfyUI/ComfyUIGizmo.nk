@@ -9,7 +9,9 @@ Group {
  ypos -48
  addUserKnob {20 controls l Controls}
  addUserKnob {26 comfyui_gizmo l ComfyUIGizmo +INVISIBLE T "This knob only allows the read and backup to be outside the gizmo !"}
- addUserKnob {41 run l Run T Run.run}
+ addUserKnob {3 batch}
+ batch 1
+ addUserKnob {22 run l Run -STARTLINE T comfyui.batch_execution.multi_versions()}
  addUserKnob {22 inferenceStart +HIDDEN T "" +STARTLINE}
  addUserKnob {22 inferenceEnd +HIDDEN T "# Available variables: read, iter, node_iter" +STARTLINE}
 }

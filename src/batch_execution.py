@@ -417,15 +417,15 @@ def multi_versions(run=None, success_callback=None):
 
 
 def prepare_multiversions(node):
-    versions = 1
-    if node.knob("versions"):
-        versions = int(node.knob("versions").value())
+    batch = 1
+    if node.knob("batch"):
+        batch = int(node.knob("batch").value())
 
     for child in node.nodes():
-        if versions > 1 and child.knob("randomize"):
+        if batch > 1 and child.knob("randomize"):
             child.knob("randomize").setValue(True)
 
-    return [node] * versions
+    return [node] * batch
 
 
 def execute_runs(settings=None, distribute_load=False):

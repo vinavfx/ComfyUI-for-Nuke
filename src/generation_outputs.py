@@ -555,9 +555,18 @@ def backup_previous_generation(run_node=None):
     arrange_related_reads(main_node)
 
 
+def get_inference_stem(filename):
+    basename = os.path.basename(filename)
+    generations = list(re.finditer(r"(?:^|_)gen\d+(?=[_.]|$)", basename))
+    if not generations:
+        return get_sequence_stem(filename, True)
+    stem = basename[: generations[-1].end()]
+    return os.path.join(os.path.dirname(filename), stem)
+
+
 def filename_matching(filename, filenames=[]):
-    filename_no_padding = get_sequence_stem(filename, True)
-    if any(get_sequence_stem(f, True) == filename_no_padding for f in filenames):
+    filename_no_padding = get_inference_stem(filename)
+    if any(get_inference_stem(f) == filename_no_padding for f in filenames):
         return True
 
 
