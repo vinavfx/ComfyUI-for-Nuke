@@ -6,7 +6,6 @@
 import nuke  # type: ignore
 from datetime import datetime
 import json
-import sys
 import os
 import hashlib
 import bz2
@@ -137,7 +136,7 @@ def show_message(msg):
     if gui_available() and getattr(scan_thread_state, "gui", True):
         execute_in_main_thread(nuke.message, (msg,))
     else:
-        print(msg, file=sys.__stdout__)
+        execute_in_main_thread(print, (msg,))
 
 
 def execute_in_main_thread(func, args=(), kwargs=None):
