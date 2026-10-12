@@ -356,6 +356,31 @@ def get_register(run_node):
     return []
 
 
+def relocate_registered_files(relocated_files):
+    if not relocated_files:
+        return
+
+    for node in nuke.allNodes(recurseGroups=True):
+        register_knob = node.knob("register")
+        if not register_knob:
+            continue
+
+        register = decode_compressed_json(register_knob.toScript())
+        changed = False
+        for inference in register.get("inferences", []):
+            filename = inference["filename"]
+            match = re.search(r" -?\d+--?\d+$", filename)
+            filepath = filename[: match.start()] if match else filename
+            if filepath not in relocated_files:
+                continue
+            frame_range = match.group() if match else ""
+            inference["filename"] = relocated_files[filepath] + frame_range
+            changed = True
+
+        if changed:
+            register_knob.setValue(encode_compressed_json(register))
+
+
 def reset_copied_register():
     node = nuke.thisNode()
     if not node or not node.knob("comfyui_gizmo"):
