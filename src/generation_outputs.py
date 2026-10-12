@@ -356,6 +356,37 @@ def get_register(run_node):
     return []
 
 
+def reset_copied_register():
+    node = nuke.thisNode()
+    if not node or not node.knob("comfyui_gizmo"):
+        return
+
+    run_node = node.node("Run")
+    if not run_node:
+        return
+
+    register_knob = run_node.knob("register")
+    if not register_knob:
+        return
+
+    value = register_knob.value()
+    if not value:
+        return
+
+    for other in nuke.root().nodes():
+        if other is node or not other.knob("comfyui_gizmo"):
+            continue
+
+        other_run = other.node("Run")
+        if not other_run:
+            continue
+
+        other_register = other_run.knob("register")
+        if other_register and other_register.value() == value:
+            register_knob.setValue("")
+            return
+
+
 def create_read(run_node, data, settings, filename, already_exists=False):
     if not filename:
         return

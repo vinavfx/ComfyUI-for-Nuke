@@ -25,6 +25,7 @@ from .settings import UPDATE_MENU_AT_START, COMFYUI2NUKE
 media_import = media_import_module
 add_inference_start = workflow_submission.add_inference_start
 remove_inference_start = workflow_submission.remove_inference_start
+nuke.addOnCreate(generation_outputs.reset_copied_register)
 
 
 def setup():
