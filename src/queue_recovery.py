@@ -51,6 +51,9 @@ def get_recovery_settings(job, run_node):
         settings.pop("output_filepath", None)
         settings.pop("filename_prefix", None)
         settings["output_format"] = inputs.get("format", "png")
+        settings["fallback_to_output"] = inputs.get("fallback_to_output", False)
+        if "start_frame" in inputs:
+            settings["output_start_frame"] = inputs["start_frame"]
         for key in ("filepath", "file_path", "filename_prefix"):
             if inputs.get(key):
                 setting_key = (

@@ -31,6 +31,8 @@ Group {
   addUserKnob {2 filepath_ l filepath}
   addUserKnob {3 start_frame_ l start_frame}
   start_frame_ 1001
+  addUserKnob {6 fallback_to_output_ l fallback_to_output +STARTLINE}
+  fallback_to_output_ true
   addUserKnob {4 format_ l format M {png exr}}
   format_ exr
   addUserKnob {4 bit_depth_ l bit_depth M {8bit 16bit 32bit}}

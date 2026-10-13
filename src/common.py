@@ -11,6 +11,7 @@ import hashlib
 import bz2
 import base64
 from ..settings import (
+    COLLECT_DIRECTORY,
     DISPLAY_META_IN_READ_NODE,
     INPUT_DIRECTORY,
     OUTPUT_DIRECTORY,
@@ -352,6 +353,7 @@ def get_settings(run_node=None):
     settings = {
         "URL": URL,
         "OUTPUT_DIRECTORY": OUTPUT_DIRECTORY,
+        "COLLECT_DIRECTORY": COLLECT_DIRECTORY,
         "INPUT_DIRECTORY": INPUT_DIRECTORY,
         "UPDATE_MENU_AT_START": UPDATE_MENU_AT_START,
         "DISPLAY_META_IN_READ_NODE": DISPLAY_META_IN_READ_NODE,

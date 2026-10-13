@@ -6,6 +6,7 @@
 import os
 import math
 import re
+import shutil
 
 import nuke  # type: ignore
 from time import time
@@ -13,6 +14,7 @@ from time import time
 from ..nuke_util.colors import get_tile_color_hsv, set_tile_color_hsv
 from ..nuke_util.graph import get_output_connections
 from ..nuke_util.media_names import get_sequence_stem
+from ..nuke_util.paths import get_project_path
 from ..nuke_util.selection import get_selected_node
 from .nodes import get_frame_range, get_input
 from .common import (
@@ -33,6 +35,7 @@ def prepare_output_path(run_node, settings, update=True, data=None):
     settings.pop("filename_prefix", None)
     settings.pop("output_format", None)
     settings.pop("output_start_frame", None)
+    settings.pop("fallback_to_output", None)
     output_data = (data or {}).get(output_node.name(), {})
     inputs = output_data.get("inputs", {})
     format_knob = output_node.knob("format_")
@@ -45,6 +48,10 @@ def prepare_output_path(run_node, settings, update=True, data=None):
         if filepath_knob:
             filepath = inputs.get(knob_name, filepath_knob.value())
             settings["output_filepath"] = filepath
+            fallback_knob = output_node.knob("fallback_to_output_")
+            settings["fallback_to_output"] = inputs.get(
+                "fallback_to_output", fallback_knob.value() if fallback_knob else False
+            )
             start_frame_knob = output_node.knob("start_frame_")
             start_frame = inputs.get(
                 "start_frame", start_frame_knob.value() if start_frame_knob else None
@@ -154,7 +161,7 @@ def extract_meta(data, settings, include_time=True):
     return meta
 
 
-def get_inference_pattern(settings):
+def get_inference_pattern(settings, fallback=False):
     extension = settings.get("output_format", "png")
     filepath = settings.get("output_filepath")
     if filepath:
@@ -167,7 +174,11 @@ def get_inference_pattern(settings):
             lambda match: "#" * max(1, int(match[1] or 1)),
             os.path.basename(stem),
         )
-        stem = os.path.join(os.path.dirname(stem), basename)
+        directory = os.path.dirname(stem)
+        if fallback:
+            subfolder = os.path.basename(directory) or "Write"
+            directory = os.path.join(settings["OUTPUT_DIRECTORY"], subfolder)
+        stem = os.path.join(directory, basename)
         if "#" not in basename:
             stem += "_####"
         return f"{stem}.{extension}"
@@ -178,11 +189,95 @@ def get_inference_pattern(settings):
         return f"{filename}_#####_.{extension}"
 
 
+def get_collected_pattern(pattern, settings):
+    collect_directory = settings.get("COLLECT_DIRECTORY", "inferences").strip()
+    project_path = get_project_path()
+    if not collect_directory or not project_path:
+        return pattern
+    directory = os.path.abspath(
+        os.path.join(os.path.dirname(project_path), collect_directory)
+    )
+    prefix = settings.get("filename_prefix")
+    if prefix:
+        sequence_directory = os.path.dirname(prefix) or os.path.basename(prefix)
+    else:
+        filepath = settings["output_filepath"].strip().strip('"')
+        sequence_directory = os.path.basename(os.path.dirname(filepath))
+        if not sequence_directory:
+            sequence_directory = get_sequence_stem(os.path.basename(pattern))
+    sequence_directory = sequence_directory.replace("\\", "/").strip("/")
+    sequence_directory = "/".join(
+        part for part in sequence_directory.split("/") if part not in (".", "..")
+    )
+    return os.path.join(directory, sequence_directory, os.path.basename(pattern))
+
+
+def collect_inference_file(filename, settings):
+    source_pattern = re.sub(r" -?\d+--?\d+$", "", filename)
+    collected_pattern = get_collected_pattern(source_pattern, settings)
+    if collected_pattern == source_pattern:
+        return filename
+    directory = os.path.dirname(collected_pattern)
+    os.makedirs(directory, exist_ok=True)
+    expression = re.escape(os.path.basename(source_pattern))
+    expression = re.sub(r"(?:\\#)+|%0?\d*d", lambda match: r"-?\d+", expression)
+    source_directory = os.path.dirname(source_pattern)
+    with os.scandir(source_directory) as entries:
+        sources = [
+            entry.path
+            for entry in entries
+            if entry.is_file() and re.fullmatch(expression, entry.name)
+        ]
+    task = nuke.ProgressTask("Collect from ComfyUI")
+    task.setMessage("Collecting: ...")
+    task.setProgress(0)
+    try:
+        for index, source in enumerate(sources, start=1):
+            basename = os.path.basename(source)
+            task.setMessage("Collecting: " + basename)
+            destination = os.path.join(directory, basename)
+            if os.path.abspath(source) != os.path.abspath(destination):
+                shutil.move(source, destination)
+            task.setProgress(int(index * 100 / len(sources)))
+        task.setProgress(100)
+    finally:
+        del task
+    output_directory = settings.get("OUTPUT_DIRECTORY") or source_directory
+    if os.path.abspath(source_directory) != os.path.abspath(
+        output_directory
+    ) and not os.listdir(source_directory):
+        os.rmdir(source_directory)
+    return os.path.join(directory, os.path.basename(filename))
+
+
 def find_inference_file(settings):
     pattern = get_inference_pattern(settings)
     if not pattern:
         return
+    if settings.get("filename_prefix"):
+        filename = find_pattern_file(get_collected_pattern(pattern, settings), settings)
+        if filename:
+            return filename
+        filename = find_pattern_file(pattern, settings)
+        if filename:
+            return collect_inference_file(filename, settings)
+        return
 
+    filename = find_pattern_file(pattern, settings)
+    if filename or not settings.get("fallback_to_output"):
+        return filename
+    fallback_pattern = get_inference_pattern(settings, fallback=True)
+    filename = find_pattern_file(
+        get_collected_pattern(fallback_pattern, settings), settings
+    )
+    if filename:
+        return filename
+    filename = find_pattern_file(fallback_pattern, settings)
+    if filename:
+        return collect_inference_file(filename, settings)
+
+
+def find_pattern_file(pattern, settings):
     sequence_output = os.path.dirname(pattern)
     if not os.path.isdir(sequence_output):
         return
