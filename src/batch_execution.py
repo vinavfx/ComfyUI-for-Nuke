@@ -89,6 +89,21 @@ def submit_run(run_node, metadata):
         submit(run_node, inference_end, custom_metadata=metadata)
 
 
+def dependency_input_indices(node):
+    if node.Class() != "Group" or node.knob("comfyui_gizmo") is not None:
+        return range(node.inputs())
+
+    return sorted(
+        {
+            int(input_node["number"].value())
+            for child in node.nodes()
+            for index in range(child.inputs())
+            if (input_node := child.input(index)) is not None
+            and input_node.Class() == "Input"
+        }
+    )
+
+
 def dependency_gizmos(gizmo):
     ordered = []
     visited = set()
@@ -107,7 +122,7 @@ def dependency_gizmos(gizmo):
         if linked is not None and linked.name() == "comfyui_gizmo":
             visit(linked.node())
         else:
-            for index in range(node.inputs()):
+            for index in dependency_input_indices(node):
                 upstream = get_external_input(node, index)
                 if upstream is not None:
                     visit(upstream)
