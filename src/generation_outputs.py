@@ -18,7 +18,6 @@ from ..nuke_util.paths import get_project_path
 from ..nuke_util.selection import get_selected_node
 from .nodes import get_frame_range, get_input
 from .common import (
-    get_date_code,
     show_message,
     decode_compressed_json,
     encode_compressed_json,
@@ -70,17 +69,57 @@ def prepare_output_path(run_node, settings, update=True, data=None):
         return settings["filename_prefix"]
 
     prefix = filename_prefix_knob.value()
-    old_rand = prefix.split("/")[0]
+    directory, separator, filename = prefix.partition("/")
+    if separator and (directory.isdigit() or re.fullmatch(r".+_gen\d+", directory)):
+        prefix = filename
 
-    if old_rand.isdigit():
-        prefix = prefix.replace(old_rand + "/", "")
-
-    new_prefix = "{}/{}".format(get_date_code(), prefix)
+    new_prefix = "{}/{}".format(
+        reserve_generation_directory(run_node, output_node, settings), prefix
+    )
     filename_prefix_knob.setValue(new_prefix)
     if data is not None:
         data[output_node.name()]["inputs"]["filename_prefix"] = new_prefix
     settings["filename_prefix"] = new_prefix
     return new_prefix
+
+
+def reserve_generation_directory(run_node, output_node, settings):
+    project_path = get_project_path()
+    script_name = (
+        os.path.splitext(os.path.basename(project_path))[0]
+        if project_path
+        else "Untitled"
+    )
+    owner = get_gizmo_group(run_node) or output_node.parent()
+    node_name = output_node.name() if owner == nuke.root() else owner.name()
+    prefix = f"{script_name}_{node_name}_gen"
+    output_directory = settings["OUTPUT_DIRECTORY"]
+    directories = [output_directory]
+    collect_directory = settings.get("COLLECT_DIRECTORY", "inferences").strip()
+    if project_path and collect_directory:
+        directories.append(
+            os.path.join(os.path.dirname(project_path), collect_directory)
+        )
+    version = 1
+    for directory in directories:
+        if not os.path.isdir(directory):
+            continue
+        for entry in os.listdir(directory):
+            suffix = entry.removeprefix(prefix)
+            if entry.startswith(prefix) and suffix.isdecimal():
+                version = max(version, int(suffix) + 1)
+    os.makedirs(output_directory, exist_ok=True)
+    while True:
+        name = f"{prefix}{version:03d}"
+        if any(os.path.exists(os.path.join(path, name)) for path in directories):
+            version += 1
+            continue
+        try:
+            os.mkdir(os.path.join(output_directory, name))
+        except FileExistsError:
+            version += 1
+            continue
+        return name
 
 
 def set_raw_mode_for_format(read):
