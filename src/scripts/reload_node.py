@@ -40,8 +40,8 @@ def has_node_updates(node, data, definition):
         )
         if info.get("forceInput", False) or not is_knob:
             expected_inputs.extend(
-                name
-                for name, input_type, _, _ in get_autogrow_inputs(
+                (name, optional_input)
+                for name, input_type, optional_input, _ in get_autogrow_inputs(
                     key, input_class, info, is_optional
                 )
                 if input_type
@@ -60,14 +60,16 @@ def has_node_updates(node, data, definition):
             ):
                 return True
         if swapped_knobs.get(key, {}).get("swapped_knob", False):
-            expected_inputs.append(key)
+            expected_inputs.append((key, is_optional))
 
     actual_knobs = [
         name
         for name in data.get("knobs_order", [])
         if node.knob(name) is not None or node.knob(name[:-1] + "_hide") is not None
     ]
-    actual_inputs = [value["name"] for value in data["inputs"]]
+    actual_inputs = [
+        (value["name"], value.get("opt", False)) for value in data["inputs"]
+    ]
     expected_outputs = [
         name if isinstance(output, list) else output.lower()
         for output, name in zip(definition["output"], definition["output_name"])
