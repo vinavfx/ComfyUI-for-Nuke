@@ -4,7 +4,6 @@
 # WEBSITE -------> https://vinavfx.com
 # -----------------------------------------------------------
 import nuke  # type: ignore
-from datetime import datetime
 import json
 import os
 import hashlib
@@ -268,12 +267,6 @@ def decode_compressed_json(data):
         return json.loads(json_bytes.decode("utf-8"))
     except Exception:
         return {}
-
-
-def get_date_code():
-    now = datetime.now()
-    ms = str(int(now.microsecond / 1000)).zfill(3)
-    return now.strftime("%Y%m%d%H%M%S") + ms
 
 
 def get_name_code(name, length=15):

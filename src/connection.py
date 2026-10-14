@@ -15,7 +15,7 @@ else:
     import urllib.request as urllib2
 
 import nuke  # type: ignore
-from .common import show_message, get_settings
+from .common import show_message
 
 
 def get_hostname_from_url(url):
@@ -35,13 +35,6 @@ def GET(endpoint, settings, warning=True, timeout=30):
     except Exception:
         if warning:
             show_message(f"Error connecting to ComfyUI server {settings['URL']}!")
-
-
-def check_connection():
-    if GET("system_stats", get_settings()):
-        return True
-
-    return False
 
 
 def POST(endpoint, data, settings):

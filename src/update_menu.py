@@ -121,13 +121,6 @@ def get_dynamic_combo_inputs(
     return inputs
 
 
-def get_nodes():
-    if not comfyui_nodes:
-        update()
-
-    return comfyui_nodes
-
-
 def create_comfyui_node(node_type, inpanel=True, connect_selected=True):
     node_data = comfyui_nodes.get(node_type)
     if not node_data:

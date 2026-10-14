@@ -578,21 +578,6 @@ def requires_force_output(outputs, input_class):
     return True
 
 
-def update_input_nodes(node):
-    for n in nuke.allNodes():
-        if n.Class() == "Input":
-            nuke.delete(n)
-
-    data = get_node_data(node)
-
-    for idx, i in enumerate(data["inputs"]):
-        inode = nuke.createNode("Input", inpanel=False)
-        inode.setName(i["name"])
-
-        if idx == 0:
-            nuke.toNode("Output1").setInput(0, inode)
-
-
 def is_switch_any(node):
     if not node.Class() == "Switch":
         return
