@@ -511,7 +511,9 @@ def build_menu(info, progress, callback=None):
             if hasattr(item, "items"):
                 collect_menu_labels(item)
             else:
-                nuke_labels.add(normalize_string(item.name()))
+                label = normalize_string(item.name())
+                nuke_labels.add(label)
+                nuke_labels.add(re.sub(r"\s+\([^)]*\)$", "", label))
 
     collect_menu_labels(nodes_menu)
 

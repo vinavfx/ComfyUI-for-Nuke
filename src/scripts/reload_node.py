@@ -48,7 +48,17 @@ def has_node_updates(node, data, definition):
             )
             continue
 
-        expected_knobs.append(normalize_nodename(key.replace(".", "__")) + "_")
+        knob_name = normalize_nodename(key.replace(".", "__")) + "_"
+        expected_knobs.append(knob_name)
+        if input_class == "FLOAT":
+            knob = node.knob(knob_name)
+            if knob is None:
+                knob = node.knob(knob_name[:-1] + "_hide")
+            if knob is not None and (
+                knob.minimum() != info.get("min", 0)
+                or knob.maximum() != info.get("max", 1)
+            ):
+                return True
         if swapped_knobs.get(key, {}).get("swapped_knob", False):
             expected_inputs.append(key)
 
@@ -84,6 +94,11 @@ def transfer_reload_knobs(source_node, new_node):
         if isinstance(knob, nuke.Enumeration_Knob)
     }
 
+    ranges = {
+        knob.name(): (knob.minimum(), knob.maximum())
+        for knob in new_node.allKnobs()
+        if isinstance(knob, nuke.Double_Knob)
+    }
     tile_color = new_node["tile_color"].value()
     callback = new_node["knobChanged"].value()
     transfer_knobs(source_node, new_node, transfer_all=True, ignore_hidden=False)
@@ -97,6 +112,8 @@ def transfer_reload_knobs(source_node, new_node):
         knob.setValues(values)
         if value in values:
             knob.setValue(value)
+    for knob_name, (minimum, maximum) in ranges.items():
+        new_node.knob(knob_name).setRange(minimum, maximum)
     apply_nuke_metadata(new_node)
     new_node["knobChanged"].setValue(callback)
 
