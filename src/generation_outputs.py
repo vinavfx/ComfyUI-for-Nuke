@@ -15,6 +15,7 @@ from ..nuke_util.colors import get_tile_color_hsv, set_tile_color_hsv
 from ..nuke_util.graph import get_output_connections
 from ..nuke_util.media_names import get_sequence_stem
 from ..nuke_util.paths import get_project_path
+from ..nuke_util.pyside import QtCore
 from ..nuke_util.selection import get_selected_node
 from .nodes import get_frame_range, get_input
 from .common import (
@@ -95,11 +96,9 @@ def reserve_generation_directory(run_node, output_node, settings):
     prefix = f"{script_name}_{node_name}_gen"
     output_directory = settings["OUTPUT_DIRECTORY"]
     directories = [output_directory]
-    collect_directory = settings.get("COLLECT_DIRECTORY", "inferences").strip()
-    if project_path and collect_directory:
-        directories.append(
-            os.path.join(os.path.dirname(project_path), collect_directory)
-        )
+    collect_directory = get_collection_directory(settings)
+    if collect_directory:
+        directories.append(collect_directory)
     version = 1
     for directory in directories:
         if not os.path.isdir(directory):
@@ -228,14 +227,25 @@ def get_inference_pattern(settings, fallback=False):
         return f"{filename}_#####_.{extension}"
 
 
-def get_collected_pattern(pattern, settings):
+def get_collection_directory(settings):
     collect_directory = settings.get("COLLECT_DIRECTORY", "inferences").strip()
+    if not collect_directory:
+        return
     project_path = get_project_path()
-    if not collect_directory or not project_path:
-        return pattern
-    directory = os.path.abspath(
-        os.path.join(os.path.dirname(project_path), collect_directory)
+    base_directory = (
+        os.path.dirname(project_path)
+        if project_path
+        else QtCore.QStandardPaths.writableLocation(
+            QtCore.QStandardPaths.DesktopLocation
+        )
     )
+    return os.path.abspath(os.path.join(base_directory, collect_directory))
+
+
+def get_collected_pattern(pattern, settings):
+    directory = get_collection_directory(settings)
+    if not directory:
+        return pattern
     prefix = settings.get("filename_prefix")
     if prefix:
         sequence_directory = os.path.dirname(prefix) or os.path.basename(prefix)
