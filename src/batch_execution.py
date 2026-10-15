@@ -42,7 +42,6 @@ def inference_start(run_node, iteration=0, node_iteration=0):
         messages.append(str(message))
 
     with gizmo:
-        code = callback.value()
         context = __main__.__dict__.copy()
         context["ret"] = True
         context["halt"] = False
@@ -52,7 +51,7 @@ def inference_start(run_node, iteration=0, node_iteration=0):
         context["node_iter"] = node_iteration
         nuke.message = capture_message
         try:
-            exec(code, context)
+            exec(callback.value(), context)
         except Exception as error:
             messages.append(str(error) or type(error).__name__)
             return False, True, "\n".join(messages), {}
