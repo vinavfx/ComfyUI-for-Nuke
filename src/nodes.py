@@ -267,12 +267,19 @@ def prepare_rendered_image_input(node, settings, rendered_nodes):
     clamp = nuke.createNode("Clamp", inpanel=False)
     clamp.setInput(0, crop)
 
-    write = nuke.createNode("Write", inpanel=False)
+    rgb = None
+    if not any(
+        channel in node.channels()
+        for channel in ("rgba.red", "rgba.green", "rgba.blue")
+    ):
+        rgb = nuke.nodes.AddChannels(inputs=[clamp], channels="rgb")
+
+    write = nuke.nodes.Write()
     write.knob("hide_input").setValue(True)
     write.setName(node.name() + "_write")
     write.setXYpos(node.xpos(), node.ypos())
     write.setSelected(False)
-    write.setInput(0, clamp)
+    write.setInput(0, rgb if rgb is not None else clamp)
     write.knob("file").setValue(filename)
     write.knob("file_type").setValue("exr")
     write.knob("raw").setValue(True)
@@ -280,6 +287,7 @@ def prepare_rendered_image_input(node, settings, rendered_nodes):
 
     def clean():
         nuke.delete(write)
+        nuke.delete(rgb)
         nuke.delete(crop)
         nuke.delete(clamp)
 
