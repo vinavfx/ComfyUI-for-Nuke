@@ -53,10 +53,9 @@ def inference_start(run_node, iteration=0, node_iteration=0):
         nuke.message = capture_message
         try:
             exec(code, context)
-        except Exception:
-            for message in messages:
-                original_message(message)
-            raise
+        except Exception as error:
+            messages.append(str(error) or type(error).__name__)
+            return False, True, "\n".join(messages), {}
         finally:
             nuke.message = original_message
 
@@ -224,7 +223,7 @@ def run_dependencies(
 
     def execution_finished(error):
         if error:
-            nuke.message(error)
+            show_message(error)
         elif success_callback:
             success_callback()
 
@@ -252,8 +251,10 @@ def run():
             run_dependencies(gizmos)
             return
 
-    ret, _, _, metadata = inference_start(run_node)
-    if not ret:
+    ret, halt, start_error, metadata = inference_start(run_node)
+    if start_error:
+        show_message(start_error)
+    if halt or not ret:
         return
 
     if wait_for_comfyui(lambda: submit_run(run_node, metadata)):
@@ -289,6 +290,8 @@ def sequential_execution(
         if halt or not ret:
             if start_error:
                 error = start_error
+                if not callback:
+                    show_message(error)
             else:
                 status = "halted" if halt else "rejected"
                 error = "Inference start {} execution for node '{}'.".format(

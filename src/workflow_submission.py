@@ -122,10 +122,21 @@ class SubmissionJob(ComfyJob):
         self.notify_submission_result(read, self.run_node)
 
     def finish_failed(self, error):
+        self.close_progress()
         self.show_error(error)
         self.notify_submission_result(run_node=self.run_node, error=error)
 
     def start(self):
+        try:
+            return self.submit_workflow()
+        except Exception as error:
+            message = str(error) or type(error).__name__
+            self.set_external_error(message)
+            if not self.monitor_thread:
+                self.finish_with_error(message)
+            return None
+
+    def submit_workflow(self):
         settings = self.settings
         settings["pre_inference_time"] = time()
         settings["inference_time"] = time()

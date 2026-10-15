@@ -154,14 +154,16 @@ def compute_input_fingerprint(node):
     ct = nuke.nodes.CurveTool(
         inputs=[node], operation="Avg Intensities", channels="rgba"
     )
-    ct["ROI"].setValue([0, 0, node.width(), node.height()])
-    nuke.execute(ct, node.firstFrame(), node.firstFrame())
-    intensity_data = ct["intensitydata"]
-    rgba = [
-        round(intensity_data.value(index), 5)
-        for index in range(intensity_data.arraySize())
-    ]
-    nuke.delete(ct)
+    try:
+        ct["ROI"].setValue([0, 0, node.width(), node.height()])
+        nuke.execute(ct, node.firstFrame(), node.firstFrame())
+        intensity_data = ct["intensitydata"]
+        rgba = [
+            round(intensity_data.value(index), 5)
+            for index in range(intensity_data.arraySize())
+        ]
+    finally:
+        nuke.delete(ct)
 
     attrs = [
         rgba,
