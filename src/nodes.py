@@ -364,7 +364,10 @@ def get_connected_comfyui_nodes(root_node, visited=None, ignore_nodes=[]):
 
 
 def get_node_data(node):
-    data_knob = node.knob("data")
+    try:
+        data_knob = node.knob("data")
+    except ValueError:
+        return {}
 
     if not data_knob:
         return {}
