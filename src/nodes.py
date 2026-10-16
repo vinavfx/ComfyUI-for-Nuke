@@ -394,6 +394,21 @@ def save_node_data(node, data):
     node.knob("data").setValue(encode_compressed_json(data))
 
 
+def get_inactive_dynamic_inputs(node, data):
+    knob_names = {
+        input_name: knob_name
+        for knob_name, input_name in data.get("knobs_input_names", {}).items()
+    }
+    inactive = set()
+    for name, options in data.get("dynamic_combos", {}).items():
+        knob_name = knob_names.get(name, name.replace(".", "__") + "_")
+        knob = node.knob(knob_name)
+        selected = options.get(knob.value(), []) if knob else []
+        children = {child for names in options.values() for child in names}
+        inactive.update(children.difference(selected))
+    return inactive
+
+
 def extract_node_data(node):
     data = get_node_data(node)
     if not data:
@@ -458,6 +473,12 @@ def extract_node_data(node):
 
         inputs[input_name] = [inode.name(), output_index]
 
+    inactive = get_inactive_dynamic_inputs(node, data)
+    inputs = {
+        name: value
+        for name, value in inputs.items()
+        if not any(name == key or name.startswith(key + ".") for key in inactive)
+    }
     return {"inputs": inputs, "class_type": data["class_type"]}
 
 
@@ -489,12 +510,17 @@ def get_output_index(node, node_data, input_index):
 
 def check_node(node, input_links=None):
     node_data = get_node_data(node)
+    inactive = get_inactive_dynamic_inputs(node, node_data)
 
     for i in range(node.maxInputs()):
         inode = get_input(node, i)
 
         index_data = node_data["inputs"][i]
         input_name = index_data["name"]
+        if any(
+            input_name == key or input_name.startswith(key + ".") for key in inactive
+        ):
+            continue
         optional_input = index_data.get("opt", False)
 
         if optional_input and not inode:

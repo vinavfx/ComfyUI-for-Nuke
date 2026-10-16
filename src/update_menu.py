@@ -7,7 +7,6 @@
 from functools import partial
 import colorsys
 import re
-import json
 import nuke  # type: ignore
 
 from ..nuke_util.graph import get_output_connections
@@ -16,6 +15,7 @@ from .nuke_metadata import apply_nuke_metadata, get_nuke_metadata
 from ..settings import COMFYUI2NUKE
 from .common import (
     get_autogrow_names,
+    normalize_matchtypes,
     show_message,
     encode_compressed_json,
     get_object_info,
@@ -97,8 +97,7 @@ def get_dynamic_combo_inputs(
                 full_key = "{}.{}".format(key, nested_key)
                 nested_class = input_value[0]
                 nested_info = input_value[1] if len(input_value) == 2 else {}
-                if not nested_info.get("forceInput", False):
-                    option_keys.append(full_key)
+                option_keys.append(full_key)
                 if full_key in added_keys:
                     continue
 
@@ -558,7 +557,7 @@ def build_menu(info, progress, callback=None):
                 "optional": list(input_data.get("optional", {})),
             }
 
-        value = json.loads(json.dumps(value))
+        value = normalize_matchtypes(value)
         value_utf8 = convert_to_utf8(value)
 
         comfyui_nodes[value["name"]] = value_utf8

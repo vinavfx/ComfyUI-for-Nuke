@@ -207,6 +207,10 @@ def get_autogrow_names(template):
     return ["{}{}".format(prefix, index) for index in range(AUTOGROW_INPUT_COUNT)]
 
 
+def normalize_matchtypes(data):
+    return json.loads(json.dumps(data).replace('"COMFY_MATCHTYPE_V3"', '"*"'))
+
+
 def update_images_and_mask_inputs():
     global updated_inputs
 
@@ -217,8 +221,8 @@ def update_images_and_mask_inputs():
     if not info:
         return False
 
-    for _, data in info.items():
-        input_data = data["input"]
+    for data in info.values():
+        input_data = normalize_matchtypes(data)["input"]
         required = input_data.get("required", {})
         optional = input_data.get("optional", {})
 
