@@ -6,6 +6,7 @@
 import os
 import re
 import textwrap
+from contextvars import ContextVar
 from copy import deepcopy
 
 import nuke  # type: ignore
@@ -21,6 +22,8 @@ from .scripts.knob2input import convert_knobs
 from .update_menu import create_comfyui_node, normalize_nodename, update_menu
 from .workflow_connections import read_metadata, write_metadata
 from .workflow_templates import select_template
+
+import_warnings = ContextVar("import_warnings")
 
 
 def move_nodes_to_origin(nodes):
@@ -81,6 +84,8 @@ def import_workflow_data(data):
         node.setSelected(False)
     undo = nuke.Undo()
     undo.begin("Import ComfyUI Workflow")
+    warnings = []
+    token = import_warnings.set(warnings)
     try:
         _, nodes = build_graph(data, definitions, not_installed)
         for node in nodes:
@@ -90,7 +95,10 @@ def import_workflow_data(data):
             "Could not import the workflow: {}. Use Undo to remove it.".format(error)
         )
     finally:
+        import_warnings.reset(token)
         undo.end()
+    if warnings:
+        show_message("\n\n".join(dict.fromkeys(warnings)))
     if not_installed:
         show_message(
             "You need to install these nodes in ComfyUI:\n\n"
@@ -114,7 +122,23 @@ def set_widget_value(node, knob, value):
             value = value != "fixed"
         if type(value) is int:
             value = min(value, 999999999)
-        knob.setValue(convert_to_utf8(value))
+        value = convert_to_utf8(value)
+        if isinstance(knob, nuke.Enumeration_Knob) and isinstance(value, str):
+            options = knob.values()
+            if value not in options:
+                knob.setValues(options + [value])
+                message = (
+                    'Preserved unavailable option "{}" for "{}.{}". '
+                    "Make it available in ComfyUI before running.".format(
+                        value, node.name(), knob.name()
+                    )
+                )
+                warnings = import_warnings.get(None)
+                if warnings is None:
+                    show_message(message)
+                else:
+                    warnings.append(message)
+        knob.setValue(value)
     except (TypeError, ValueError, RuntimeError):
         show_message('Could not set "{}.{}".'.format(node.name(), knob.name()))
 
