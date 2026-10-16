@@ -31,7 +31,10 @@ def conditions_match(knobs, conditions):
 
 
 def apply_nuke_metadata(node):
-    node_name = node.fullName()
+    try:
+        node_name = node.fullName()
+    except ValueError:
+        return
     if node_name in updating_nodes:
         return
     data = get_node_data(node)
