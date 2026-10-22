@@ -203,7 +203,15 @@ def get_inference_pattern(settings, fallback=False):
     extension = settings.get("output_format", "png")
     filepath = settings.get("output_filepath")
     if filepath:
-        filepath = os.path.abspath(os.path.expanduser(filepath.strip().strip('"')))
+        filepath = os.path.expanduser(filepath.strip().strip('"'))
+        if extension.lower() == "obj":
+            if not os.path.isabs(filepath):
+                filepath = os.path.join(settings.get("OUTPUT_DIRECTORY", ""), filepath)
+            stem, suffix = os.path.splitext(filepath)
+            if suffix.lower() == ".obj":
+                return os.path.abspath(filepath)
+            return os.path.abspath(stem + ".obj")
+        filepath = os.path.abspath(filepath)
         stem, suffix = os.path.splitext(filepath)
         if suffix.lower() not in (".png", ".exr"):
             stem = filepath
@@ -303,6 +311,8 @@ def find_inference_file(settings):
     pattern = get_inference_pattern(settings)
     if not pattern:
         return
+    if settings.get("output_format", "").lower() == "obj":
+        return pattern if os.path.isfile(pattern) else None
     if settings.get("filename_prefix"):
         filename = find_pattern_file(get_collected_pattern(pattern, settings), settings)
         if filename:
@@ -376,9 +386,9 @@ def get_output_frame_range(data, settings):
 
 def register_temporary_inference(run_node, data, settings):
     first_frame, last_frame = get_output_frame_range(data, settings)
-    filename = "{} {}-{}".format(
-        get_inference_pattern(settings), first_frame, last_frame
-    )
+    filename = get_inference_pattern(settings)
+    if settings.get("output_format", "").lower() != "obj":
+        filename = "{} {}-{}".format(filename, first_frame, last_frame)
     settings["temporary_inference_filename"] = filename
     meta = list(settings.get("custom_metadata", {}).items())
     meta.extend(extract_meta(data, settings, include_time=False))
@@ -400,6 +410,8 @@ def create_empty_read(run_node, data, settings):
 
     if not read:
         return
+    if settings.get("output_format", "").lower() == "obj":
+        return read
 
     first_frame, last_frame = get_output_frame_range(data, settings)
     read["on_error"].setValue("black")
