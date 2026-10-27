@@ -11,6 +11,7 @@ from copy import deepcopy
 
 import nuke  # type: ignore
 
+from ..nuke_util.arrange_nodes import arrange_candidates
 from ..nuke_util.colors import set_tile_color_hex
 from ..nuke_util.python_util import read_json_file
 from ..settings import COMFYUI2NUKE
@@ -47,7 +48,7 @@ def workflow_links(data):
 
 def import_workflow():
     panel = nuke.Panel("Import Workflow")
-    panel.addEnumerationPulldown("Source", "JSON\\ file ComfyUI\\ templates")
+    panel.addEnumerationPulldown("Source", "ComfyUI\\ templates JSON\\ file")
     if not panel.show():
         return
     if panel.value("Source") == "ComfyUI templates":
@@ -88,7 +89,7 @@ def import_workflow_data(data):
     token = import_warnings.set(warnings)
     try:
         _, nodes = build_graph(data, definitions, not_installed)
-        for node in nodes:
+        for node in arrange_candidates(nodes, True):
             node.setSelected(True)
     except (KeyError, ValueError, TypeError, RuntimeError) as error:
         show_message(
@@ -458,6 +459,15 @@ def expose_knob(group, knob, label, widgets):
     return name
 
 
+def move_run_controls_to_end(group):
+    knobs = [group.knob(name) for name in ("batch", "run")]
+    for knob in knobs:
+        group.removeKnob(knob)
+    group.addKnob(nuke.Text_Knob("run_divider", ""))
+    for knob in knobs:
+        group.addKnob(knob)
+
+
 def create_subgraph(attrs, definition, definitions, not_installed, stack):
     definition = deepcopy(definition)
     sockets, promoted = subgraph_boundary(definition, attrs)
@@ -588,6 +598,8 @@ def create_subgraph(attrs, definition, definitions, not_installed, stack):
             for name, value in zip(widgets.values(), values):
                 set_widget_value(group, group.knob(name), value)
         sync_widget_targets(group, widget_targets)
+        move_run_controls_to_end(group)
+        arrange_candidates(nuke.allNodes())
     finally:
         group.end()
     return group
