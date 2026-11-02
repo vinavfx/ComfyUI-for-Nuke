@@ -26,6 +26,7 @@ from .workflow_flatten import (
     main_output_id,
     node_parents,
     replaced_ids,
+    upstream_ids,
     workflow_links,
 )
 from .workflow_templates import select_template
@@ -412,10 +413,12 @@ def move_run_controls_to_end(group):
         group.addKnob(knob)
 
 
-def expose_controls(group, created, controls):
+def expose_controls(group, created, controls, main_tree):
     widgets = {}
     widget_targets = {}
     for label, targets in controls:
+        if not any(key in main_tree for key, _ in targets):
+            continue
         knobs = [widget_knob(created.get(key), widget) for key, widget in targets]
         knobs = [knob for knob in knobs if knob]
         if not knobs:
@@ -454,7 +457,8 @@ def create_workflow_gizmo(data, definitions, not_installed):
         output.setInput(0, run)
         created, _ = build_flat_graph(flat, not_installed)
         main = connect_main_output(flat, created, write, run)
-        expose_controls(group, created, flat["controls"].values())
+        main_tree = upstream_ids(node_parents(flat), main) if main else created
+        expose_controls(group, created, flat["controls"].values(), main_tree)
         arrange_candidates(nuke.allNodes())
     finally:
         group.end()
