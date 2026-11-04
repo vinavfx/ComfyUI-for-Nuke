@@ -17,6 +17,7 @@ from .src import (
     update_menu,
     scripts,
     workflow_importer,
+    workflow_input,
     workflow_submission,
 )
 from functools import partial
@@ -29,6 +30,7 @@ nuke.addOnCreate(generation_outputs.reset_copied_register)
 
 
 def setup():
+    workflow_input.install()
     threading.Thread(target=common.init_startup_scan, daemon=True).start()
     nuke.addOnScriptLoad(queue_recovery.start_queue_recovery)
 
