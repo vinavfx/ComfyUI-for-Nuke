@@ -10,6 +10,7 @@ import websocket
 
 from ..nuke_util.colors import set_tile_color_hsv
 from ..nuke_util.graph import get_upstream_nodes
+from ..nuke_util.pyside import QTimer
 from .common import execute_in_main_thread, show_message
 from .connection import GET, get_hostname_from_url
 from .queue_manager import find_prompt_id, interrupt
@@ -38,7 +39,20 @@ class ComfyJob:
         self.progress_title = "Inferencing"
         self.progress_value = 0
         self.progress_message = ""
-        self.progress = nuke.ProgressTask(self.progress_title)
+        self.progress_lock = threading.Lock()
+        self.progress_closed = False
+        self.progress_applied = None
+        self.cancel_requested = threading.Event()
+        self.progress = None
+        self.progress_timer = None
+        if nuke.GUI:
+            if threading.current_thread() is not threading.main_thread():
+                raise RuntimeError("ComfyJob must be created on the main thread")
+            self.progress = nuke.ProgressTask(self.progress_title)
+            self.progress_timer = QTimer()
+            self.progress_timer.setInterval(100)
+            self.progress_timer.timeout.connect(self.refresh_progress)
+            self.progress_timer.start()
         self.finished = threading.Event()
         self.cancelled = False
         self.execution_error = ""
@@ -123,35 +137,81 @@ class ComfyJob:
         preview_node.end()
 
     def set_progress(self, value, message="", include_ip=True):
+        if message:
+            hostname = ""
+            url = self.settings["URL"][0]
+            if include_ip and "127" not in url:
+                hostname = get_hostname_from_url(url)
+            if hostname:
+                message = "{} ({}) ".format(message, hostname)
+
+        with self.progress_lock:
+            if self.progress_closed:
+                return
+            self.progress_value = value
+            if message:
+                self.progress_message = message
+            current_message = self.progress_message
+
         if not nuke.GUI:
-            print("{} : {}%".format(message or self.progress_message, value))
+            print("{} : {}%".format(current_message, value))
+        elif threading.current_thread() is threading.main_thread():
+            self.refresh_progress()
+
+    def close_progress(self):
+        with self.progress_lock:
+            self.progress_closed = True
+        if threading.current_thread() is threading.main_thread():
+            self.refresh_progress()
+
+    def refresh_progress(self):
+        with self.progress_lock:
+            closed = self.progress_closed
+            state = (self.progress_value, self.progress_message)
+
+        if closed:
+            if self.progress_timer:
+                self.progress_timer.stop()
+                self.progress_timer.timeout.disconnect(self.refresh_progress)
+                self.progress_timer.deleteLater()
+                self.progress_timer = None
+            self.progress = None
+            return
 
         progress = self.progress
         if not progress:
             return
-
-        progress.setProgress(value)
-        self.progress_value = value
-
-        if not message:
+        if state != self.progress_applied:
+            progress.setProgress(state[0])
+            if state[1]:
+                progress.setMessage(state[1])
+            self.progress_applied = state
+        if not progress.isCancelled():
             return
 
-        hostname = ""
-        url = self.settings["URL"][0]
-        if include_ip and "127" not in url:
-            hostname = get_hostname_from_url(url)
-
-        message = "{} ({}) ".format(message, hostname) if hostname else message
-        progress.setMessage(message)
-        self.progress_message = message
-
-    def close_progress(self):
-        self.progress = None
+        if self.progress_timer:
+            self.progress_timer.stop()
+        confirmed = nuke.ask("Are you sure? This will stop the ComfyUI inference")
+        with self.progress_lock:
+            closed = self.progress_closed
+        if closed:
+            self.refresh_progress()
+            return
+        if confirmed:
+            self.cancel_requested.set()
+            self.close_progress()
+        else:
+            self.restore_progress()
+            if self.progress_timer:
+                self.progress_timer.start()
 
     def restore_progress(self):
+        with self.progress_lock:
+            state = (self.progress_value, self.progress_message)
         self.progress = nuke.ProgressTask(self.progress_title)
-        self.progress.setProgress(self.progress_value)
-        self.progress.setMessage(self.progress_message)
+        self.progress.setProgress(state[0])
+        self.progress.setMessage(state[1])
+        self.progress_applied = state
 
     def start_monitor(self):
         url = "{}/ws?clientId={}".format(
@@ -256,15 +316,7 @@ class ComfyJob:
         )
 
     def handle_cancellation(self):
-        progress = self.progress
-        if not progress or not progress.isCancelled():
-            return False
-
-        confirmed = nuke.executeInMainThreadWithResult(
-            lambda: nuke.ask("Are you sure? This will stop the ComfyUI inference")
-        )
-        if not confirmed:
-            self.restore_progress()
+        if not self.cancel_requested.is_set():
             return False
 
         self.cancelled = True
@@ -319,7 +371,11 @@ class ComfyJob:
         if self.cancelled:
             return
 
-        execute_in_main_thread(self.finish)
+        execute_in_main_thread(self.finish_on_main_thread)
+
+    def finish_on_main_thread(self):
+        self.close_progress()
+        self.finish()
 
     def set_external_error(self, error):
         self.execution_error = error
