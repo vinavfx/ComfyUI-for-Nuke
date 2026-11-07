@@ -57,7 +57,7 @@ def is_node_graph(widget):
             return False
         if "DAG" in widget.objectName():
             return True
-        widget = widget.parent()
+        widget = QtCore.QObject.parent(widget)
     return False
 
 
