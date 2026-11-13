@@ -348,7 +348,18 @@ class ComfyJob:
         if prompt_is_queued:
             self.prompt_was_queued = True
         elif self.prompt_was_queued:
+            self.apply_history_outputs()
             self.finished.set()
+
+    def apply_history_outputs(self):
+        endpoint = "history/{}".format(self.prompt_id)
+        history = GET(endpoint, self.settings, warning=False) or {}
+        outputs = history.get(self.prompt_id, {}).get("outputs", {})
+        for node_name, output in outputs.items():
+            execute_in_main_thread(
+                self.update_node,
+                args=(node_name, {"output": output}, self.run_node, self.settings),
+            )
 
     def monitor(self):
         check_count = 0
