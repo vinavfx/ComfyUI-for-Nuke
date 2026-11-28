@@ -295,7 +295,7 @@ def create_node(data, inpanel=True, connect_selected=True):
         elif input_class == "STRING" and key in ["filepath", "file", "directory"]:
             knob = nuke.File_Knob(knob_name, display_name)
 
-        elif input_class == "STRING":
+        elif input_class in ("STRING", "COLOR"):
             multiline = info.get("multiline", False)
 
             if multiline:
