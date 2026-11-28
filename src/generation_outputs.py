@@ -47,6 +47,11 @@ def prepare_output_path(run_node, settings, update=True, data=None):
         filepath_knob = output_node.knob(knob_name + "_")
         if filepath_knob:
             filepath = inputs.get(knob_name, filepath_knob.value())
+            if update and is_relative_mesh_path(filepath, settings):
+                filepath = reserve_mesh_path(run_node, output_node, settings, filepath)
+                filepath_knob.setValue(filepath)
+                if data is not None:
+                    data[output_node.name()]["inputs"][knob_name] = filepath
             settings["output_filepath"] = filepath
             fallback_knob = output_node.knob("fallback_to_output_")
             settings["fallback_to_output"] = inputs.get(
@@ -82,6 +87,45 @@ def prepare_output_path(run_node, settings, update=True, data=None):
         data[output_node.name()]["inputs"]["filename_prefix"] = new_prefix
     settings["filename_prefix"] = new_prefix
     return new_prefix
+
+
+def is_relative_mesh_path(filepath, settings):
+    if settings.get("output_format", "").lower() != "obj":
+        return False
+    filepath = os.path.expanduser(filepath.strip().strip('"'))
+    return bool(filepath) and not os.path.isabs(filepath)
+
+
+def reserve_mesh_path(run_node, output_node, settings, filepath):
+    filepath = filepath.strip().strip('"').replace("\\", "/")
+    directory, separator, filename = filepath.partition("/")
+    if separator and re.fullmatch(r".+_gen\d+", directory):
+        filepath = filename
+    generation = reserve_generation_directory(run_node, output_node, settings)
+    return "{}/{}".format(generation, filepath)
+
+
+def collect_mesh_files(filename, settings):
+    source_directory = os.path.dirname(filename)
+    if not re.fullmatch(r".+_gen\d+", os.path.basename(source_directory)):
+        return filename
+    collected = get_collected_pattern(filename, settings)
+    if collected == filename:
+        return filename
+    directory = os.path.dirname(collected)
+    os.makedirs(directory, exist_ok=True)
+    stem = os.path.splitext(os.path.basename(filename))[0]
+    with os.scandir(source_directory) as entries:
+        sources = [
+            entry.path
+            for entry in entries
+            if entry.is_file() and os.path.splitext(entry.name)[0] == stem
+        ]
+    for source in sources:
+        shutil.move(source, os.path.join(directory, os.path.basename(source)))
+    if not os.listdir(source_directory):
+        os.rmdir(source_directory)
+    return collected
 
 
 def reserve_generation_directory(run_node, output_node, settings):
@@ -312,7 +356,12 @@ def find_inference_file(settings):
     if not pattern:
         return
     if settings.get("output_format", "").lower() == "obj":
-        return pattern if os.path.isfile(pattern) else None
+        collected = get_collected_pattern(pattern, settings)
+        if os.path.isfile(collected):
+            return collected
+        if os.path.isfile(pattern):
+            return collect_mesh_files(pattern, settings)
+        return None
     if settings.get("filename_prefix"):
         filename = find_pattern_file(get_collected_pattern(pattern, settings), settings)
         if filename:
